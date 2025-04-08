@@ -15,3 +15,7 @@ pip install imagehash
 
 ## Info
 You can run the above script to have a working application that allows users to select a folder, compare & preview images, and delete selected duplicates.
+
+```
+python app.py
+```
