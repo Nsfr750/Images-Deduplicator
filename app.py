@@ -18,7 +18,7 @@ class Sponsor:
 
     def open_github():
         import webbrowser
-        webbrowser.open("https://github.com/Nsfr750")
+        webbrowser.open("https://github.com/sponsors/Nsfr750")
 
     def open_discord():    
         import webbrowser
