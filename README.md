@@ -9,7 +9,7 @@ A desktop application for finding and managing duplicate images in your folders.
 - Automatically detect duplicate images using perceptual hashing
 - Preview images before deletion
 - Bulk delete selected duplicates
-- Support for common image formats
+- Support for common image formats: PNG, JPG, JPEG, GIF, BMP, TIFF, and TIF
 
 ## Installation
 
