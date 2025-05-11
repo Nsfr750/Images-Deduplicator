@@ -6,7 +6,7 @@ import imagehash
 
 class Sponsor:
     root = Tk()
-    root.geometry("300x150")
+    root.geometry("300x200")
     root.title("Sponsor")
 
     title_label = Label(root, text="Socials", font=("Arial", 16))
@@ -24,15 +24,24 @@ class Sponsor:
         import webbrowser
         webbrowser.open("https://discord.gg/q5Pcgrju")
         
+    def open_paypal():
+        import webbrowser
+        webbrowser.open("https://paypal.me/3dmega")
+        
     # Create and place buttons
     patreon_button = Button(root, text="Join the Patreon!", command=open_patreon)
-    patreon_button.pack(pady=10)
+    patreon_button.pack(pady=5)
 
     github_button = Button(root, text="GitHub", command=open_github)
-    github_button.pack(pady=10)
+    github_button.pack(pady=5)
 
-    discord_button = Button(root, text="Discord", command=open_discord)
-    discord_button.pack(pady=10)
+    discord_button = Button(root, text="Join Discord", command=open_discord)
+    discord_button.pack(pady=5)
+
+    paypal_button = Button(root, text="Pay me a Coffee", command=open_paypal)
+    paypal_button.pack(pady=5)
+
+
 
     root.mainloop()
 
@@ -40,7 +49,7 @@ class ImageDeduplicatorApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Image Deduplicator")
-        self.root.geometry("1000x800")
+        self.root.geometry("800x600")
 
         self.folder_path = tk.StringVar()
 
@@ -86,10 +95,9 @@ class ImageDeduplicatorApp:
     def create_menu(self):
         menubar = Menu(self.root)
         self.root.config(menu=menubar)
-
-        help_menu = Menu(menubar, tearoff=0)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=self.show_about)
+        about_menu = Menu(menubar, tearoff=0)
+        about_menu.add_command(label="About", command=self.show_about)
+        menubar.add_cascade(label="About", menu=about_menu)
 
     def show_about(self):
         messagebox.showinfo("About", "Image Deduplicator v1.0\nDeveloped by Nsfr750")
