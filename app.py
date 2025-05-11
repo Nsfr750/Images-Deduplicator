@@ -114,7 +114,7 @@ class ImageDeduplicatorApp:
         duplicates = {}
         
         for filename in os.listdir(folder):
-            if filename.endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp')):
+            if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
                 filepath = os.path.join(folder, filename)
                 image = Image.open(filepath)
                 hash_value = imagehash.average_hash(image)
