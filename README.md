@@ -11,7 +11,7 @@ A desktop application for finding and managing duplicate images in your folders.
 - Bulk delete selected duplicates
 - Support for common image formats: PNG, JPG, JPEG, GIF, BMP, TIFF, and TIF
 
-## Installation
+
 
 1. Clone this repository:
 ```bash
