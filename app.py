@@ -123,22 +123,23 @@ class ImageDeduplicatorApp:
         self.display_duplicates()
 
     def find_duplicates(self, folder):
-        images = {}
-        duplicates = {}
-
-        for filename in os.listdir(folder):
-            if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
-                filepath = os.path.join(folder, filename)
-                image = Image.open(filepath)
-                hash_value = imagehash.average_hash(image)
-
-                if hash_value in images:
-                    duplicates[filepath] = images[hash_value]
-                else:
-                    images[hash_value] = filepath
-
-        return duplicates
-
+    images = {}
+    duplicates = {}
+    
+    for filename in os.listdir(folder):
+        if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
+            filepath = os.path.join(folder, filename)
+            image = Image.open(filepath)
+            hash_value = imagehash.average_hash(image)
+            
+            if hash_value in images:
+                duplicates[filepath] = images[hash_value]
+            else:
+                images[hash_value] = filepath
+    
+    return duplicates
+    
+    
     def display_duplicates(self):
         self.duplicates_listbox.delete(0, tk.END)
 
