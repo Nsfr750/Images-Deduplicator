@@ -5,176 +5,150 @@ from PIL import Image, ImageTk
 import imagehash
 
 class Sponsor:
-     root = Tk()
-     root.geometry("300x200")
-     root.title("Sponsor")
- 
-     title_label = Label(root, text="Socials", font=("Arial", 16))
-     title_label.pack(pady=10)
- 
-     def open_patreon():
-         import webbrowser
-         webbrowser.open("https://www.patreon.com/Nsfr750")
- 
-     def open_github():
-         import webbrowser
-         webbrowser.open("https://github.com/sponsors/Nsfr750")
- 
-     def open_discord():    
-         import webbrowser
-         webbrowser.open("https://discord.gg/q5Pcgrju")
- 
-     def open_paypal():
-         import webbrowser
-         webbrowser.open("https://paypal.me/3dmega")
- 
-     # Create and place buttons
-     patreon_button = Button(root, text="Join the Patreon!", command=open_patreon)
-     patreon_button.pack(pady=5)
- 
-     github_button = Button(root, text="GitHub", command=open_github)
-     github_button.pack(pady=5)
- 
-     discord_button = Button(root, text="Join Discord", command=open_discord)
-     discord_button.pack(pady=5)
- 
-     paypal_button = Button(root, text="Pay me a Coffee", command=open_paypal)
-     paypal_button.pack(pady=5)
- 
-     root.mainloop()
+    def __init__(self):
+        self.root = Tk()
+        self.root.geometry("300x200")
+        self.root.title("Sponsor")
 
-# Program Start
-def copy_files(self):
-    selected_files = self.duplicates_listbox.curselection()
-    self.copied_files = [self.duplicates_listbox.get(i) for i in selected_files]
+        title_label = Label(self.root, text="Socials", font=("Arial", 16))
+        title_label.pack(pady=10)
 
-def paste_files(self):
-    for file in self.copied_files:
-        self.duplicates_listbox.insert(tk.END, file)
+        # Create and place buttons
+        patreon_button = Button(self.root, text="Join the Patreon!", command=self.open_patreon)
+        patreon_button.pack(pady=5)
 
-def drag_enter(self, event):
-    event.widget.focus_force()
-    return True
+        github_button = Button(self.root, text="GitHub", command=self.open_github)
+        github_button.pack(pady=5)
 
-def drop_files(self, event):
-    files = event.data.split()
-    for file in files:
-            self.duplicates_listbox.insert(tk.END, file)
+        discord_button = Button(self.root, text="Join Discord", command=self.open_discord)
+        discord_button.pack(pady=5)
 
-def __init__(self, root):
-    self.root = root
-    self.root.title("Image Deduplicator")
-    self.root.geometry("800x600")
+        paypal_button = Button(self.root, text="Pay me a Coffee", command=self.open_paypal)
+        paypal_button.pack(pady=5)
 
-    self.folder_path = tk.StringVar()
+        self.root.mainloop()
 
-    self.create_widgets()
-    self.create_menu()
+    def open_patreon(self):
+        import webbrowser
+        webbrowser.open("https://www.patreon.com/Nsfr750")
 
-def create_widgets(self):
-    # Folder selection
-    folder_frame = tk.Frame(self.root)
-    folder_frame.pack(pady=10)
-        
-    folder_label = tk.Label(folder_frame, text="Select Folder:")
-    folder_label.pack(side=tk.LEFT, padx=5)
-        
-    folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
-    folder_entry.pack(side=tk.LEFT, padx=5)
-        
-    browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
-    browse_button.pack(side=tk.LEFT, padx=5)
+    def open_github(self):
+        import webbrowser
+        webbrowser.open("https://github.com/sponsors/Nsfr750")
 
-    # Buttons for actions
-    action_frame = tk.Frame(self.root)
-    action_frame.pack(pady=10)
-        
-    compare_button = tk.Button(action_frame, text="Compare Images", command=self.compare_images)
-    compare_button.pack(side=tk.LEFT, padx=5)
-        
-    delete_button = tk.Button(action_frame, text="Delete Selected", command=self.delete_selected)
-    delete_button.pack(side=tk.LEFT, padx=5)
-        
-    # Listbox for displaying duplicates
+    def open_discord(self):
+        import webbrowser
+        webbrowser.open("https://discord.gg/q5Pcgrju")
 
-    self.duplicates_listbox.pack(pady=10)
-    self.duplicates_listbox.bind('<<ListboxSelect>>', self.preview_image)
+    def open_paypal(self):
+        import webbrowser
+        webbrowser.open("https://paypal.me/3dmega")
 
-    # Image preview area
-    self.preview_label = tk.Label(self.root, text="Image Preview")
-    self.preview_label.pack(pady=10)
-        
-    self.canvas = tk.Canvas(self.root, width=400, height=300)
-    self.canvas.pack()
 
-def create_menu(self):
-    menubar = Menu(self.root)
-    self.root.config(menu=menubar)
-    about_menu = Menu(menubar, tearoff=0)
-    about_menu.add_command(label="About", command=self.show_about)
-    menubar.add_cascade(label="About", menu=about_menu)
+class ImageDeduplicatorApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Image Deduplicator")
+        self.root.geometry("800x600")
 
-def show_about(self):
-    messagebox.showinfo("About", "Image Deduplicator v.2.0\nDeveloped by Nsfr750")
+        self.folder_path = tk.StringVar()
+        self.copied_files = []
+        self.duplicates = {}
 
-def browse_folder(self):
-    folder_selected = filedialog.askdirectory()
-    if folder_selected:
-        self.folder_path.set(folder_selected)
-        messagebox.showinfo("Folder Selected", f"Selected folder: {folder_selected}")
+        self.create_widgets()
+        self.create_menu()
 
-def compare_images(self):
-    folder = self.folder_path.get()
-    if not folder:
-        messagebox.showwarning("Warning", "Please select a folder first.")
-        return
-        
-# Compare images and find duplicates
-    self.duplicates = self.find_duplicates(folder)
-    image_count = len(self.duplicates)
-    messagebox.showinfo("Image Count", f"Found {image_count} duplicate images.")
-    self.display_duplicates()
-    folder_selected = filedialog.askdirectory()
-    if folder_selected:
-        self.folder_path.set(folder_selected)
+    def create_widgets(self):
+        # Folder selection
+        folder_frame = tk.Frame(self.root)
+        folder_frame.pack(pady=10)
+
+        folder_label = tk.Label(folder_frame, text="Select Folder:")
+        folder_label.pack(side=tk.LEFT, padx=5)
+
+        folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
+        folder_entry.pack(side=tk.LEFT, padx=5)
+
+        browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
+        browse_button.pack(side=tk.LEFT, padx=5)
+
+        # Buttons for actions
+        action_frame = tk.Frame(self.root)
+        action_frame.pack(pady=10)
+
+        compare_button = tk.Button(action_frame, text="Compare Images", command=self.compare_images)
+        compare_button.pack(side=tk.LEFT, padx=5)
+
+        delete_button = tk.Button(action_frame, text="Delete Selected", command=self.delete_selected)
+        delete_button.pack(side=tk.LEFT, padx=5)
+
+        # Listbox for displaying duplicates
+        self.duplicates_listbox = tk.Listbox(self.root, width=100, height=20)
+        self.duplicates_listbox.pack(pady=10)
+        self.duplicates_listbox.bind('<<ListboxSelect>>', self.preview_image)
+
+        # Image preview area
+        self.preview_label = tk.Label(self.root, text="Image Preview")
+        self.preview_label.pack(pady=10)
+
+        self.canvas = tk.Canvas(self.root, width=400, height=300)
+        self.canvas.pack()
+
+    def create_menu(self):
+        menubar = Menu(self.root)
+        self.root.config(menu=menubar)
+        about_menu = Menu(menubar, tearoff=0)
+        about_menu.add_command(label="About", command=self.show_about)
+        menubar.add_cascade(label="About", menu=about_menu)
+
+    def show_about(self):
+        messagebox.showinfo("About", "Image Deduplicator v.2.0\nDeveloped by Nsfr750")
+
+    def browse_folder(self):
+        folder_selected = filedialog.askdirectory()
+        if folder_selected:
+            self.folder_path.set(folder_selected)
+            messagebox.showinfo("Folder Selected", f"Selected folder: {folder_selected}")
 
     def compare_images(self):
         folder = self.folder_path.get()
         if not folder:
             messagebox.showwarning("Warning", "Please select a folder first.")
             return
-        
+
         # Compare images and find duplicates
         self.duplicates = self.find_duplicates(folder)
+        image_count = len(self.duplicates)
+        messagebox.showinfo("Image Count", f"Found {image_count} duplicate images.")
         self.display_duplicates()
 
     def find_duplicates(self, folder):
         images = {}
         duplicates = {}
-        
+
         for filename in os.listdir(folder):
             if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
                 filepath = os.path.join(folder, filename)
                 image = Image.open(filepath)
                 hash_value = imagehash.average_hash(image)
-                
+
                 if hash_value in images:
                     duplicates[filepath] = images[hash_value]
                 else:
                     images[hash_value] = filepath
-        
+
         return duplicates
-    
+
     def display_duplicates(self):
         self.duplicates_listbox.delete(0, tk.END)
-        
+
         for duplicate, original in self.duplicates.items():
             self.duplicates_listbox.insert(tk.END, f"Duplicate: {duplicate} | Original: {original}")
-    
+
     def preview_image(self, event):
         selected_index = self.duplicates_listbox.curselection()
         if selected_index:
-            item = self.duplicates_listbox.get(selected_index)
+            item = self.duplicates_listbox.get(selected_index[0])
             duplicate_path = item.split(" | ")[0].replace("Duplicate: ", "")
             image = Image.open(duplicate_path)
             image.thumbnail((400, 300))
@@ -187,137 +161,10 @@ def compare_images(self):
             item = self.duplicates_listbox.get(index)
             duplicate_path = item.split(" | ")[0].replace("Duplicate: ", "")
             os.remove(duplicate_path)
-        
+
         self.compare_images()
         messagebox.showinfo("Info", "Selected duplicates have been deleted.")
 
-    class ImageDeduplicatorApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Image Deduplicator")
-        self.root.geometry("800x600")
-
-        self.folder_path = tk.StringVar()
-
-        self.create_widgets()
-        self.create_menu()
-
-    def create_widgets(self):
-        # Folder selection
-        folder_frame = tk.Frame(self.root)
-        folder_frame.pack(pady=10)
-        
-        folder_label = tk.Label(folder_frame, text="Select Folder:")
-        folder_label.pack(side=tk.LEFT, padx=5)
-        
-        folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
-        folder_entry.pack(side=tk.LEFT, padx=5)
-        
-        browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
-        browse_button.pack(side=tk.LEFT, padx=5)
-
-    def create_menu(self):
-        menubar = Menu(self.root)
-        self.root.config(menu=menubar)
-        about_menu = Menu(menubar, tearoff=0)
-        about_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(label="About", menu=about_menu)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageDeduplicatorApp(root)
-    root.mainloop()
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Image Deduplicator")
-        self.root.geometry("800x600")
-
-        self.folder_path = tk.StringVar()
-
-        self.create_widgets()
-        self.create_menu()
-
-    def create_widgets(self):
-        # Folder selection
-        folder_frame = tk.Frame(self.root)
-        folder_frame.pack(pady=10)
-        
-        folder_label = tk.Label(folder_frame, text="Select Folder:")
-        folder_label.pack(side=tk.LEFT, padx=5)
-        
-        folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
-        folder_entry.pack(side=tk.LEFT, padx=5)
-        
-        browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
-        browse_button.pack(side=tk.LEFT, padx=5)
-
-    def create_menu(self):
-        menubar = Menu(self.root)
-        self.root.config(menu=menubar)
-        about_menu = Menu(menubar, tearoff=0)
-        about_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(label="About", menu=about_menu)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageDeduplicatorApp(root)
-    root.mainloop()
-    def __init__(self, root):
-        self.root = root
-        self.root.title("Image Deduplicator")
-        self.root.geometry("800x600")
-
-        self.folder_path = tk.StringVar()
-
-        self.create_widgets()
-        self.create_menu()
-
-    def create_widgets(self):
-        # Folder selection
-        folder_frame = tk.Frame(self.root)
-        folder_frame.pack(pady=10)
-        
-        folder_label = tk.Label(folder_frame, text="Select Folder:")
-        folder_label.pack(side=tk.LEFT, padx=5)
-        
-        folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
-        folder_entry.pack(side=tk.LEFT, padx=5)
-        
-        browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
-        browse_button.pack(side=tk.LEFT, padx=5)
-
-    def create_menu(self):
-        menubar = Menu(self.root)
-        self.root.config(menu=menubar)
-        about_menu = Menu(menubar, tearoff=0)
-        about_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(label="About", menu=about_menu)
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ImageDeduplicatorApp(root)
-    root.mainloop()
-        def __init__(self, root):
-            self.root = root
-            self.root.title("Image Deduplicator")
-            self.root.geometry("800x600")
-
-            self.folder_path = tk.StringVar()
-
-            self.create_widgets()
-            self.create_menu()
-
-        # Add the rest of the methods here
-    
-        def create_widgets(self):
-            # Your existing create_widgets implementation
-            pass
-
-        def create_menu(self):
-        # Your existing create_menu implementation
-        pass
-
-        # ... other methods ...
 
 if __name__ == "__main__":
     root = tk.Tk()
