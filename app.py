@@ -101,6 +101,13 @@ class ImageDeduplicatorApp:
         about_menu.add_command(label="About", command=self.show_about)
         menubar.add_cascade(label="About", menu=about_menu)
 
+        sponsor_menu = Menu(menubar, tearoff=0)
+        sponsor_menu.add_command(label="Show Sponsor", command=self.open_sponsor)
+        menubar.add_cascade(label="Sponsor", menu=sponsor_menu)
+
+    def open_sponsor(self):
+        Sponsor()
+
     def show_about(self):
         messagebox.showinfo("About", "Image Deduplicator v.2.0\nDeveloped by Nsfr750")
 
@@ -123,23 +130,25 @@ class ImageDeduplicatorApp:
         self.display_duplicates()
 
     def find_duplicates(self, folder):
-    images = {}
-    duplicates = {}
-    
-    for filename in os.listdir(folder):
-        if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
-            filepath = os.path.join(folder, filename)
-            image = Image.open(filepath)
-            hash_value = imagehash.average_hash(image)
-            
-            if hash_value in images:
-                duplicates[filepath] = images[hash_value]
-            else:
-                images[hash_value] = filepath
-    
-    return duplicates
-    
-    
+        from PIL import ImageFile
+        ImageFile.LOAD_TRUNCATED_IMAGES = True
+        images = {}
+        duplicates = {}
+
+        for filename in os.listdir(folder):
+            if filename.lower().endswith(('png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'tif')):
+                filepath = os.path.join(folder, filename)
+                try:
+                    image = Image.open(filepath)
+                    hash_value = imagehash.average_hash(image)
+                    if hash_value in images:
+                        duplicates[filepath] = images[hash_value]
+                    else:
+                        images[hash_value] = filepath
+                except Exception as e:
+                    print(f"Skipping file {filepath}: {e}")
+        return duplicates
+
     def display_duplicates(self):
         self.duplicates_listbox.delete(0, tk.END)
 
