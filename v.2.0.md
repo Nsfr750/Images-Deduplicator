@@ -1,7 +1,11 @@
 ### V. 2.0
 
-- added Scroll Bars
-- added ability to select multiple files with shift+arrows 
-- added copy and paste
-- added file drag&drop
+#done
+- moved sponsor windows to a menu
+
+#todo
+- add Scroll Bars
+- add ability to select multiple files with shift+arrows 
+- add copy and paste
+- add file drag&drop
 
