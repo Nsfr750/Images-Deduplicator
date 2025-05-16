@@ -3,52 +3,14 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, Button, Tk, Label, Menu
 from PIL import Image, ImageTk
 import imagehash
-
-class Sponsor:
-    def __init__(self):
-        self.root = Tk()
-        self.root.geometry("300x200")
-        self.root.title("Sponsor")
-
-        title_label = Label(self.root, text="Socials", font=("Arial", 16))
-        title_label.pack(pady=10)
-
-        # Create and place buttons
-        patreon_button = Button(self.root, text="Join the Patreon!", command=self.open_patreon)
-        patreon_button.pack(pady=5)
-
-        github_button = Button(self.root, text="GitHub", command=self.open_github)
-        github_button.pack(pady=5)
-
-        discord_button = Button(self.root, text="Join Discord", command=self.open_discord)
-        discord_button.pack(pady=5)
-
-        paypal_button = Button(self.root, text="Pay me a Coffee", command=self.open_paypal)
-        paypal_button.pack(pady=5)
-
-        self.root.mainloop()
-
-    def open_patreon(self):
-        import webbrowser
-        webbrowser.open("https://www.patreon.com/Nsfr750")
-
-    def open_github(self):
-        import webbrowser
-        webbrowser.open("https://github.com/sponsors/Nsfr750")
-
-    def open_discord(self):
-        import webbrowser
-        webbrowser.open("https://discord.gg/q5Pcgrju")
-
-    def open_paypal(self):
-        import webbrowser
-        webbrowser.open("https://paypal.me/3dmega")
-
+from about import About
+from sponsor import Sponsor
+from version import get_version
 
 class ImageDeduplicatorApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Image Deduplicator")
+        self.root.title(f"Image Deduplicator v{get_version()}")
         self.root.geometry("800x600")
 
         self.folder_path = tk.StringVar()
@@ -106,10 +68,11 @@ class ImageDeduplicatorApp:
         menubar.add_cascade(label="Sponsor", menu=sponsor_menu)
 
     def open_sponsor(self):
-        Sponsor()
+        sponsor = Sponsor(self.root)
+        sponsor.show_sponsor()
 
     def show_about(self):
-        messagebox.showinfo("About", "Image Deduplicator v.2.0\nDeveloped by Nsfr750")
+        About.show_about(self.root)
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
