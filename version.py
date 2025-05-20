@@ -5,13 +5,13 @@ This module provides a centralized version tracking system
 for the Database Browser project.
 """
 
-# Version information follows Semantic Versioning 2.0.0 (https://semver.org/)
-VERSION_MAJOR = 2
-VERSION_MINOR = 0
-VERSION_PATCH = 0
+# Version components
+MAJOR_VERSION = 1
+MINOR_VERSION = 2
+PATCH_VERSION = 0
 
 # Additional version qualifiers
-VERSION_QUALIFIER = 'beta'  # Could be 'alpha', 'beta', 'rc', or ''
+VERSION_QUALIFIER = ''  # Could be 'alpha', 'beta', 'rc', or ''
 
 def get_version():
     """
@@ -20,7 +20,11 @@ def get_version():
     Returns:
         str: Formatted version string
     """
-    version_parts = [str(VERSION_MAJOR), str(VERSION_MINOR), str(VERSION_PATCH)]
+    version_parts = [
+        str(MAJOR_VERSION),
+        str(MINOR_VERSION),
+        str(PATCH_VERSION)
+    ]
     version_str = '.'.join(version_parts)
     
     if VERSION_QUALIFIER:
