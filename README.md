@@ -20,15 +20,6 @@ A powerful desktop application for finding and managing duplicate images in your
 
 - **File Management**
   - Easy folder selection and browsing
-  - Bulk operations for duplicate deletion
-  - Preview before deletion
-  - List-based duplicate display
-
-- **Developer Features**
-  - Modular code structure
-  - Version control integration
-  - Detailed changelog
-  - Extensible architecture
 
 ## Requirements
 
@@ -40,34 +31,45 @@ A powerful desktop application for finding and managing duplicate images in your
 
 ## Installation
 
-1. Clone the repository:
-```bash
-git clone https://github.com/Nsfr750/Images-Deduplicator.git
-cd Images-Deduplicator
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+1. Install Python 3.7 or higher
+2. Install required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the application:
+   ```bash
+   python app.py
+   ```
 
 ## Usage
 
-1. Launch the application:
-```bash
-python app.py
-```
+1. Select a folder containing images using the "Select Folder" option
+2. Enable "Search subfolders" to scan nested directories
+3. Adjust the quality threshold slider for duplicate matching
+4. Click "Compare Images" to find duplicates
+5. Review duplicates in the preview window
+6. Select multiple duplicates using Ctrl or Shift
+7. Click "Delete Selected" to remove duplicates
+8. Use "Delete All Duplicates" to remove all found duplicates
 
-2. Main Interface:
-   - Click 'Browse' to select a folder containing images
-   - Click 'Compare Images' to find duplicates
-   - Select duplicates from the list to preview them
-   - Click 'Delete Selected' to remove chosen duplicates
-   - Use the menus to access About and Sponsor information
+## Quality Comparison
 
-3. Menus:
-   - **About**: Shows application version and information
-   - **Sponsor**: Opens window with support options
+The app uses a quality threshold (0.8-1.0) to determine if images are duplicates:
+- Lower values (0.8-0.9) find more similar images
+- Higher values (0.95-1.0) find exact duplicates
+- Adjust based on your needs using the quality threshold slider
+
+## Supported Image Formats
+
+- PNG
+- JPG/JPEG
+- GIF
+- BMP
+- TIFF/TIF
+
+## Error Handling
+
+The app includes comprehensive error handling and will display detailed error messages if something goes wrong during image processing.
 
 ## Contributing
 
