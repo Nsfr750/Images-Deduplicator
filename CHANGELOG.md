@@ -1,6 +1,18 @@
 # Changelog
 
-## Version 1.2.0 (2025-05-20)
+## Version 1.3.0 (2025-05-22)
+### Added
+- "Select All" button for duplicates
+- Improved UI organization with better button placement
+- Better scrollbar positioning in results list
+- Removed quality threshold functionality for simpler UI
+
+### Fixed
+- Removed redundant "Delete All Duplicates" button
+- Improved spacing and layout consistency
+- Fixed button organization in action frame
+
+## Version 1.2.0 (2025-05-21)
 ### Added
 - Multiple file selection for deletion
 - Improved error handling in file operations
