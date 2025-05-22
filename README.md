@@ -10,7 +10,7 @@ A powerful desktop application for finding and managing duplicate images in your
 
 - **Image Comparison**
   - Utilizes perceptual hashing for accurate duplicate detection
-  - Supports PNG, JPG, JPEG, GIF, BMP, TIFF, and TIF formats
+  - Supports PNG,JPG,JPEG,GIF,BMP,TIFF,TIF,WEBP,SVG,PSD formats
   - Handles truncated or corrupted images gracefully
 
 - **User Interface**
@@ -91,7 +91,7 @@ Found a bug or have a feature request? Please open an issue.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPL-2.0 license. See[LICENSE](LICENSE) file for details.
 
 ## Changelog
 
