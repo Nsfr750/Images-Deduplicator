@@ -1,12 +1,16 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+from translations import t
+
+# Set your language here: 'en', 'es', 'fr', 'de', 'pt', 'it'
+LANG = 'en'  # Change as needed
 
 class Help:
     @staticmethod
     def show_help(parent):
         """Show help window with usage information"""
         help_window = tk.Toplevel(parent)
-        help_window.title("Image Deduplicator Help")
+        help_window.title(t('help_title', LANG))
         help_window.geometry("600x400")
         
         # Create a notebook for different help sections
@@ -15,9 +19,9 @@ class Help:
         
         # Usage tab
         usage_frame = ttk.Frame(notebook)
-        notebook.add(usage_frame, text="Usage")
+        notebook.add(usage_frame, text=t('usage', LANG))
         
-        HELP_TEXT = """
+        HELP_TEXT = t('help_text', LANG) if 'help_text' in t.__code__.co_varnames or hasattr(t, 'help_text') else """
 Image Deduplicator v1.3.0
 
 This application helps you find and manage duplicate images in your folders.
@@ -61,7 +65,7 @@ https://github.com/Nsfr750/Images-Deduplicator
         
         # Features tab
         features_frame = ttk.Frame(notebook)
-        notebook.add(features_frame, text="Features")
+        notebook.add(features_frame, text=t('features', LANG))
         
         features_text = """
         Features:
@@ -86,7 +90,7 @@ https://github.com/Nsfr750/Images-Deduplicator
         
         # Tips tab
         tips_frame = ttk.Frame(notebook)
-        notebook.add(tips_frame, text="Tips")
+        notebook.add(tips_frame, text=t('tips', LANG))
         
         tips_text = """
         Tips:
@@ -105,5 +109,5 @@ https://github.com/Nsfr750/Images-Deduplicator
         tips_label.pack(padx=10, pady=10)
         
         # Add close button
-        close_button = ttk.Button(help_window, text="Close", command=help_window.destroy)
+        close_button = ttk.Button(help_window, text=t('close', LANG), command=help_window.destroy)
         close_button.pack(pady=10)
