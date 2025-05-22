@@ -22,7 +22,7 @@ class About:
         description = ttk.Label(about_dialog, text='A desktop application for finding and managing\n duplicate images in your folders.', justify=tk.CENTER)
         description.pack(pady=20)
 
-        copyright = ttk.Label(about_dialog, text=' 2025 Nsfr750')
+        copyright = ttk.Label(about_dialog, text='© 2025 Nsfr750')
         copyright.pack(pady=10)
 
         ttk.Button(about_dialog, text='Close', command=about_dialog.destroy).pack(pady=20)
