@@ -35,113 +35,154 @@ class ImageDeduplicatorApp:
         self.progress_bar = None
 
         self.create_widgets()
-        self.create_menu()
         self.setup_styles()
+        self.create_menu()
 
     def create_widgets(self):
         # Progress frame
-        self.progress_frame = tk.Frame(self.root)
-        self.progress_frame.pack(fill=tk.X, pady=(0, 10))
-        self.progress_label = tk.Label(self.progress_frame, text="")
-        self.progress_label.pack(side=tk.LEFT)
-        self.progress_bar = ttk.Progressbar(self.progress_frame, mode='determinate')
-        self.progress_bar.pack(fill=tk.X, padx=5)
+        self.progress_frame = ttk.Frame(self.root)
+        self.progress_frame.pack(fill=tk.X, pady=(0, 10), padx=10)
+        
+        # Progress label with better styling
+        self.progress_label = ttk.Label(self.progress_frame, 
+                                      text="",
+                                      font=('Segoe UI', 10, 'bold'))
+        self.progress_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # Progress bar with better styling
+        self.progress_bar = ttk.Progressbar(self.progress_frame, 
+                                          mode='determinate', 
+                                          style='TProgressbar')
+        self.progress_bar.pack(fill=tk.X, expand=True)
         self.progress_bar['maximum'] = 1000
 
-        # Preview frames
-        preview_frame = tk.Frame(self.root)
-        preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        # Create results frame with scrollbar
+        results_frame = ttk.Frame(self.root)
+        results_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(10, 0))
+        
+        # Create listbox for duplicates with better styling
+        self.duplicates_listbox = tk.Listbox(results_frame, 
+                                            selectmode=tk.EXTENDED,
+                                            font=('Segoe UI', 10))
+        self.duplicates_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.duplicates_listbox.bind('<<ListboxSelect>>', self.preview_image)
+        
+        # Add scrollbar to listbox
+        scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=self.duplicates_listbox.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.duplicates_listbox.configure(yscrollcommand=scrollbar.set)
 
-        # Duplicate preview
-        duplicate_preview_frame = tk.LabelFrame(preview_frame, text="Duplicate Image Preview")
-        duplicate_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-        self.duplicate_preview = tk.Canvas(duplicate_preview_frame, width=400, height=300)
-        self.duplicate_preview.pack(pady=10)
+        # Create delete buttons frame
+        delete_buttons_frame = ttk.Frame(self.root)
+        delete_buttons_frame.pack(fill=tk.X, pady=5, padx=10)
+        
+        # Create buttons frame with select all and delete buttons
+        buttons_frame = ttk.Frame(delete_buttons_frame)
+        buttons_frame.pack(side=tk.LEFT, padx=5)
+        
+        self.select_all_button = ttk.Button(buttons_frame, 
+                                           text="Select All",
+                                           command=self.select_all_duplicates,
+                                           style='TButton')
+        self.select_all_button.pack(side=tk.LEFT, padx=2)
+        
+        self.delete_selected_button = ttk.Button(buttons_frame, 
+                                                text="Delete Selected",
+                                                command=self.delete_selected,
+                                                state=tk.DISABLED,
+                                                style='TButton')
+        self.delete_selected_button.pack(side=tk.LEFT, padx=2)
+        
+        self.delete_all_button = ttk.Button(buttons_frame, 
+                                           text="Delete All Duplicates",
+                                           command=self.delete_all_duplicates,
+                                           state=tk.DISABLED,
+                                           style='TButton')
+        self.delete_all_button.pack(side=tk.LEFT, padx=2)
 
-        # Original preview
-        original_preview_frame = tk.LabelFrame(preview_frame, text="Original Image Preview")
-        original_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5)
-        self.original_preview = tk.Canvas(original_preview_frame, width=400, height=300)
-        self.original_preview.pack(pady=10)
+        # Preview frames with reduced spacing
+        preview_frame = ttk.Frame(self.root)
+        preview_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5), padx=5)
 
-        # Folder selection
-        folder_frame = tk.Frame(self.root)
-        folder_frame.pack(fill=tk.X, pady=(0, 10))
+        # Adjust padding to accommodate scrollbar
+        preview_frame.pack_configure(pady=(0, 5), padx=5, expand=True)
+        
+        # Add a separator between preview frames
+        ttk.Separator(preview_frame, orient='vertical').pack(side=tk.LEFT, fill=tk.Y, padx=2)
 
-        folder_label = tk.Label(folder_frame, text="Select Folder:")
+        # Duplicate preview with reduced spacing
+        duplicate_preview_frame = ttk.LabelFrame(preview_frame, 
+                                               text="Duplicate Image Preview",
+                                               style='TFrame')
+        duplicate_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        
+        self.duplicate_preview = tk.Canvas(duplicate_preview_frame, 
+                                          width=400, 
+                                          height=300,
+                                          bg='#f8f9fa')
+        self.duplicate_preview.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+
+        # Original preview with reduced spacing
+        original_preview_frame = ttk.LabelFrame(preview_frame, 
+                                              text="Original Image Preview",
+                                              style='TFrame')
+        original_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        
+        self.original_preview = tk.Canvas(original_preview_frame, 
+                                         width=400, 
+                                         height=300,
+                                         bg='#f8f9fa')
+        self.original_preview.pack(pady=5, padx=5, fill=tk.BOTH, expand=True)
+
+        # Folder selection with better layout
+        folder_frame = ttk.Frame(self.root)
+        folder_frame.pack(fill=tk.X, pady=(0, 10), padx=10)
+        
+        # Left side of folder frame
+        folder_left = ttk.Frame(folder_frame)
+        folder_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        folder_label = ttk.Label(folder_left, text="Select Folder:")
         folder_label.pack(side=tk.LEFT, padx=5)
-
-        folder_entry = tk.Entry(folder_frame, textvariable=self.folder_path, width=50)
-        folder_entry.pack(side=tk.LEFT, padx=5)
-
-        self.browse_button = tk.Button(folder_frame, text="Browse", command=self.browse_folder)
+        
+        folder_entry = ttk.Entry(folder_left, 
+                                textvariable=self.folder_path, 
+                                width=50,
+                                style='TEntry')
+        folder_entry.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        # Right side of folder frame
+        folder_right = ttk.Frame(folder_frame)
+        folder_right.pack(side=tk.LEFT)
+        
+        self.browse_button = ttk.Button(folder_right, 
+                                       text="Browse",
+                                       command=self.browse_folder)
         self.browse_button.pack(side=tk.LEFT, padx=5)
-
+        
         # Recursive search option
         self.recursive_var = tk.BooleanVar(value=True)
-        recursive_check = ttk.Checkbutton(folder_frame, text="Search subfolders", variable=self.recursive_var)
+        recursive_check = ttk.Checkbutton(folder_right, 
+                                        text="Search subfolders",
+                                        variable=self.recursive_var)
         recursive_check.pack(side=tk.LEFT, padx=5)
 
-        # Buttons for actions
-        action_frame = tk.Frame(self.root)
-        action_frame.pack(pady=10)
+        # Buttons for actions with better layout
+        action_frame = ttk.Frame(self.root)
+        action_frame.pack(pady=10, padx=10, fill=tk.X)
 
         # Initialize buttons
         self.compare_button = None
         self.delete_button = None
-        self.delete_all_button = None
-        self.quality_slider = None
 
-        # Create buttons
-        self.compare_button = tk.Button(action_frame, text="Compare Images", command=self.compare_images)
+        # Create buttons with better styling
+        self.compare_button = ttk.Button(action_frame, 
+                                       text="Compare Images",
+                                       command=self.compare_images,
+                                       style='TButton')
         self.compare_button.pack(side=tk.LEFT, padx=5)
 
-        self.delete_button = tk.Button(action_frame, text="Delete Selected", command=self.delete_selected, state=tk.DISABLED)
-        self.delete_button.pack(side=tk.LEFT, padx=5)
 
-        self.delete_all_button = tk.Button(action_frame, text="Delete All Duplicates", command=self.delete_all_duplicates, state=tk.DISABLED)
-        self.delete_all_button.pack(side=tk.LEFT, padx=5)
-
-        # Quality threshold slider
-        quality_frame = tk.Frame(self.root)
-        quality_frame.pack(fill=tk.X, pady=(10, 0))
-        
-        quality_label = tk.Label(quality_frame, text="Quality Threshold (0.95):")
-        quality_label.pack(side=tk.LEFT, padx=5)
-        
-        self.quality_slider = ttk.Scale(quality_frame, from_=0.8, to=1.0, value=0.95, orient=tk.HORIZONTAL)
-        self.quality_slider.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
-        
-        self.quality_slider.bind("<ButtonRelease-1>", self.update_quality_threshold)
-
-        # Listbox for displaying duplicates with multiple selection
-        results_frame = tk.Frame(self.root)
-        results_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
-        self.duplicates_listbox = tk.Listbox(results_frame, width=100, height=20, selectmode=tk.EXTENDED)
-        self.duplicates_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-        self.duplicates_listbox.bind('<<ListboxSelect>>', self.preview_image)
-        
-        # Add delete selected button above the listbox
-        delete_frame = tk.Frame(results_frame)
-        delete_frame.pack(fill=tk.X, pady=5)
-        
-        self.delete_selected_button = tk.Button(delete_frame, text="Delete Selected", 
-                                               command=self.delete_selected, 
-                                               state=tk.DISABLED)
-        self.delete_selected_button.pack(side=tk.LEFT, padx=5)
-        
-        self.delete_all_button = tk.Button(delete_frame, text="Delete All Duplicates", 
-                                          command=self.delete_all_duplicates, 
-                                          state=tk.DISABLED)
-        self.delete_all_button.pack(side=tk.LEFT, padx=5)
-
-        # Image preview area
-        self.preview_label = tk.Label(self.root, text="Image Preview")
-        self.preview_label.pack(pady=10)
-
-        self.canvas = tk.Canvas(self.root, width=400, height=300)
-        self.canvas.pack()
 
     def create_menu(self):
         menubar = Menu(self.root)
@@ -160,11 +201,6 @@ class ImageDeduplicatorApp:
         tools_menu.add_command(label="Delete Selected", command=self.delete_selected)
         tools_menu.add_command(label="Delete All Duplicates", command=self.delete_all_duplicates)
         menubar.add_cascade(label="Tools", menu=tools_menu)
-
-        # Options menu
-        options_menu = Menu(menubar, tearoff=0)
-        options_menu.add_command(label="Set Quality Threshold", command=self.show_quality_dialog)
-        menubar.add_cascade(label="Options", menu=options_menu)
 
         # Help menu
         help_menu = Menu(menubar, tearoff=0)
@@ -209,22 +245,43 @@ class ImageDeduplicatorApp:
     def _compare_images_thread(self, folder, recursive=True):
         try:
             # Get all image files using recursive search
-            supported_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif')
+            supported_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.tif', '.psd', '.webp', '.svg')
             image_files = []
             
+            # Normalize folder path to ensure correct path handling
+            folder = os.path.abspath(folder)
+            
             if recursive:
-                # Use glob to find all image files recursively
-                for ext in supported_extensions:
-                    pattern = os.path.join(folder, '**', f'*{ext}')
-                    image_files.extend(glob.glob(pattern, recursive=True))
+                # Use os.walk for more reliable recursive search
+                for root, _, files in os.walk(folder):
+                    for f in files:
+                        if f.lower().endswith(supported_extensions):
+                            full_path = os.path.join(root, f)
+                            if os.path.isfile(full_path):
+                                image_files.append(full_path)
             else:
                 # Get files from current directory only
-                image_files = [os.path.join(folder, f) for f in os.listdir(folder)
-                             if f.lower().endswith(supported_extensions)]
+                try:
+                    for f in os.listdir(folder):
+                        if f.lower().endswith(supported_extensions):
+                            full_path = os.path.join(folder, f)
+                            if os.path.isfile(full_path):
+                                image_files.append(full_path)
+                except OSError as e:
+                    raise Exception(f"Error accessing folder {folder}: {str(e)}")
+
+            # Remove duplicates and sort for consistent processing
+            image_files = list(set(image_files))
+            image_files.sort()
 
             total_files = len(image_files)
             if total_files < 2:
-                self.root.after(0, self._comparison_complete, "Not enough images to compare.")
+                error_msg = f"Found {total_files} image(s) in the selected folder. Need at least 2 images to compare."
+                if total_files == 1:
+                    error_msg += f"\nFound image: {os.path.basename(image_files[0])}"
+                elif total_files == 0:
+                    error_msg += "\nNo images found with supported extensions: " + ", ".join(supported_extensions)
+                self.root.after(0, self._comparison_complete, error_msg)
                 return
 
             # Process images in chunks
@@ -252,14 +309,7 @@ class ImageDeduplicatorApp:
                         # Check for duplicates based on hash
                         if hash_value in images:
                             original_path = images[hash_value]
-                            
-                            # Compare quality if threshold is set
-                            if self.image_quality_threshold < 1.0:
-                                quality = self.compare_image_quality(image, Image.open(original_path))
-                                if quality >= self.image_quality_threshold:
-                                    duplicates[filepath] = original_path
-                            else:
-                                duplicates[filepath] = original_path
+                            duplicates[filepath] = original_path
                         else:
                             images[hash_value] = filepath
                         
@@ -345,90 +395,15 @@ class ImageDeduplicatorApp:
                     self.original_preview.create_image(0, 0, anchor=tk.NW, image=self.original_photo)
                     self.original_preview.image = self.original_photo
 
-                # Calculate and show quality comparison
-                quality = self.compare_image_quality(duplicate_img, original_img)
-                self.progress_label.config(text=f"Quality: {quality:.2f}")
-
             except Exception as e:
                 error_msg = f"Error loading image: {str(e)}\n\nDetailed error:\n{traceback.format_exc()}"
                 messagebox.showerror("Error", error_msg)
                 return
 
-    def preview_image(self, event):
-        selected_index = self.duplicates_listbox.curselection()
-        if selected_index:
-            item = self.duplicates_listbox.get(selected_index[0])
-            duplicate_path = item.split(" | ")[0].replace("Duplicate: ", "")
-            original_path = item.split(" | ")[1].replace("Original: ", "")
-
-            try:
-                # Load and preview duplicate image
-                duplicate_img = Image.open(duplicate_path)
-                duplicate_img.thumbnail((400, 300))
-                self.duplicate_photo = ImageTk.PhotoImage(duplicate_img)
-                
-                # Load and preview original image
-                original_img = Image.open(original_path)
-                original_img.thumbnail((400, 300))
-                self.original_photo = ImageTk.PhotoImage(original_img)
-
-                # Update preview canvases
-                if self.duplicate_preview:
-                    self.duplicate_preview.delete("all")
-                    self.duplicate_preview.create_image(0, 0, anchor=tk.NW, image=self.duplicate_photo)
-                    self.duplicate_preview.image = self.duplicate_photo
-                
-                if self.original_preview:
-                    self.original_preview.delete("all")
-                    self.original_preview.create_image(0, 0, anchor=tk.NW, image=self.original_photo)
-                    self.original_preview.image = self.original_photo
-
-                # Calculate and show quality comparison
-                quality = self.compare_image_quality(duplicate_img, original_img)
-                self.progress_label.config(text=f"Quality: {quality:.2f}")
-
-            except Exception as e:
-                error_msg = f"Error loading image: {str(e)}\n\nDetailed error:\n{traceback.format_exc()}"
-                messagebox.showerror("Error", error_msg)
-                return
-
-    def compare_image_quality(self, img1, img2):
-        """Compare image quality between two images using mean squared error"""
-        img1 = img1.convert('RGB')
-        img2 = img2.convert('RGB')
-        
-        # Resize images to same size if needed
-        if img1.size != img2.size:
-            img1 = img1.resize(img2.size)
-        
-        # Calculate mean squared error
-        mse = 0
-        for band_index in range(len(img1.getbands())):
-            band1 = img1.getdata(band_index)
-            band2 = img2.getdata(band_index)
-            mse += sum((a - b) ** 2 for a, b in zip(band1, band2))
-        
-        mse /= (img1.size[0] * img1.size[1] * len(img1.getbands()))
-        
-        # Convert MSE to quality score (0-1)
-        quality = 1 - (mse / (255**2))
-        return quality
-
-    def update_quality_threshold(self, event):
-        self.image_quality_threshold = self.quality_slider.get()
-        self.progress_label.config(text=f"Quality Threshold: {self.image_quality_threshold:.2f}")
-
-    def show_quality_dialog(self):
-        """Show dialog to set quality threshold"""
-        quality = simpledialog.askfloat("Set Quality Threshold",
-                                      "Enter quality threshold (0.8 - 1.0):",
-                                      minvalue=0.8,
-                                      maxvalue=1.0,
-                                      initialvalue=self.image_quality_threshold)
-        if quality is not None:
-            self.quality_slider.set(quality)
-            self.image_quality_threshold = quality
-            self.progress_label.config(text=f"Quality Threshold: {quality:.2f}")
+    def select_all_duplicates(self):
+        """Select all duplicates in the listbox"""
+        self.duplicates_listbox.selection_set(0, tk.END)
+        self.delete_selected_button.config(state=tk.NORMAL)  # Enable delete selected button
 
     def delete_all_duplicates(self):
         """Delete all duplicates at once"""
@@ -437,33 +412,124 @@ class ImageDeduplicatorApp:
             return
 
         if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete ALL duplicates?"):
+            failed_deletions = []
             for duplicate in self.duplicates.keys():
                 try:
                     os.remove(duplicate)
                 except Exception as e:
-                    messagebox.showerror("Error", f"Failed to delete {duplicate}: {str(e)}")
+                    failed_deletions.append(f"{duplicate}: {str(e)}")
+            
+            if failed_deletions:
+                error_msg = "\n".join(failed_deletions)
+                messagebox.showerror("Error", f"Failed to delete some duplicates:\n\n{error_msg}")
+            
+            # Clear duplicates and update UI
             self.duplicates = {}
             self.display_duplicates()
-            self.delete_button.config(state=tk.DISABLED)
+            self.delete_selected_button.config(state=tk.DISABLED)
             self.delete_all_button.config(state=tk.DISABLED)
-            messagebox.showinfo("Info", "All duplicates have been deleted.")
+            
+            success_count = len(self.duplicates_listbox.get(0, tk.END))
+            if success_count > 0:
+                messagebox.showinfo("Info", f"Successfully deleted {success_count} duplicates.")
+            else:
+                messagebox.showinfo("Info", "All duplicates have been deleted.")
+
+    def delete_selected(self):
+        selected_indices = self.duplicates_listbox.curselection()
+        if not selected_indices:
+            messagebox.showwarning("Warning", "No items selected")
+            return
+
+        num_selected = len(selected_indices)
+        if num_selected > 1:
+            message = f"Are you sure you want to delete {num_selected} selected duplicates?"
+        else:
+            message = "Are you sure you want to delete the selected duplicate?"
+
+        if messagebox.askyesno("Confirm Delete", message):
+            deleted_count = 0
+            failed_count = 0
+            failed_items = []
+            
+            for index in selected_indices:
+                try:
+                    item = self.duplicates_listbox.get(index)
+                    duplicate_path = item.split(" | ")[0].replace("Duplicate: ", "")
+                    os.remove(duplicate_path)
+                    deleted_count += 1
+                except Exception as e:
+                    failed_count += 1
+                    failed_items.append(f"{duplicate_path}: {str(e)}")
+
+            # Update duplicates dictionary
+            self.duplicates = {
+                k: v for k, v in self.duplicates.items()
+                if k not in [self.duplicates_listbox.get(i).split(" | ")[0].replace("Duplicate: ", "") 
+                           for i in selected_indices]
+            }
+            
+            self.display_duplicates()
+            
+            if failed_count > 0:
+                error_message = "\n".join(failed_items)
+                messagebox.showerror("Error", f"Failed to delete {failed_count} items:\n\n{error_message}")
+            else:
+                if deleted_count > 1:
+                    messagebox.showinfo("Info", f"Successfully deleted {deleted_count} duplicates.")
+                else:
+                    messagebox.showinfo("Info", "Successfully deleted the duplicate.")
 
     def setup_styles(self):
         """Setup custom styles for the application"""
         style = ttk.Style()
-        style.configure("TButton", padding=6, relief="flat")
-        style.configure("TProgressbar", thickness=20)
-        style.configure("TScale", sliderlength=20)
-
-    def delete_selected(self):
-        selected_indices = self.duplicates_listbox.curselection()
-        for index in selected_indices:
-            item = self.duplicates_listbox.get(index)
-            duplicate_path = item.split(" | ")[0].replace("Duplicate: ", "")
-            os.remove(duplicate_path)
-
-        self.compare_images()
-        messagebox.showinfo("Info", "Selected duplicates have been deleted.")
+        
+        # Modern button style
+        style.configure("TButton", 
+                       padding=10,
+                       font=('Segoe UI', 10))
+        
+        # Progress bar style
+        style.configure("TProgressbar",
+                       thickness=20)
+        
+        # Scale style
+        style.configure("TScale",
+                       sliderlength=20)
+        
+        # Listbox style
+        style.configure("TListbox",
+                       background='#ffffff',
+                       foreground='#333333',
+                       font=('Segoe UI', 10))
+        
+        # Label style
+        style.configure("TLabel",
+                       font=('Segoe UI', 10),
+                       foreground='#333333')
+        
+        # Frame style
+        style.configure("TFrame",
+                       background='#ffffff')
+        
+        # Entry style
+        style.configure("TEntry",
+                       fieldbackground='#ffffff',
+                       foreground='#333333',
+                       font=('Segoe UI', 10))
+        
+        # Checkbutton style
+        style.configure("TCheckbutton",
+                       font=('Segoe UI', 10),
+                       foreground='#333333')
+        
+        # Configure color scheme
+        style.theme_use("clam")
+        style.configure("." ,
+                       background='#ffffff',
+                       foreground='#333333')
+        
+        self.root.configure(bg='#ffffff')
 
 
 if __name__ == "__main__":
