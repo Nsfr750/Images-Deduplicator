@@ -24,7 +24,7 @@ A powerful desktop application for finding and managing duplicate images in your
 ## Requirements
 
 - Python 3.8 or higher
-- Required Python packages (automatically installed via requirements.txt):
+- Required Python packages:
   - Pillow (PIL)
   - imagehash
   - tkinter
@@ -45,10 +45,12 @@ A powerful desktop application for finding and managing duplicate images in your
 
 1. Select a folder containing images using the "Select Folder" option
 2. Enable "Search subfolders" to scan nested directories
-3. Adjust the quality threshold slider for duplicate matching
-4. Click "Compare Images" to find duplicates
+3. Click "Compare Images" to find duplicates
+4. Use "Select All" to choose all duplicates at once
 5. Review duplicates in the preview window
 6. Select multiple duplicates using Ctrl or Shift
+7. Delete selected duplicates using the "Delete Selected" button
+8. Delete all duplicates using the "Delete All Duplicates" button in the delete buttons section
 7. Click "Delete Selected" to remove duplicates
 8. Use "Delete All Duplicates" to remove all found duplicates
 
@@ -66,6 +68,9 @@ The app uses a quality threshold (0.8-1.0) to determine if images are duplicates
 - GIF
 - BMP
 - TIFF/TIF
+- WEBP
+- SVG
+- PSD
 
 ## Error Handling
 
