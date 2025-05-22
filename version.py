@@ -7,7 +7,7 @@ for the Database Browser project.
 
 # Version components
 MAJOR_VERSION = 1
-MINOR_VERSION = 2
+MINOR_VERSION = 3
 PATCH_VERSION = 0
 
 # Additional version qualifiers
