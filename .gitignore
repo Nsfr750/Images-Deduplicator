@@ -113,3 +113,4 @@ htmlcov/
 *.test.*
 *.sample.*
 *.example.*
+go.bat
