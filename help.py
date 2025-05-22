@@ -17,26 +17,46 @@ class Help:
         usage_frame = ttk.Frame(notebook)
         notebook.add(usage_frame, text="Usage")
         
-        usage_text = """
-        Usage Guide:
+        HELP_TEXT = """
+Image Deduplicator v1.3.0
+
+This application helps you find and manage duplicate images in your folders.
+
+Features:
+- Find duplicate images using perceptual hashing
+- Select and delete duplicates
+- Search subfolders
+- Modern user interface with improved layout
+- "Select All" functionality for duplicates
+
+Usage:
+1. Select a folder containing images
+2. Enable "Search subfolders" if you want to scan nested directories
+3. Click "Compare Images" to find duplicates
+4. Use "Select All" to choose all duplicates at once
+5. Review duplicates in the preview window
+6. Select multiple duplicates using Ctrl or Shift
+7. Delete selected duplicates using the "Delete Selected" button
+8. Delete all duplicates using the "Delete All Duplicates" button in the delete buttons section
+
+Supported image formats:
+- PNG
+- JPG
+- JPEG
+- GIF
+- BMP
+- TIFF
+- TIF
+- WEBP
+- SVG
+- >PSD
+
+
+For more information, visit:
+https://github.com/Nsfr750/Images-Deduplicator
+"""
         
-        1. Select Folder:
-           - Click "Browse" to select a folder containing images
-           - The app supports PNG, JPG, JPEG, GIF, BMP, TIFF, and TIF formats
-           
-        2. Compare Images:
-           - Click "Compare Images" to find duplicates
-           - The app uses image hashing to identify duplicates
-           - Progress bar shows comparison progress
-           
-        3. Preview Images:
-           - Select a duplicate from the list to preview both images
-           - Left side shows the duplicate image
-           - Right side shows the original image
-           - Quality score shows similarity between images
-        """
-        
-        usage_label = ttk.Label(usage_frame, text=usage_text, justify=tk.LEFT)
+        usage_label = ttk.Label(usage_frame, text=HELP_TEXT, justify=tk.LEFT)
         usage_label.pack(padx=10, pady=10)
         
         # Features tab
@@ -71,17 +91,12 @@ class Help:
         tips_text = """
         Tips:
         
-        1. Quality Threshold:
-           - Lower values (0.8-0.9) find more similar images
-           - Higher values (0.95-1.0) find exact duplicates
-           - Adjust based on your needs
-           
-        2. Large Collections:
+        1. Large Collections:
            - Process images in chunks for better performance
            - Use progress bar to track progress
            - Close and reopen app for large collections
            
-        3. Image Formats:
+        2. Image Formats:
            - Convert all images to same format before comparison
            - Use quality threshold to handle format differences
         """
