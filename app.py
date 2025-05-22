@@ -13,11 +13,53 @@ from pathlib import Path
 import glob
 import threading
 from version import get_version
+from translations import t, LANGUAGES
 
 class ImageDeduplicatorApp:
+    def set_language(self, lang_code):
+        self.lang = lang_code
+        self.update_ui_language()
+
+    def update_ui_language(self):
+        # Update window title
+        self.root.title(t('app_title', self.lang, version=get_version()))
+        # Rebuild menu
+        self.create_menu()
+        # Update all labels/buttons
+        self.select_all_button.config(text=t('select_all', self.lang))
+        self.delete_selected_button.config(text=t('delete_selected', self.lang))
+        self.delete_all_button.config(text=t('delete_all_duplicates', self.lang))
+        self.browse_button.config(text=t('browse', self.lang))
+        self.compare_button.config(text=t('compare_images', self.lang))
+        # Update folder label
+        for child in self.root.winfo_children():
+            if isinstance(child, ttk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, ttk.Label) and subchild.cget('text') in [t('select_folder', l) for l in LANGUAGES]:
+                        subchild.config(text=t('select_folder', self.lang))
+        # Update checkbutton
+        for child in self.root.winfo_children():
+            if isinstance(child, ttk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, ttk.Checkbutton):
+                        subchild.config(text=t('search_subfolders', self.lang))
+        # Update preview frames
+        for child in self.root.winfo_children():
+            if isinstance(child, ttk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, ttk.LabelFrame):
+                        if 'duplicate' in subchild.cget('text').lower():
+                            subchild.config(text=t('duplicate_image_preview', self.lang))
+                        elif 'original' in subchild.cget('text').lower():
+                            subchild.config(text=t('original_image_preview', self.lang))
+        # If progress label is showing a known phrase, update it
+        if self.progress_label.cget('text') in [t('processing_images', l) for l in LANGUAGES]:
+            self.progress_label.config(text=t('processing_images', self.lang))
+
     def __init__(self, root):
         self.root = root
-        self.root.title(f"Image Deduplicator v{get_version()}")
+        self.lang = 'en'
+        self.root.title(t('app_title', self.lang, version=get_version()))
         self.root.geometry("1000x800")
         self.root.minsize(1000, 800)
 
@@ -81,20 +123,20 @@ class ImageDeduplicatorApp:
         buttons_frame.pack(side=tk.LEFT, padx=5)
         
         self.select_all_button = ttk.Button(buttons_frame, 
-                                           text="Select All",
+                                           text=t('select_all', self.lang),
                                            command=self.select_all_duplicates,
                                            style='TButton')
         self.select_all_button.pack(side=tk.LEFT, padx=2)
         
         self.delete_selected_button = ttk.Button(buttons_frame, 
-                                                text="Delete Selected",
+                                                text=t('delete_selected', self.lang),
                                                 command=self.delete_selected,
                                                 state=tk.DISABLED,
                                                 style='TButton')
         self.delete_selected_button.pack(side=tk.LEFT, padx=2)
         
         self.delete_all_button = ttk.Button(buttons_frame, 
-                                           text="Delete All Duplicates",
+                                           text=t('delete_all_duplicates', self.lang),
                                            command=self.delete_all_duplicates,
                                            state=tk.DISABLED,
                                            style='TButton')
@@ -112,7 +154,7 @@ class ImageDeduplicatorApp:
 
         # Duplicate preview with reduced spacing
         duplicate_preview_frame = ttk.LabelFrame(preview_frame, 
-                                               text="Duplicate Image Preview",
+                                               text=t('duplicate_image_preview', self.lang),
                                                style='TFrame')
         duplicate_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
         
@@ -124,7 +166,7 @@ class ImageDeduplicatorApp:
 
         # Original preview with reduced spacing
         original_preview_frame = ttk.LabelFrame(preview_frame, 
-                                              text="Original Image Preview",
+                                              text=t('original_image_preview', self.lang),
                                               style='TFrame')
         original_preview_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
@@ -142,7 +184,7 @@ class ImageDeduplicatorApp:
         folder_left = ttk.Frame(folder_frame)
         folder_left.pack(side=tk.LEFT, fill=tk.X, expand=True)
         
-        folder_label = ttk.Label(folder_left, text="Select Folder:")
+        folder_label = ttk.Label(folder_left, text=t('select_folder', self.lang))
         folder_label.pack(side=tk.LEFT, padx=5)
         
         folder_entry = ttk.Entry(folder_left, 
@@ -156,14 +198,14 @@ class ImageDeduplicatorApp:
         folder_right.pack(side=tk.LEFT)
         
         self.browse_button = ttk.Button(folder_right, 
-                                       text="Browse",
+                                       text=t('browse', self.lang),
                                        command=self.browse_folder)
         self.browse_button.pack(side=tk.LEFT, padx=5)
         
         # Recursive search option
         self.recursive_var = tk.BooleanVar(value=True)
         recursive_check = ttk.Checkbutton(folder_right, 
-                                        text="Search subfolders",
+                                        text=t('search_subfolders', self.lang),
                                         variable=self.recursive_var)
         recursive_check.pack(side=tk.LEFT, padx=5)
 
@@ -177,7 +219,7 @@ class ImageDeduplicatorApp:
 
         # Create buttons with better styling
         self.compare_button = ttk.Button(action_frame, 
-                                       text="Compare Images",
+                                       text=t('compare_images', self.lang),
                                        command=self.compare_images,
                                        style='TButton')
         self.compare_button.pack(side=tk.LEFT, padx=5)
@@ -190,24 +232,31 @@ class ImageDeduplicatorApp:
 
         # File menu
         file_menu = Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Select Folder", command=self.browse_folder)
+        file_menu = Menu(menubar, tearoff=0)
+        file_menu.add_command(label=t('select_folder', self.lang), command=self.browse_folder)
         file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.root.quit)
-        menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label=t('exit', self.lang), command=self.root.quit)
+        menubar.add_cascade(label=t('file', self.lang), menu=file_menu)
 
         # Tools menu
         tools_menu = Menu(menubar, tearoff=0)
-        tools_menu.add_command(label="Compare Images", command=self.compare_images)
-        tools_menu.add_command(label="Delete Selected", command=self.delete_selected)
-        tools_menu.add_command(label="Delete All Duplicates", command=self.delete_all_duplicates)
-        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label=t('compare_images', self.lang), command=self.compare_images)
+        tools_menu.add_command(label=t('delete_selected', self.lang), command=self.delete_selected)
+        tools_menu.add_command(label=t('delete_all_duplicates', self.lang), command=self.delete_all_duplicates)
+        menubar.add_cascade(label=t('tools', self.lang), menu=tools_menu)
+
+        # Language menu
+        lang_menu = Menu(menubar, tearoff=0)
+        for code in LANGUAGES:
+            lang_menu.add_command(label=code.upper(), command=lambda c=code: self.set_language(c))
+        menubar.add_cascade(label='Language', menu=lang_menu)
 
         # Help menu
         help_menu = Menu(menubar, tearoff=0)
-        help_menu.add_command(label="Help", command=lambda: Help.show_help(self.root))
-        help_menu.add_command(label="About", command=self.show_about)
-        help_menu.add_command(label="Show Sponsor", command=self.open_sponsor)
-        menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label=t('help', self.lang), command=lambda: Help.show_help(self.root))
+        help_menu.add_command(label=t('about', self.lang), command=self.show_about)
+        help_menu.add_command(label=t('show_sponsor', self.lang), command=self.open_sponsor)
+        menubar.add_cascade(label=t('help', self.lang), menu=help_menu)
 
     def open_sponsor(self):
         sponsor = Sponsor(self.root)
@@ -220,22 +269,22 @@ class ImageDeduplicatorApp:
         folder_selected = filedialog.askdirectory()
         if folder_selected:
             self.folder_path.set(folder_selected)
-            messagebox.showinfo("Folder Selected", f"Selected folder: {folder_selected}")
+            messagebox.showinfo(t('folder_selected', self.lang), t('selected_folder', self.lang, folder=folder_selected))
 
     def compare_images(self):
         folder = self.folder_path.get()
         if not folder:
-            messagebox.showwarning("Warning", "Please select a folder first.")
+            messagebox.showwarning(t('warning', self.lang), t('please_select_folder', self.lang))
             return
 
         if self.comparison_in_progress:
-            messagebox.showwarning("Warning", "Comparison is already in progress.")
+            messagebox.showwarning(t('warning', self.lang), t('comparison_in_progress', self.lang))
             return
 
         self.comparison_in_progress = True
         if self.compare_button:
             self.compare_button.config(state=tk.DISABLED)
-        self.progress_label.config(text="Processing images...")
+        self.progress_label.config(text=t('processing_images', self.lang))
         self.progress_bar['value'] = 0
         self.progress_bar['maximum'] = 100
 
@@ -276,11 +325,11 @@ class ImageDeduplicatorApp:
 
             total_files = len(image_files)
             if total_files < 2:
-                error_msg = f"Found {total_files} image(s) in the selected folder. Need at least 2 images to compare."
+                error_msg = t('found_images', self.lang, count=total_files)
                 if total_files == 1:
-                    error_msg += f"\nFound image: {os.path.basename(image_files[0])}"
+                    error_msg += '\n' + t('found_image', self.lang, image=os.path.basename(image_files[0]))
                 elif total_files == 0:
-                    error_msg += "\nNo images found with supported extensions: " + ", ".join(supported_extensions)
+                    error_msg += '\n' + t('no_images_found', self.lang, exts=', '.join(supported_extensions))
                 self.root.after(0, self._comparison_complete, error_msg)
                 return
 
@@ -320,11 +369,11 @@ class ImageDeduplicatorApp:
                         print(f"Skipping file {filepath}: {str(e)}")
                         continue
 
-            self.root.after(0, self._comparison_complete, f"Found {len(duplicates)} duplicate images.")
+            self.root.after(0, self._comparison_complete, t('found_duplicates', self.lang, count=len(duplicates)))
             self.root.after(0, self._update_duplicates, duplicates)
 
         except Exception as e:
-            self.root.after(0, self._comparison_error, f"Error during comparison: {str(e)}")
+            self.root.after(0, self._comparison_error, t('error_comparison', self.lang, error=str(e)))
         finally:
             self.root.after(0, self._reset_ui)
 
@@ -352,7 +401,7 @@ class ImageDeduplicatorApp:
         self.duplicates_listbox.delete(0, tk.END)
         
         for duplicate, original in self.duplicates.items():
-            self.duplicates_listbox.insert(tk.END, f"Duplicate: {duplicate} | Original: {original}")
+            self.duplicates_listbox.insert(tk.END, f"{t('duplicate', self.lang)}: {duplicate} | {t('original', self.lang)}: {original}")
         
         # Update button states
         if self.duplicates:
@@ -396,8 +445,8 @@ class ImageDeduplicatorApp:
                     self.original_preview.image = self.original_photo
 
             except Exception as e:
-                error_msg = f"Error loading image: {str(e)}\n\nDetailed error:\n{traceback.format_exc()}"
-                messagebox.showerror("Error", error_msg)
+                error_msg = t('error_loading_image', self.lang, error=str(e), trace=traceback.format_exc())
+                messagebox.showerror(t('error', self.lang), error_msg)
                 return
 
     def select_all_duplicates(self):
@@ -408,10 +457,10 @@ class ImageDeduplicatorApp:
     def delete_all_duplicates(self):
         """Delete all duplicates at once"""
         if not self.duplicates:
-            messagebox.showwarning("Warning", "No duplicates found.")
+            messagebox.showwarning(t('warning', self.lang), t('no_duplicates_found', self.lang))
             return
 
-        if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete ALL duplicates?"):
+        if messagebox.askyesno(t('confirm_delete_all', self.lang), t('confirm_delete_all', self.lang)):
             failed_deletions = []
             for duplicate in self.duplicates.keys():
                 try:
@@ -421,7 +470,7 @@ class ImageDeduplicatorApp:
             
             if failed_deletions:
                 error_msg = "\n".join(failed_deletions)
-                messagebox.showerror("Error", f"Failed to delete some duplicates:\n\n{error_msg}")
+                messagebox.showerror(t('error', self.lang), t('failed_to_delete', self.lang, error=error_msg))
             
             # Clear duplicates and update UI
             self.duplicates = {}
@@ -431,23 +480,23 @@ class ImageDeduplicatorApp:
             
             success_count = len(self.duplicates_listbox.get(0, tk.END))
             if success_count > 0:
-                messagebox.showinfo("Info", f"Successfully deleted {success_count} duplicates.")
+                messagebox.showinfo(t('info', self.lang), t('successfully_deleted', self.lang, count=success_count))
             else:
-                messagebox.showinfo("Info", "All duplicates have been deleted.")
+                messagebox.showinfo(t('info', self.lang), t('all_deleted', self.lang))
 
     def delete_selected(self):
         selected_indices = self.duplicates_listbox.curselection()
         if not selected_indices:
-            messagebox.showwarning("Warning", "No items selected")
+            messagebox.showwarning(t('warning', self.lang), t('no_items_selected', self.lang))
             return
 
         num_selected = len(selected_indices)
         if num_selected > 1:
-            message = f"Are you sure you want to delete {num_selected} selected duplicates?"
+            message = t('confirm_delete_selected', self.lang, count=num_selected)
         else:
-            message = "Are you sure you want to delete the selected duplicate?"
+            message = t('confirm_delete_one', self.lang)
 
-        if messagebox.askyesno("Confirm Delete", message):
+        if messagebox.askyesno(t('confirm_delete_all', self.lang), message):
             deleted_count = 0
             failed_count = 0
             failed_items = []
@@ -473,12 +522,12 @@ class ImageDeduplicatorApp:
             
             if failed_count > 0:
                 error_message = "\n".join(failed_items)
-                messagebox.showerror("Error", f"Failed to delete {failed_count} items:\n\n{error_message}")
+                messagebox.showerror(t('error', self.lang), t('failed_to_delete_items', self.lang, count=failed_count, error=error_message))
             else:
                 if deleted_count > 1:
-                    messagebox.showinfo("Info", f"Successfully deleted {deleted_count} duplicates.")
+                    messagebox.showinfo(t('info', self.lang), t('successfully_deleted', self.lang, count=deleted_count))
                 else:
-                    messagebox.showinfo("Info", "Successfully deleted the duplicate.")
+                    messagebox.showinfo(t('info', self.lang), t('successfully_deleted_one', self.lang))
 
     def setup_styles(self):
         """Setup custom styles for the application"""
