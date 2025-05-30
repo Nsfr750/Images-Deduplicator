@@ -1,0 +1,49 @@
+.. _installation:
+
+Installation
+============
+
+Prerequisites
+------------
+- Python 3.7 or higher
+- pip (Python package manager)
+
+Installing from PyPI
+-------------------
+.. code-block:: bash
+
+    pip install images-deduplicator
+
+Installing from Source
+---------------------
+1. Clone the repository:
+
+   .. code-block:: bash
+
+       git clone https://github.com/Nsfr750/Images-Deduplicator.git
+       cd Images-Deduplicator
+
+2. Install the package in development mode:
+
+   .. code-block:: bash
+
+       pip install -e .
+
+Dependencies
+------------
+The package will automatically install the following dependencies:
+
+- Pillow>=8.0.0
+- numpy>=1.19.0
+- scikit-image>=0.18.0
+- tqdm>=4.50.0
+
+Verifying Installation
+---------------------
+To verify that the installation was successful, run:
+
+.. code-block:: bash
+
+    python -c "import images_deduplicator; print(images_deduplicator.__version__)"
+
+You should see the version number printed (e.g., 1.3.0).

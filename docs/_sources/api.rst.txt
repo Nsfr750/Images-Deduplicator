@@ -1,0 +1,55 @@
+.. _api:
+
+API Reference
+============
+
+This document provides detailed information about the public API of Images-Deduplicator.
+
+Core Classes
+-----------
+
+.. automodule:: images_deduplicator.core
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :member-order: bysource
+
+Hash Functions
+-------------
+
+.. automodule:: images_deduplicator.hashing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Utils
+-----
+
+.. automodule:: images_deduplicator.utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+CLI
+---
+
+.. automodule:: images_deduplicator.cli
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Constants
+---------
+
+.. automodule:: images_deduplicator.constants
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Exceptions
+----------
+
+.. automodule:: images_deduplicator.exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:

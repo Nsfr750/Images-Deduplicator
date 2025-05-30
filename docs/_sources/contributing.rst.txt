@@ -1,0 +1,100 @@
+.. _contributing:
+
+Contributing
+============
+
+We welcome contributions from the community! Here's how you can help improve Images-Deduplicator.
+
+Ways to Contribute
+------------------
+- Report bugs
+- Suggest new features
+- Improve documentation
+- Submit bug fixes
+- Write tests
+- Spread the word
+
+Development Setup
+----------------
+1. Fork the repository on GitHub
+2. Clone your fork locally:
+
+   .. code-block:: bash
+
+       git clone https://github.com/Nsfr750/Images-Deduplicator.git
+       cd Images-Deduplicator
+       git remote add upstream https://github.com/Nsfr750/Images-Deduplicator.git
+
+3. Create a virtual environment:
+
+   .. code-block:: bash
+
+       python -m venv venv
+       source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+4. Install development dependencies:
+
+   .. code-block:: bash
+
+       pip install -e .[dev]
+       pre-commit install
+
+5. Create a feature branch:
+
+   .. code-block:: bash
+
+       git checkout -b feature/your-feature-name
+
+Coding Standards
+----------------
+- Follow `PEP 8`_ style guide
+- Use type hints for all new code
+- Write docstrings for all public functions and classes
+- Keep lines under 88 characters
+- Use double quotes for strings
+
+.. _PEP 8: https://www.python.org/dev/peps/pep-0008/
+
+Testing
+-------
+Run the test suite:
+
+.. code-block:: bash
+
+    pytest tests/
+
+Documentation
+-------------
+Build the documentation locally:
+
+.. code-block:: bash
+
+    cd docs
+    make html
+    open _build/html/index.html  # On Windows: start _build/html/index.html
+
+Submitting Changes
+-----------------
+1. Run the test suite and ensure all tests pass
+2. Update the documentation if needed
+3. Commit your changes with a descriptive message
+4. Push to your fork and submit a pull request
+
+Pull Request Guidelines
+----------------------
+- Keep pull requests focused on a single feature or fix
+- Include tests for new functionality
+- Update documentation as needed
+- Ensure all CI checks pass
+
+Code of Conduct
+---------------
+Please note that this project is released with a Contributor Code of Conduct. By participating in this project you agree to abide by its terms.
+
+Reporting Issues
+---------------
+When reporting issues, please include:
+- Steps to reproduce the issue
+- Expected vs. actual behavior
+- Version information (Python, OS, etc.)
+- Any relevant error messages

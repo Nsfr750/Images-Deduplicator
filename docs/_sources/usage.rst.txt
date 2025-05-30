@@ -1,0 +1,129 @@
+.. _usage:
+
+Usage Guide
+==========
+
+This guide will help you get started with Images-Deduplicator.
+
+Basic Usage
+-----------
+
+To find duplicate images in a directory:
+
+.. code-block:: bash
+
+    images-deduplicator /path/to/images
+
+This will scan the specified directory and its subdirectories for duplicate images.
+
+Command Line Options
+-------------------
+
+.. program-output:: python -m images_deduplicator --help
+   :prompt:
+   :nostderr:
+
+Advanced Usage
+--------------
+
+Using Different Comparison Methods
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Images-Deduplicator supports multiple comparison methods:
+
+1. **Perceptual Hash (phash)** - Fast and good for finding similar images (default)
+2. **Difference Hash (dhash)** - Good for finding exact duplicates
+3. **Average Hash (ahash)** - Simple but less accurate
+
+.. code-block:: bash
+
+    # Use dhash comparison
+    images-deduplicator --method dhash /path/to/images
+
+Setting Similarity Threshold
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Adjust the similarity threshold (0-100, where 100 is identical):
+
+.. code-block:: bash
+
+    # Set threshold to 90%
+    images-deduplicator --threshold 90 /path/to/images
+
+Excluding Directories
+~~~~~~~~~~~~~~~~~~~~
+
+Exclude specific directories from the search:
+
+.. code-block:: bash
+
+    images-deduplicator --exclude "**/temp/*" --exclude "**/backup/*" /path/to/images
+
+Output Options
+~~~~~~~~~~~~~
+
+Save results to a JSON file:
+
+.. code-block:: bash
+
+    images-deduplicator --output duplicates.json /path/to/images
+
+Preview Mode
+~~~~~~~~~~~
+
+Preview duplicates before taking any action:
+
+.. code-block:: bash
+
+    images-deduplicator --preview /path/to/images
+
+Interactive Mode
+~~~~~~~~~~~~~~~
+
+Use interactive mode to manually select which duplicates to keep:
+
+.. code-block:: bash
+
+    images-deduplicator --interactive /path/to/images
+
+Configuration File
+-----------------
+You can create a configuration file at ``~/.config/images-deduplicator/config.ini``:
+
+.. code-block:: ini
+
+    [DEFAULT]
+    method = phash
+    threshold = 85
+    recursive = true
+    min_file_size = 10  # KB
+    max_file_size = 50000  # KB
+    threads = 4
+
+    [formats]
+    jpg = true
+    png = true
+    gif = true
+    bmp = true
+    webp = true
+
+Examples
+--------
+
+Find duplicates in current directory:
+
+.. code-block:: bash
+
+    images-deduplicator .
+
+Find duplicates and automatically remove them:
+
+.. code-block:: bash
+
+    images-deduplicator --auto-remove /path/to/images
+
+Find duplicates and move them to a different directory:
+
+.. code-block:: bash
+
+    images-deduplicator --move-to /path/to/duplicates /path/to/images

@@ -1,0 +1,104 @@
+/* Custom CSS for Images-Deduplicator documentation */
+
+/* Main content area */
+.wy-nav-content {
+    max-width: 1200px !important;
+}
+
+/* Code blocks */
+.highlight {
+    background: #f8f8f8;
+    border-radius: 4px;
+    padding: 1em;
+    margin: 1em 0;
+}
+
+/* Tables */
+.wy-table-responsive table td, .wy-table-responsive table th {
+    white-space: normal;
+}
+
+/* Sidebar */
+.wy-side-nav-search {
+    background-color: #2980B9;
+}
+
+/* Version number in sidebar */
+.version {
+    color: #e0e0e0 !important;
+}
+
+/* Code blocks in tables */
+.wy-table-responsive code {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* API documentation */
+.py.class, .py.function, .py.method, .py.attribute, .py.data, .py.exception {
+    margin-bottom: 2em;
+}
+
+/* Make sure images don't overflow */
+.wy-nav-content img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Better spacing for method/function signatures */
+.sig {
+    margin-bottom: 0.5em;
+}
+
+/* Better spacing for parameter lists */
+.field-list {
+    margin-bottom: 1em;
+}
+
+/* Better spacing for section headers */
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+/* Better spacing for paragraphs */
+p {
+    margin-bottom: 1em;
+    line-height: 1.6;
+}
+
+/* Better spacing for lists */
+li {
+    margin-bottom: 0.5em;
+}
+
+/* Better spacing for code in lists */
+li code, p code {
+    background: #f0f0f0;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+
+/* Better styling for note/warning blocks */
+.admonition {
+    margin: 1.5em 0;
+    padding: 0.5em 1em;
+    border-radius: 4px;
+}
+
+.admonition-title {
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+
+/* Responsive design adjustments */
+@media screen and (max-width: 768px) {
+    .wy-nav-content {
+        padding: 1.5em;
+    }
+    
+    .wy-table-responsive {
+        overflow-x: auto;
+    }
+}
