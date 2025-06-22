@@ -297,6 +297,6 @@ TRANSLATIONS = {
 def t(key, lang='en', **kwargs):
     """Get translation for key in given language, fallback to English."""
     if lang not in TRANSLATIONS:
-        lang = 'en'
+        lang = 'it'
     text = TRANSLATIONS[lang].get(key, TRANSLATIONS['en'].get(key, key))
     return text.format(**kwargs)
