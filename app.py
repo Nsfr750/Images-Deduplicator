@@ -5,14 +5,14 @@ from PIL import Image, ImageTk
 import imagehash
 from about import About
 from sponsor import Sponsor
-from version import get_version
+from version import get_version, __version__
 from help import Help
 import queue
 import traceback
 from pathlib import Path
 import glob
 import threading
-from version import get_version
+from updates import UpdateChecker, check_for_updates
 from translations import t, LANGUAGES
 
 class ImageDeduplicatorApp:
@@ -75,10 +75,17 @@ class ImageDeduplicatorApp:
         self.original_preview = None
         self.progress_label = None
         self.progress_bar = None
+        self.update_checker = None
 
         self.create_widgets()
         self.setup_styles()
         self.create_menu()
+
+        # Initialize update checker
+        self.update_checker = UpdateChecker(__version__)
+
+        # Check for updates on startup
+        self.root.after(1000, self.check_for_updates_on_startup)
 
     def create_widgets(self):
         # Progress frame
@@ -232,38 +239,138 @@ class ImageDeduplicatorApp:
 
         # File menu
         file_menu = Menu(menubar, tearoff=0)
-        file_menu = Menu(menubar, tearoff=0)
-        file_menu.add_command(label=t('select_folder', self.lang), command=self.browse_folder)
-        file_menu.add_separator()
         file_menu.add_command(label=t('exit', self.lang), command=self.root.quit)
         menubar.add_cascade(label=t('file', self.lang), menu=file_menu)
 
-        # Tools menu
-        tools_menu = Menu(menubar, tearoff=0)
-        tools_menu.add_command(label=t('compare_images', self.lang), command=self.compare_images)
-        tools_menu.add_command(label=t('delete_selected', self.lang), command=self.delete_selected)
-        tools_menu.add_command(label=t('delete_all_duplicates', self.lang), command=self.delete_all_duplicates)
-        menubar.add_cascade(label=t('tools', self.lang), menu=tools_menu)
-
         # Language menu
-        lang_menu = Menu(menubar, tearoff=0)
-        for code in LANGUAGES:
-            lang_menu.add_command(label=code.upper(), command=lambda c=code: self.set_language(c))
-        menubar.add_cascade(label='Language', menu=lang_menu)
+        language_menu = Menu(menubar, tearoff=0)
+        language_menu.add_radiobutton(label='English', command=lambda: self.set_language('en'))
+        language_menu.add_radiobutton(label='Español', command=lambda: self.set_language('es'))
+        language_menu.add_radiobutton(label='Français', command=lambda: self.set_language('fr'))
+        language_menu.add_radiobutton(label='Deutsch', command=lambda: self.set_language('de'))
+        language_menu.add_radiobutton(label='Português', command=lambda: self.set_language('pt'))
+        language_menu.add_radiobutton(label='Italiano', command=lambda: self.set_language('it'))
+        menubar.add_cascade(label=t('language', self.lang), menu=language_menu)
 
         # Help menu
         help_menu = Menu(menubar, tearoff=0)
+        help_menu.add_command(label=t('check_for_updates', self.lang), command=self.check_for_updates)
+        help_menu.add_separator()
         help_menu.add_command(label=t('help', self.lang), command=lambda: Help.show_help(self.root))
         help_menu.add_command(label=t('about', self.lang), command=self.show_about)
-        help_menu.add_command(label=t('show_sponsor', self.lang), command=self.open_sponsor)
+        help_menu.add_command(label=t('sponsor', self.lang), command=self.open_sponsor)
         menubar.add_cascade(label=t('help', self.lang), menu=help_menu)
 
     def open_sponsor(self):
         sponsor = Sponsor(self.root)
         sponsor.show_sponsor()
 
+    def check_for_updates(self, force_check=False):
+        """Check for updates and show a dialog if an update is available."""
+        try:
+            update_available, update_info = self.update_checker.check_for_updates(
+                parent=self.root,
+                force_check=force_check
+            )
+            if update_available and update_info:
+                self.update_checker.show_update_dialog(self.root, update_info)
+        except Exception as e:
+            messagebox.showerror(
+                t('error', self.lang),
+                f"{t('update_check_failed', self.lang)}: {str(e)}",
+                parent=self.root
+            )
+    
+    def check_for_updates_on_startup(self):
+        """Check for updates on application startup."""
+        try:
+            self.update_checker.check_for_updates(
+                parent=self.root,
+                force_check=False
+            )
+        except Exception:
+            # Don't show errors during startup to avoid annoying the user
+            pass
+    
     def show_about(self):
-        About.show_about(self.root)
+        about_dialog = tk.Toplevel(self.root)
+        about_dialog.title(t('about', self.lang))
+        about_dialog.geometry('500x400')
+        about_dialog.transient(self.root)
+        about_dialog.grab_set()
+        about_dialog.resizable(False, False)
+
+        # Main container
+        main_frame = ttk.Frame(about_dialog, padding=20)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        # App title and version
+        title = ttk.Label(
+            main_frame,
+            text='Image Deduplicator',
+            font=('Segoe UI', 16, 'bold')
+        )
+        title.pack(pady=(0, 10))
+
+        version = ttk.Label(
+            main_frame,
+            text=f"{t('version', self.lang)}: {get_version()}"
+        )
+        version.pack()
+
+        # Description
+        description = ttk.Label(
+            main_frame,
+            text=t('about_description', self.lang),
+            wraplength=450,
+            justify=tk.CENTER
+        )
+        description.pack(pady=20)
+
+        # Features
+        features_frame = ttk.LabelFrame(main_frame, text=t('features', self.lang))
+        features_frame.pack(fill=tk.X, padx=20, pady=10)
+
+        features = [
+            t('feature_1', self.lang),
+            t('feature_2', self.lang),
+            t('feature_3', self.lang),
+            t('feature_4', self.lang)
+        ]
+
+        for feature in features:
+            ttk.Label(
+                features_frame,
+                text=f"• {feature}",
+                justify=tk.LEFT
+            ).pack(anchor=tk.W, padx=10, pady=2)
+
+        # Copyright
+        copyright_frame = ttk.Frame(main_frame)
+        copyright_frame.pack(side=tk.BOTTOM, pady=(20, 0))
+
+        ttk.Label(
+            copyright_frame,
+            text=f"© 2025 Nsfr750"
+        ).pack()
+
+        # Close button
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(side=tk.BOTTOM, pady=20)
+        
+        ttk.Button(
+            button_frame,
+            text=t('close', self.lang),
+            command=about_dialog.destroy
+        ).pack()
+
+        # Center the dialog
+        about_dialog.update_idletasks()
+        width = about_dialog.winfo_width()
+        height = about_dialog.winfo_height()
+        x = (about_dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (about_dialog.winfo_screenheight() // 2) - (height // 2)
+        about_dialog.geometry(f'{width}x{height}+{x}+{y}')
 
     def browse_folder(self):
         folder_selected = filedialog.askdirectory()
