@@ -1,6 +1,8 @@
 # TO DO List
 
 ## High Priority
+- [x] Add multi-language support
+- [x] Implement automatic update checking
 - [ ] Add file size comparison as an additional duplicate detection method
 - [ ] Implement batch processing for large image collections
 - [ ] Add progress saving and resuming for long operations
@@ -13,11 +15,26 @@
 - [ ] Add image thumbnails in the list view
 - [ ] Add keyboard shortcuts for common actions
 - [ ] Add visual feedback for long-running operations
+- [x] Add language selection menu
+- [x] Enhance About dialog with version information
 
 ## Features
 - [ ] Add image organization by similarity groups
 - [ ] Implement image quality comparison
 - [ ] Add support for video thumbnails comparison
+- [x] Add support for more image formats
+- [x] Improve error handling and user feedback
+
+## Localization
+- [ ] Add more language translations
+- [ ] Implement RTL language support
+- [ ] Add translation memory for consistency
+- [ ] Create translation documentation
+
+## Performance
+- [ ] Optimize image comparison algorithm
+- [ ] Add caching for faster duplicate detection
+- [ ] Implement background processing for large folders
 - [ ] Add batch renaming options for duplicates
 - [ ] Add image metadata preservation options
 

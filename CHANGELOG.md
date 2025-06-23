@@ -1,5 +1,22 @@
 # Changelog
 
+## Version 1.4.0 (2025-06-23)
+### Added
+- Multi-language support (English, Spanish, French, German, Portuguese, Italian)
+- Automatic update checking on startup
+- Language selection menu
+- Enhanced About dialog with version information
+- New translation system with support for dynamic language switching
+- Added support for more image formats
+- Improved error handling and user feedback
+
+### Fixed
+- Fixed file deletion error handling
+- Improved UI responsiveness during long operations
+- Fixed layout issues in various dialogs
+- Resolved issues with image preview functionality
+- Fixed translation strings and improved localization coverage
+
 ## Version 1.3.0 (2025-05-22)
 ### Added
 - "Select All" button for duplicates

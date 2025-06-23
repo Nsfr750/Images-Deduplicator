@@ -4,22 +4,33 @@
 [![GitHub issues](https://img.shields.io/github/issues/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/issues)
 [![GitHub stars](https://img.shields.io/github/stars/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/stargazers)
 
-A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology.
+A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Available in multiple languages with automatic update checking.
 
 ## Features
 
 - **Image Comparison**
   - Utilizes perceptual hashing for accurate duplicate detection
-  - Supports PNG,JPG,JPEG,GIF,BMP,TIFF,TIF,WEBP,SVG,PSD formats
+  - Supports PNG, JPG, JPEG, GIF, BMP, TIFF, TIF, WEBP, SVG, PSD formats
   - Handles truncated or corrupted images gracefully
+  - Configurable similarity threshold
 
 - **User Interface**
   - Modern and intuitive graphical interface
+  - Multi-language support (English, Spanish, French, German, Portuguese, Italian)
   - Menu-driven navigation with About and Sponsor options
   - Clear visual feedback for operations
+  - Image preview functionality
 
 - **File Management**
   - Easy folder selection and browsing
+  - Recursive subfolder search
+  - Batch delete functionality
+  - Safe file operations with confirmation dialogs
+
+- **Updates & Localization**
+  - Automatic update checking
+  - Multi-language support
+  - User-selectable language preferences
 
 ## Requirements
 

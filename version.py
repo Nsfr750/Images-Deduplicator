@@ -1,13 +1,13 @@
 """
-Version management for Database Browser application.
+Version management for Images Deduplicator.
 
 This module provides a centralized version tracking system 
-for the Database Browser project.
+for the Images Deduplicator project.
 """
 
 # Version components
 MAJOR_VERSION = 1
-MINOR_VERSION = 3
+MINOR_VERSION = 4
 PATCH_VERSION = 0
 
 # Additional version qualifiers
