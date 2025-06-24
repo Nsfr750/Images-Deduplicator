@@ -116,3 +116,4 @@ htmlcov/
 go.bat
 Comparatore.exe
 Comparatore.bat
+*.bat
