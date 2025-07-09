@@ -1,5 +1,57 @@
 # Changelog
 
+## Version 1.5.0 (2025-07-10)
+### Added
+- Added comprehensive logging system with log viewer
+- Implemented log level filtering (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- Added dark theme as default for better user experience
+- Improved error handling and user feedback
+- Added more detailed status messages
+- Enhanced logging of file operations
+
+### Changed
+- Reorganized project structure with Python package layout
+- Moved all Python modules to `script` package
+- Updated all imports to use package-relative imports
+- Removed Windows 11 and Vista styles, keeping only Fusion style
+- Simplified theme selection to light/dark only
+- Improved thread safety in update checking
+
+### Fixed
+- Fixed crash when closing application with active threads
+- Fixed infinite recursion in theme/style application
+- Fixed language menu display issues
+- Improved handling of missing menu items during language changes
+- Fixed log viewer filter functionality
+- Resolved threading issues in update checker
+- Fixed status bar update issues
+- Improved error handling for file operations
+
+## Version 1.4.5 (2025-07-09)
+### Added
+- Migrated from Tkinter to PyQt6 for a more modern and responsive UI
+- New modern dialogs with improved user experience
+- Enhanced status bar with better messaging
+- Improved error handling and user feedback
+- Better cross-platform compatibility
+- Added support for high DPI displays
+- Improved dark mode support
+
+### Changed
+- Completely redesigned UI using Qt widgets
+- Updated all dialogs to use PyQt6 (About, Help, Sponsor, Update)
+- Improved threading model for better performance
+- Enhanced image preview with better scaling and aspect ratio handling
+- Modernized application styling and theming
+- Improved window management and resizing behavior
+
+### Fixed
+- Fixed issues with language switching in the new Qt interface
+- Resolved threading issues during image comparison
+- Fixed status bar visibility and functionality
+- Improved error handling during file operations
+- Fixed various UI layout issues
+
 ## Version 1.4.0 (2025-06-23)
 ### Added
 - Multi-language support (English, Spanish, French, German, Portuguese, Italian)

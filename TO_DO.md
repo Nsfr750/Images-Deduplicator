@@ -1,8 +1,9 @@
 # TO DO List
 
 ## High Priority
-- [x] Add multi-language support
+- [x] Migrate from Tkinter to PyQt6
 - [x] Implement automatic update checking
+- [x] Add comprehensive logging system with log viewer
 - [ ] Add file size comparison as an additional duplicate detection method
 - [ ] Implement batch processing for large image collections
 - [ ] Add progress saving and resuming for long operations
@@ -10,65 +11,75 @@
 - [ ] Add support for image metadata comparison
 
 ## User Interface
+- [x] Complete PyQt6 migration with modern UI components
+- [x] Implement dark mode theme support
 - [ ] Add drag and drop support for folder selection
-- [ ] Implement dark mode theme
 - [ ] Add image thumbnails in the list view
 - [ ] Add keyboard shortcuts for common actions
-- [ ] Add visual feedback for long-running operations
+- [x] Add visual feedback for long-running operations
 - [x] Add language selection menu
 - [x] Enhance About dialog with version information
+- [x] Improve status bar with better feedback
+- [x] Add log viewer with filtering capabilities
 
 ## Features
 - [ ] Add image organization by similarity groups
 - [ ] Implement image quality comparison
-- [ ] Add support for video thumbnails comparison
 - [x] Add support for more image formats
 - [x] Improve error handling and user feedback
-
-## Localization
-- [ ] Add more language translations
-- [ ] Implement RTL language support
-- [ ] Add translation memory for consistency
-- [ ] Create translation documentation
+- [x] Add logging system with log viewer
+- [ ] Add undo/redo functionality for file operations
+- [ ] Add session persistence for user preferences
 
 ## Performance
+- [x] Optimize PyQt6 UI responsiveness
 - [ ] Optimize image comparison algorithm
 - [ ] Add caching for faster duplicate detection
-- [ ] Implement background processing for large folders
-- [ ] Add batch renaming options for duplicates
+- [x] Implement background processing for large folders
 - [ ] Add image metadata preservation options
-
-## Performance
-- [ ] Optimize image hash calculation for large collections
-- [ ] Implement multi-threading for image processing
-- [ ] Add memory usage optimization
-- [ ] Implement caching for frequently accessed images
-- [ ] Add option to limit memory usage
+- [ ] Optimize memory usage for large image collections
 
 ## Quality of Life
-- [ ] Add image preview zoom functionality
+- [x] Add image preview with zoom functionality
 - [ ] Add option to save duplicate reports
-- [ ] Add image comparison history
-- [ ] Add option to exclude certain file types
-- [ ] Add option to exclude system folders
+- [ ] Add keyboard navigation between duplicates
+- [ ] Implement undo functionality for file operations
+- [ ] Add session persistence for last used settings
+- [ ] Add confirmation dialogs for destructive actions
+
+## Localization
+- [x] Complete translations for all PyQt6 dialogs
+- [ ] Add more language translations
+- [ ] Implement RTL language support
+- [ ] Create translation documentation
+- [ ] Add language auto-detection
 
 ## Documentation
-- [ ] Add detailed usage examples
-- [ ] Add troubleshooting guide
-- [ ] Add performance optimization tips
-- [ ] Add FAQ section
+- [x] Update README with PyQt6 information
+- [x] Update CHANGELOG with recent changes
+- [ ] Add user guide
 - [ ] Add developer documentation
+- [ ] Add API documentation
 
-## Testing
-- [ ] Add unit tests for core functionality
-- [ ] Add integration tests for UI components
-- [ ] Add performance benchmarks
-- [ ] Add test cases for edge cases
-- [ ] Add cross-platform compatibility tests
+## Future Enhancements
+- [ ] Implement AI-based image comparison
+- [ ] Add batch processing for multiple folders
+- [ ] Create installers for different platforms
 
-## Future Ideas
-- [ ] Add cloud storage integration
-- [ ] Add image similarity search
-- [ ] Add batch image optimization
-- [ ] Add image format conversion
-- [ ] Add machine learning for advanced comparison
+## Completed in v1.5.1
+- [x] Fixed crash when closing application with active threads
+- [x] Resolved threading issues in update checker
+- [x] Improved error handling and logging
+- [x] Simplified theme selection to light/dark only
+- [x] Reorganized project structure with Python package layout
+- [x] Fixed infinite recursion in theme/style application
+- [x] Improved language menu and translations
+
+## Completed in v1.5.0
+- [x] Migrated from Tkinter to PyQt6
+- [x] Added dark theme support
+- [x] Improved image preview functionality
+- [x] Added status bar with operation feedback
+- [x] Implemented automatic update checking
+- [x] Added multi-language support
+- [x] Improved error handling and user feedback
