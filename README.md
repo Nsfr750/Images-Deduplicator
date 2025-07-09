@@ -78,7 +78,7 @@ A powerful desktop application for finding and managing duplicate images in your
 
 1. Run the application:
    ```bash
-   python app_qt.py
+   python main.py
    ```
 
 2. Select a folder containing images using the "Browse" button
@@ -89,7 +89,7 @@ A powerful desktop application for finding and managing duplicate images in your
 
 ## Project Structure
 
-- `app_qt.py` - Main application entry point
+- `main.py` - Main application entry point
 - `script/` - Python package containing all application modules
   - `__init__.py` - Package initialization
   - `about.py` - About dialog implementation
@@ -110,7 +110,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GPLv2 License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
