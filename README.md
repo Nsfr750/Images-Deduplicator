@@ -84,7 +84,7 @@ A powerful desktop application for finding and managing duplicate images in your
 2. Select a folder containing images using the "Browse" button
 3. Click "Compare Images" to start the duplicate detection
 4. Review the list of duplicate images
-5. Use the preview pane to compare images side by side
+5. Use the preview panel to compare images side by side
 6. Select duplicates to delete and click "Delete Selected"
 
 ## Project Structure
