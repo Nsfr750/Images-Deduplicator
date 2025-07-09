@@ -66,7 +66,7 @@
 - [ ] Add batch processing for multiple folders
 - [ ] Create installers for different platforms
 
-## Completed in v1.5.1
+## Completed in v1.5.0
 - [x] Fixed crash when closing application with active threads
 - [x] Resolved threading issues in update checker
 - [x] Improved error handling and logging
@@ -75,7 +75,7 @@
 - [x] Fixed infinite recursion in theme/style application
 - [x] Improved language menu and translations
 
-## Completed in v1.5.0
+## Completed in v1.4.5
 - [x] Migrated from Tkinter to PyQt6
 - [x] Added dark theme support
 - [x] Improved image preview functionality
