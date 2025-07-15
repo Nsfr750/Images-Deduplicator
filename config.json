@@ -1,0 +1,9 @@
+{
+    "language": "it",
+    "theme": "dark",
+    "style": "Fusion",
+    "comparison": {
+        "similarity_threshold": 100,
+        "recursive_search": true
+    }
+}

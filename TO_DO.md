@@ -1,9 +1,6 @@
 # TO DO List
 
 ## High Priority
-- [x] Migrate from Tkinter to PyQt6
-- [x] Implement automatic update checking
-- [x] Add comprehensive logging system with log viewer
 - [ ] Add file size comparison as an additional duplicate detection method
 - [ ] Implement batch processing for large image collections
 - [ ] Add progress saving and resuming for long operations
@@ -13,7 +10,7 @@
 ## User Interface
 - [x] Complete PyQt6 migration with modern UI components
 - [x] Implement dark mode theme support
-- [ ] Add drag and drop support for folder selection
+- [x] Add drag and drop support for folder selection
 - [ ] Add image thumbnails in the list view
 - [ ] Add keyboard shortcuts for common actions
 - [x] Add visual feedback for long-running operations
@@ -21,6 +18,12 @@
 - [x] Enhance About dialog with version information
 - [x] Improve status bar with better feedback
 - [x] Add log viewer with filtering capabilities
+- [x] Enhance Help Dialog
+  - [x] Add search functionality
+  - [x] Implement dark theme
+  - [x] Add language support
+  - [x] Fix layout issues
+  - [x] Improve content organization
 
 ## Features
 - [ ] Add image organization by similarity groups

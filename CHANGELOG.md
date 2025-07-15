@@ -8,6 +8,15 @@
 - Improved error handling and user feedback
 - Added more detailed status messages
 - Enhanced logging of file operations
+- Enhanced Help Dialog with dark theme support
+  - Added search functionality with real-time results
+  - Implemented dark theme with consistent styling
+  - Added language switching support
+  - Improved tabbed content organization
+- Improved UI consistency
+  - Removed white backgrounds from all UI elements
+  - Added consistent dark theme across all components
+  - Enhanced text readability with proper contrast
 
 ### Changed
 - Reorganized project structure with Python package layout
@@ -16,6 +25,10 @@
 - Removed Windows 11 and Vista styles, keeping only Fusion style
 - Simplified theme selection to light/dark only
 - Improved thread safety in update checking
+- Refactored HelpDialog layout management
+  - Fixed QLayout warnings and conflicts
+  - Improved tab content organization
+  - Enhanced search functionality
 
 ### Fixed
 - Fixed crash when closing application with active threads
@@ -26,6 +39,11 @@
 - Resolved threading issues in update checker
 - Fixed status bar update issues
 - Improved error handling for file operations
+- Resolved HelpDialog issues
+  - Fixed search bar visibility
+  - Fixed language change handling
+  - Fixed white background issues
+  - Fixed layout conflicts
 
 ## Version 1.4.5 (2025-07-09)
 ### Added

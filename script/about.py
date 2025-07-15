@@ -54,7 +54,7 @@ class AboutDialog(QDialog):
         description.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Copyright
-        copyright_label = QLabel(' 2025 Nsfr750')
+        copyright_label = QLabel('© 2025 Nsfr750')
         copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Close button
@@ -102,7 +102,7 @@ class TkAbout:
         description.setWordWrap(True)
         description.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        copyright_label = QLabel(' 2025 Nsfr750')
+        copyright_label = QLabel('© 2025 Nsfr750')
         copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         close_button = QPushButton('Close')

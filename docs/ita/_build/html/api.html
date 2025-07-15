@@ -1,0 +1,700 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="it" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API &mdash; Documentazione Images Deduplicator 1.0.0 </title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=eba8e968"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=45930005"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="Cronologia delle modifiche" href="changelog.html" />
+    <link rel="prev" title="Configurazione" href="configurazione.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Images Deduplicator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Cerca documenti" aria-label="Cerca documenti" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Menu di navigazione">
+              <p class="caption" role="heading"><span class="caption-text">Contenuti:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduzione.html">Introduzione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installazione.html">Installazione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="utilizzo.html">Utilizzo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configurazione.html">Configurazione</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#main.AboutDialog"><code class="docutils literal notranslate"><span class="pre">AboutDialog</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.AboutDialog.setup_ui"><code class="docutils literal notranslate"><span class="pre">AboutDialog.setup_ui()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.HelpDialog"><code class="docutils literal notranslate"><span class="pre">HelpDialog</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.HelpDialog.create_features_tab"><code class="docutils literal notranslate"><span class="pre">HelpDialog.create_features_tab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.HelpDialog.create_tips_tab"><code class="docutils literal notranslate"><span class="pre">HelpDialog.create_tips_tab()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.HelpDialog.create_usage_tab"><code class="docutils literal notranslate"><span class="pre">HelpDialog.create_usage_tab()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.ImageComparisonWorker"><code class="docutils literal notranslate"><span class="pre">ImageComparisonWorker</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageComparisonWorker.run"><code class="docutils literal notranslate"><span class="pre">ImageComparisonWorker.run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageComparisonWorker.stop"><code class="docutils literal notranslate"><span class="pre">ImageComparisonWorker.stop()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.ImageDeduplicatorApp"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.apply_style"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.apply_style()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.apply_theme"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.apply_theme()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.browse_folder"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.browse_folder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.change_language"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.change_language()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.check_for_updates"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.check_for_updates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.check_for_updates_on_startup"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.check_for_updates_on_startup()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.closeEvent"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.closeEvent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.compare_images"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.compare_images()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.comparison_complete"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.comparison_complete()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.comparison_error"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.comparison_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.delete_all_duplicates"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.delete_all_duplicates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.delete_selected"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.delete_selected()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.display_duplicates"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.display_duplicates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.download_update"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.download_update()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.init_ui"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.init_ui()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.preview_image"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.preview_image()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.resizeEvent"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.resizeEvent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.retranslate_ui"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.retranslate_ui()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.select_all_duplicates"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.select_all_duplicates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.set_language"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.set_language()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.setup_central_widget"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.setup_central_widget()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.setup_connections"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.setup_connections()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.setup_menu_bar"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.setup_menu_bar()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_about"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_about()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_help"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_help()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_log_viewer"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_log_viewer()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_sponsor"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_sponsor()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_style_preview"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_style_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.show_update_dialog"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.show_update_dialog()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.update_button_states"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.update_button_states()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.update_preview"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.update_preview()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.update_progress"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.update_progress()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.update_status"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.update_status()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImageDeduplicatorApp.update_ui_state"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp.update_ui_state()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.ImagePreview"><code class="docutils literal notranslate"><span class="pre">ImagePreview</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImagePreview.resizeEvent"><code class="docutils literal notranslate"><span class="pre">ImagePreview.resizeEvent()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.ImagePreview.setPixmap"><code class="docutils literal notranslate"><span class="pre">ImagePreview.setPixmap()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.SponsorDialog"><code class="docutils literal notranslate"><span class="pre">SponsorDialog</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.SponsorDialog.open_url"><code class="docutils literal notranslate"><span class="pre">SponsorDialog.open_url()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.StylePreviewDialog"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.create_sample_widgets"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.create_sample_widgets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.get_selected_style"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.get_selected_style()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.get_selected_theme"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.get_selected_theme()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.get_stylesheet"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.get_stylesheet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.on_style_changed"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.on_style_changed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.on_theme_changed"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.on_theme_changed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.populate_styles"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.populate_styles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.setup_ui"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.setup_ui()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.StylePreviewDialog.update_preview_style"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog.update_preview_style()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.UpdateCheckerWorker"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.UpdateCheckerWorker.finished_signal"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker.finished_signal</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.UpdateCheckerWorker.on_error"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker.on_error()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.UpdateCheckerWorker.on_no_updates"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker.on_no_updates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.UpdateCheckerWorker.on_update_available"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker.on_update_available()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.UpdateCheckerWorker.run"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker.run()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.WorkerSignals"><code class="docutils literal notranslate"><span class="pre">WorkerSignals</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#main.WorkerSignals.error"><code class="docutils literal notranslate"><span class="pre">WorkerSignals.error</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.WorkerSignals.finished"><code class="docutils literal notranslate"><span class="pre">WorkerSignals.finished</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#main.WorkerSignals.progress"><code class="docutils literal notranslate"><span class="pre">WorkerSignals.progress</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#note">Note</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Cronologia delle modifiche</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Menu navigazione dispositivi mobili" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Images Deduplicator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Naviga tra le pagine">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> Visualizza sorgente pagina</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-main">
+<span id="api"></span><h1>API<a class="headerlink" href="#module-main" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="main.AboutDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">AboutDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'en'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#AboutDialog"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.AboutDialog" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+</div></blockquote>
+<p>About dialog showing application information.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.AboutDialog.setup_ui">
+<span class="sig-name descname"><span class="pre">setup_ui</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#AboutDialog.setup_ui"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.AboutDialog.setup_ui" title="Link to this definition"></a></dt>
+<dd><p>Initialize the UI components.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.HelpDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">HelpDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'en'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#HelpDialog"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.HelpDialog" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+</div></blockquote>
+<p>Dialog showing help information.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.HelpDialog.create_features_tab">
+<span class="sig-name descname"><span class="pre">create_features_tab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#HelpDialog.create_features_tab"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.HelpDialog.create_features_tab" title="Link to this definition"></a></dt>
+<dd><p>Create the features tab.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.HelpDialog.create_tips_tab">
+<span class="sig-name descname"><span class="pre">create_tips_tab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#HelpDialog.create_tips_tab"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.HelpDialog.create_tips_tab" title="Link to this definition"></a></dt>
+<dd><p>Create the tips tab.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.HelpDialog.create_usage_tab">
+<span class="sig-name descname"><span class="pre">create_usage_tab</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#HelpDialog.create_usage_tab"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.HelpDialog.create_usage_tab" title="Link to this definition"></a></dt>
+<dd><p>Create the usage tab.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.ImageComparisonWorker">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">ImageComparisonWorker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recursive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageComparisonWorker"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageComparisonWorker" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QRunnable</span></code></p>
+</div></blockquote>
+<p>Worker thread for image comparison.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageComparisonWorker.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageComparisonWorker.run"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageComparisonWorker.run" title="Link to this definition"></a></dt>
+<dd><p>Main processing function that runs in a separate thread.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageComparisonWorker.stop">
+<span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageComparisonWorker.stop"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageComparisonWorker.stop" title="Link to this definition"></a></dt>
+<dd><p>Stop the worker thread.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">ImageDeduplicatorApp</span></span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QMainWindow</span></code></p>
+</div></blockquote>
+<p>Main application window for Image Deduplicator.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.apply_style">
+<span class="sig-name descname"><span class="pre">apply_style</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">style_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Fusion'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_theme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.apply_style"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.apply_style" title="Link to this definition"></a></dt>
+<dd><p>Apply the selected style to the application.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>style_name: Name of the style to apply (only “Fusion” is supported)
+save: Whether to save the style preference
+apply_theme: Whether to apply the current theme after changing the style</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.apply_theme">
+<span class="sig-name descname"><span class="pre">apply_theme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theme</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_style</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.apply_theme"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.apply_theme" title="Link to this definition"></a></dt>
+<dd><p>Apply the selected theme.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.browse_folder">
+<span class="sig-name descname"><span class="pre">browse_folder</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.browse_folder"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.browse_folder" title="Link to this definition"></a></dt>
+<dd><p>Open a folder selection dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.change_language">
+<span class="sig-name descname"><span class="pre">change_language</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.change_language"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.change_language" title="Link to this definition"></a></dt>
+<dd><p>Change the application language.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.check_for_updates">
+<span class="sig-name descname"><span class="pre">check_for_updates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.check_for_updates"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.check_for_updates" title="Link to this definition"></a></dt>
+<dd><p>Check for application updates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.check_for_updates_on_startup">
+<span class="sig-name descname"><span class="pre">check_for_updates_on_startup</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.check_for_updates_on_startup"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.check_for_updates_on_startup" title="Link to this definition"></a></dt>
+<dd><p>Check for updates on application startup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.closeEvent">
+<span class="sig-name descname"><span class="pre">closeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.closeEvent"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.closeEvent" title="Link to this definition"></a></dt>
+<dd><p>Handle the window close event.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.compare_images">
+<span class="sig-name descname"><span class="pre">compare_images</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.compare_images"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.compare_images" title="Link to this definition"></a></dt>
+<dd><p>Start the image comparison process.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.comparison_complete">
+<span class="sig-name descname"><span class="pre">comparison_complete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicates</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.comparison_complete"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.comparison_complete" title="Link to this definition"></a></dt>
+<dd><p>Handle completion of the image comparison.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.comparison_error">
+<span class="sig-name descname"><span class="pre">comparison_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.comparison_error"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.comparison_error" title="Link to this definition"></a></dt>
+<dd><p>Handle errors during image comparison.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.delete_all_duplicates">
+<span class="sig-name descname"><span class="pre">delete_all_duplicates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.delete_all_duplicates"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.delete_all_duplicates" title="Link to this definition"></a></dt>
+<dd><p>Delete all duplicate images.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.delete_selected">
+<span class="sig-name descname"><span class="pre">delete_selected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.delete_selected"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.delete_selected" title="Link to this definition"></a></dt>
+<dd><p>Delete the selected duplicate images.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.display_duplicates">
+<span class="sig-name descname"><span class="pre">display_duplicates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.display_duplicates"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.display_duplicates" title="Link to this definition"></a></dt>
+<dd><p>Display the list of duplicate images.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.download_update">
+<span class="sig-name descname"><span class="pre">download_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.download_update"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.download_update" title="Link to this definition"></a></dt>
+<dd><p>Open download URL in default browser.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.init_ui">
+<span class="sig-name descname"><span class="pre">init_ui</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.init_ui"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.init_ui" title="Link to this definition"></a></dt>
+<dd><p>Initialize the user interface.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.preview_image">
+<span class="sig-name descname"><span class="pre">preview_image</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.preview_image"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.preview_image" title="Link to this definition"></a></dt>
+<dd><p>Preview the selected duplicate and original images.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.resizeEvent">
+<span class="sig-name descname"><span class="pre">resizeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.resizeEvent"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.resizeEvent" title="Link to this definition"></a></dt>
+<dd><p>Handle window resize events to update previews.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.retranslate_ui">
+<span class="sig-name descname"><span class="pre">retranslate_ui</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.retranslate_ui"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.retranslate_ui" title="Link to this definition"></a></dt>
+<dd><p>Retranslate all UI elements to the current language.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.select_all_duplicates">
+<span class="sig-name descname"><span class="pre">select_all_duplicates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.select_all_duplicates"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.select_all_duplicates" title="Link to this definition"></a></dt>
+<dd><p>Select all items in the duplicates list.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.set_language">
+<span class="sig-name descname"><span class="pre">set_language</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lang_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.set_language"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.set_language" title="Link to this definition"></a></dt>
+<dd><p>Change the application language and update the UI.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.setup_central_widget">
+<span class="sig-name descname"><span class="pre">setup_central_widget</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.setup_central_widget"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.setup_central_widget" title="Link to this definition"></a></dt>
+<dd><p>Set up the central widget.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.setup_connections">
+<span class="sig-name descname"><span class="pre">setup_connections</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.setup_connections"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.setup_connections" title="Link to this definition"></a></dt>
+<dd><p>Set up signal-slot connections.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.setup_menu_bar">
+<span class="sig-name descname"><span class="pre">setup_menu_bar</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.setup_menu_bar"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.setup_menu_bar" title="Link to this definition"></a></dt>
+<dd><p>Set up the menu bar.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_about">
+<span class="sig-name descname"><span class="pre">show_about</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_about"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_about" title="Link to this definition"></a></dt>
+<dd><p>Show the about dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_help">
+<span class="sig-name descname"><span class="pre">show_help</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_help"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_help" title="Link to this definition"></a></dt>
+<dd><p>Show help dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_log_viewer">
+<span class="sig-name descname"><span class="pre">show_log_viewer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_log_viewer"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_log_viewer" title="Link to this definition"></a></dt>
+<dd><p>Show the log viewer dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_sponsor">
+<span class="sig-name descname"><span class="pre">show_sponsor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_sponsor"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_sponsor" title="Link to this definition"></a></dt>
+<dd><p>Show sponsor dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_style_preview">
+<span class="sig-name descname"><span class="pre">show_style_preview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_style_preview"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_style_preview" title="Link to this definition"></a></dt>
+<dd><p>Show the style preview dialog.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.show_update_dialog">
+<span class="sig-name descname"><span class="pre">show_update_dialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_info</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.show_update_dialog"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.show_update_dialog" title="Link to this definition"></a></dt>
+<dd><p>Show update dialog with update information.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.update_button_states">
+<span class="sig-name descname"><span class="pre">update_button_states</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.update_button_states"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.update_button_states" title="Link to this definition"></a></dt>
+<dd><p>Update the state of the action buttons.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.update_preview">
+<span class="sig-name descname"><span class="pre">update_preview</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.update_preview"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.update_preview" title="Link to this definition"></a></dt>
+<dd><p>Update the preview panes with the selected duplicate and original images.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.update_progress">
+<span class="sig-name descname"><span class="pre">update_progress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.update_progress"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.update_progress" title="Link to this definition"></a></dt>
+<dd><p>Update the progress bar.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.update_status">
+<span class="sig-name descname"><span class="pre">update_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.update_status"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.update_status" title="Link to this definition"></a></dt>
+<dd><p>Update the status bar message.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>message: The message to display
+timeout: How long to display the message in milliseconds (0 = show until next message)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImageDeduplicatorApp.update_ui_state">
+<span class="sig-name descname"><span class="pre">update_ui_state</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImageDeduplicatorApp.update_ui_state"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImageDeduplicatorApp.update_ui_state" title="Link to this definition"></a></dt>
+<dd><p>Update the UI state based on the current application state.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.ImagePreview">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">ImagePreview</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImagePreview"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImagePreview" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QLabel</span></code></p>
+</div></blockquote>
+<p>Custom widget for displaying image previews with aspect ratio preservation.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImagePreview.resizeEvent">
+<span class="sig-name descname"><span class="pre">resizeEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImagePreview.resizeEvent"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImagePreview.resizeEvent" title="Link to this definition"></a></dt>
+<dd><p>Handle resize events to scale the image.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.ImagePreview.setPixmap">
+<span class="sig-name descname"><span class="pre">setPixmap</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pixmap</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#ImagePreview.setPixmap"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.ImagePreview.setPixmap" title="Link to this definition"></a></dt>
+<dd><p>Override to store the original pixmap for scaling.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.SponsorDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">SponsorDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lang</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'en'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#SponsorDialog"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.SponsorDialog" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+</div></blockquote>
+<p>Dialog for sponsoring the project.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.SponsorDialog.open_url">
+<span class="sig-name descname"><span class="pre">open_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#SponsorDialog.open_url"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.SponsorDialog.open_url" title="Link to this definition"></a></dt>
+<dd><p>Open URL in default browser.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.StylePreviewDialog">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">StylePreviewDialog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QDialog</span></code></p>
+</div></blockquote>
+<p>Dialog to preview different styles.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.create_sample_widgets">
+<span class="sig-name descname"><span class="pre">create_sample_widgets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.create_sample_widgets"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.create_sample_widgets" title="Link to this definition"></a></dt>
+<dd><p>Create sample widgets for preview.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.get_selected_style">
+<span class="sig-name descname"><span class="pre">get_selected_style</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.get_selected_style"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.get_selected_style" title="Link to this definition"></a></dt>
+<dd><p>Get the currently selected style.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.get_selected_theme">
+<span class="sig-name descname"><span class="pre">get_selected_theme</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.get_selected_theme"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.get_selected_theme" title="Link to this definition"></a></dt>
+<dd><p>Get the currently selected theme.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.get_stylesheet">
+<span class="sig-name descname"><span class="pre">get_stylesheet</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.get_stylesheet"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.get_stylesheet" title="Link to this definition"></a></dt>
+<dd><p>Get the stylesheet for the current theme.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.on_style_changed">
+<span class="sig-name descname"><span class="pre">on_style_changed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">previous</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.on_style_changed"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.on_style_changed" title="Link to this definition"></a></dt>
+<dd><p>Handle style change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.on_theme_changed">
+<span class="sig-name descname"><span class="pre">on_theme_changed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">button</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">checked</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.on_theme_changed"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.on_theme_changed" title="Link to this definition"></a></dt>
+<dd><p>Handle theme change.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.populate_styles">
+<span class="sig-name descname"><span class="pre">populate_styles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.populate_styles"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.populate_styles" title="Link to this definition"></a></dt>
+<dd><p>Populate the style list with available styles.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.setup_ui">
+<span class="sig-name descname"><span class="pre">setup_ui</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.setup_ui"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.setup_ui" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.StylePreviewDialog.update_preview_style">
+<span class="sig-name descname"><span class="pre">update_preview_style</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#StylePreviewDialog.update_preview_style"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.StylePreviewDialog.update_preview_style" title="Link to this definition"></a></dt>
+<dd><p>Update the preview with current style and theme.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">UpdateCheckerWorker</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_checker</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#UpdateCheckerWorker"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.UpdateCheckerWorker" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+</div></blockquote>
+<p>Worker object for checking updates.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker.finished_signal">
+<span class="sig-name descname"><span class="pre">finished_signal</span></span><a class="headerlink" href="#main.UpdateCheckerWorker.finished_signal" title="Link to this definition"></a></dt>
+<dd><p>pyqtSignal(<a href="#id1"><span class="problematic" id="id2">*</span></a>types, name: str = …, revision: int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker.on_error">
+<span class="sig-name descname"><span class="pre">on_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error_msg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#UpdateCheckerWorker.on_error"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.UpdateCheckerWorker.on_error" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker.on_no_updates">
+<span class="sig-name descname"><span class="pre">on_no_updates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#UpdateCheckerWorker.on_no_updates"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.UpdateCheckerWorker.on_no_updates" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker.on_update_available">
+<span class="sig-name descname"><span class="pre">on_update_available</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_info</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#UpdateCheckerWorker.on_update_available"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.UpdateCheckerWorker.on_update_available" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="main.UpdateCheckerWorker.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#UpdateCheckerWorker.run"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.UpdateCheckerWorker.run" title="Link to this definition"></a></dt>
+<dd><p>Run the update check.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="main.WorkerSignals">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">WorkerSignals</span></span><a class="reference internal" href="_modules/main.html#WorkerSignals"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.WorkerSignals" title="Link to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Basi: <code class="xref py py-class docutils literal notranslate"><span class="pre">QObject</span></code></p>
+</div></blockquote>
+<p>Defines the signals available from a running worker thread.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="main.WorkerSignals.error">
+<span class="sig-name descname"><span class="pre">error</span></span><a class="headerlink" href="#main.WorkerSignals.error" title="Link to this definition"></a></dt>
+<dd><p>pyqtSignal(<a href="#id3"><span class="problematic" id="id4">*</span></a>types, name: str = …, revision: int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="main.WorkerSignals.finished">
+<span class="sig-name descname"><span class="pre">finished</span></span><a class="headerlink" href="#main.WorkerSignals.finished" title="Link to this definition"></a></dt>
+<dd><p>pyqtSignal(<a href="#id5"><span class="problematic" id="id6">*</span></a>types, name: str = …, revision: int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="main.WorkerSignals.progress">
+<span class="sig-name descname"><span class="pre">progress</span></span><a class="headerlink" href="#main.WorkerSignals.progress" title="Link to this definition"></a></dt>
+<dd><p>pyqtSignal(<a href="#id7"><span class="problematic" id="id8">*</span></a>types, name: str = …, revision: int = …, arguments: Sequence = …) -&gt; PYQT_SIGNAL</p>
+<p>types is normally a sequence of individual types.  Each type is either a
+type object or a string that is the name of a C++ type.  Alternatively
+each type could itself be a sequence of types each describing a different
+overloaded signal.
+name is the optional C++ name of the signal.  If it is not specified then
+the name of the class attribute that is bound to the signal is used.
+revision is the optional revision of the signal that is exported to QML.
+If it is not specified then 0 is used.
+arguments is the optional sequence of the names of the signal’s arguments.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="main.main">
+<span class="sig-prename descclassname"><span class="pre">main.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/main.html#main"><span class="viewcode-link"><span class="pre">[sorgente]</span></span></a><a class="headerlink" href="#main.main" title="Link to this definition"></a></dt>
+<dd><p>Main entry point for the application.</p>
+</dd></dl>
+
+<section id="note">
+<h2>Note<a class="headerlink" href="#note" title="Link to this heading"></a></h2>
+<p>Per una documentazione più dettagliata dell’API, consulta il codice sorgente direttamente o utilizza l’opzione «Mostra codice» nella documentazione generata.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Piè di pagina">
+        <a href="configurazione.html" class="btn btn-neutral float-left" title="Configurazione" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Precedente</a>
+        <a href="changelog.html" class="btn btn-neutral float-right" title="Cronologia delle modifiche" accesskey="n" rel="next">Prossimo <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nsfr750.</p>
+  </div>
+
+  Realizzato con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    fornito da <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

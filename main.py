@@ -3,6 +3,7 @@ import sys
 import traceback
 import queue
 import threading
+import json
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 
@@ -16,18 +17,22 @@ from PyQt6.QtWidgets import (
     QProgressBar, QCheckBox, QFrame, QMenuBar, QMenu, QStatusBar, QSizePolicy,
     QDialog, QGroupBox, QTextEdit, QDialogButtonBox, QTabWidget, QSplitter, QStyleFactory
 )
-from PyQt6.QtGui import QPixmap, QImage, QAction, QIcon, QPainter, QColor, QFont, QActionGroup, QDesktopServices
+from PyQt6.QtGui import (
+    QPixmap, QImage, QIcon, QPainter, QColor, QFont, QDesktopServices, QAction
+)
 
 from PIL import Image, ImageQt
 import imagehash
 from script.about import AboutDialog
-from script.help import HelpDialog
+from script.help import HelpDialog as HelpDialogScript
 from script.log_viewer import LogViewer
 from script.sponsor import SponsorDialog
 from script.styles import setup_styles
 from script.translations import t, LANGUAGES
 from script.updates import UpdateChecker
 from script.version import get_version, __version__
+from script.settings import SettingsDialog
+from script.menu import MenuManager
 import logging
 
 
@@ -57,10 +62,11 @@ class WorkerSignals(QObject):
 class ImageComparisonWorker(QRunnable):
     """Worker thread for image comparison."""
     
-    def __init__(self, folder: str, recursive: bool = True):
+    def __init__(self, folder: str, recursive: bool = True, similarity_threshold: int = 85):
         super().__init__()
         self.folder = folder
         self.recursive = recursive
+        self.similarity_threshold = similarity_threshold
         self.signals = WorkerSignals()
         self.is_running = True
 
@@ -140,15 +146,27 @@ class ImageComparisonWorker(QRunnable):
                             print(f"Skipping large file {filepath}")
                             continue
 
+                        # Open and convert image to RGBA if it has transparency
                         image = Image.open(filepath)
+                        if image.mode == 'P' and 'transparency' in image.info:
+                            image = image.convert('RGBA')
                         hash_value = imagehash.average_hash(image)
                         
-                        # Check for duplicates based on hash
-                        if hash_value in images:
-                            original_path = images[hash_value]
-                            duplicates[filepath] = original_path
-                        else:
-                            images[hash_value] = filepath
+                        # Check for duplicates based on hash with similarity threshold
+                        new_hash = str(hash_value)
+                        duplicates_found = False
+                        
+                        # Compare with existing images
+                        for existing_hash, existing_path in images.items():
+                            # Calculate similarity percentage
+                            similarity = 100 - (hash_value - imagehash.hex_to_hash(existing_hash))
+                            if similarity >= self.similarity_threshold:
+                                duplicates[filepath] = existing_path
+                                duplicates_found = True
+                                break
+                        
+                        if not duplicates_found:
+                            images[new_hash] = filepath
                         
                         processed_count += 1
                         progress = int((processed_count / total_files) * 100)
@@ -271,102 +289,6 @@ class AboutDialog(QDialog):
         layout.addWidget(copyright_label)
         layout.addSpacing(10)
         layout.addWidget(close_button)
-
-
-class HelpDialog(QDialog):
-    """Dialog showing help information."""
-    
-    def __init__(self, parent=None, lang='en'):
-        super().__init__(parent)
-        self.lang = lang
-        self.setWindowTitle(t('help_title', lang))
-        self.setMinimumSize(600, 500)
-        
-        # Create layout
-        layout = QVBoxLayout(self)
-        
-        # Create tab widget
-        self.tabs = QTabWidget()
-        
-        # Add tabs
-        self.tabs.addTab(self.create_usage_tab(), t('usage', lang))
-        self.tabs.addTab(self.create_features_tab(), t('features', lang))
-        self.tabs.addTab(self.create_tips_tab(), t('tips', lang))
-        
-        layout.addWidget(self.tabs)
-        
-        # Close button
-        close_btn = QPushButton(t('close', lang))
-        close_btn.clicked.connect(self.accept)
-        layout.addWidget(close_btn, 0, Qt.AlignmentFlag.AlignRight)
-    
-    def create_usage_tab(self):
-        """Create the usage tab."""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        
-        text = QTextEdit()
-        text.setReadOnly(True)
-        text.setHtml(f"""
-        <h2>Image Deduplicator v{get_version()}</h2>
-        <p>{t('help_description', self.lang)}</p>
-        <h3>{t('how_to_use', self.lang)}</h3>
-        <ol>
-            <li>{t('select_folder_instruction', self.lang)}</li>
-            <li>{t('click_compare', self.lang)}</li>
-            <li>{t('review_results', self.lang)}</li>
-            <li>{t('delete_duplicates', self.lang)}</li>
-        </ol>
-        """)
-        
-        layout.addWidget(text)
-        return widget
-    
-    def create_features_tab(self):
-        """Create the features tab."""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        
-        text = QTextEdit()
-        text.setReadOnly(True)
-        text.setHtml(f"""
-        <h3>{t('features', self.lang)}</h3>
-        <ul>
-            <li>{t('feature_1', self.lang)}</li>
-            <li>{t('feature_2', self.lang)}</li>
-            <li>{t('feature_3', self.lang)}</li>
-            <li>{t('feature_4', self.lang)}</li>
-        </ul>
-        """)
-        
-        layout.addWidget(text)
-        return widget
-    
-    def create_tips_tab(self):
-        """Create the tips tab."""
-        widget = QWidget()
-        layout = QVBoxLayout(widget)
-        
-        text = QTextEdit()
-        text.setReadOnly(True)
-        text.setHtml("""
-        <h3>Tips</h3>
-        <h4>Large Collections:</h4>
-        <ul>
-            <li>Process images in chunks for better performance</li>
-            <li>Use progress bar to track progress</li>
-            <li>Close and reopen app for large collections</li>
-        </ul>
-        
-        <h4>Image Formats:</h4>
-        <ul>
-            <li>Convert all images to same format before comparison</li>
-            <li>Use quality threshold to handle format differences</li>
-        </ul>
-        """)
-        
-        layout.addWidget(text)
-        return widget
 
 
 class SponsorDialog(QDialog):
@@ -649,30 +571,30 @@ class ImageDeduplicatorApp(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.lang = 'en'
+        self.config_file = Path('config.json')
+        self.load_config()
+        
+        # Initialize default values if not in config
+        self.lang = self.config.get('language', 'en')
         self.duplicates = {}
         self.worker = None
         self.comparison_in_progress = False
         self.update_checker = UpdateChecker(__version__)
         self.log_file = str(log_path)
         
-        # Set default style and theme
-        self.current_style = 'Fusion'
-        self.current_theme = 'dark'  # Default to dark theme
+        # Set default style and theme from config
+        self.current_style = self.config.get('style', 'Fusion')
+        self.current_theme = self.config.get('theme', 'dark')
         
         # Load settings
         self.settings = QSettings('ImagesDeduplicator', 'ImageDeduplicator')
-        
-        # Force Fusion style and dark theme
-        self.settings.setValue('style', 'Fusion')
-        self.settings.setValue('theme', 'dark')
         
         # Set up thread pool
         self.thread_pool = QThreadPool()
         
         # Apply the style and theme
-        self.apply_style('Fusion', save=False)
-        self.apply_theme('dark')
+        self.apply_style(self.current_style, save=False)
+        self.apply_theme(self.current_theme)
         
         # Set application icon
         icon_path = os.path.join('assets', 'icon.png')
@@ -690,6 +612,80 @@ class ImageDeduplicatorApp(QMainWindow):
         # Check for updates on startup
         QTimer.singleShot(1000, self.check_for_updates_on_startup)
 
+    def load_config(self):
+        """Load configuration from config.json."""
+        try:
+            if self.config_file.exists():
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    self.config = json.load(f)
+            else:
+                # Create default config if it doesn't exist
+                self.config = {
+                    "language": "en",
+                    "theme": "dark",
+                    "style": "Fusion",
+                    "comparison": {
+                        "similarity_threshold": 85,
+                        "recursive_search": True
+                    }
+                }
+                self.save_config()
+        except (json.JSONDecodeError, IOError) as e:
+            logger.error(f"Error loading config: {str(e)}")
+            self.config = {
+                "language": "en",
+                "theme": "dark",
+                "style": "Fusion",
+                "comparison": {
+                    "similarity_threshold": 85,
+                    "recursive_search": True
+                }
+            }
+
+    def save_config(self):
+        """Save configuration to config.json."""
+        try:
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=4, ensure_ascii=False)
+        except IOError as e:
+            logger.error(f"Error saving config: {str(e)}")
+
+    def set_language(self, lang_code):
+        """Change the application language and update the UI."""
+        action = self.sender()
+        if action and action.isChecked():
+            self.lang = lang_code
+            self.config['language'] = lang_code
+            self.save_config()
+            self.menu_manager.update_language(lang_code)
+            self.retranslate_ui()
+
+    def apply_theme(self, theme, apply_style=True):
+        """Apply the selected theme."""
+        self.current_theme = theme
+        self.config['theme'] = theme
+        self.save_config()
+        
+        # Rest of the apply_theme method...
+
+    def apply_style(self, style_name='Fusion', save=True, apply_theme=True):
+        """Apply the selected style."""
+        self.current_style = style_name
+        self.config['style'] = style_name
+        self.save_config()
+        
+        # Rest of the apply_style method...
+
+    def closeEvent(self, event):
+        """Handle the window close event."""
+        # Save current settings to config
+        self.config['language'] = self.lang
+        self.config['theme'] = self.current_theme
+        self.config['style'] = self.current_style
+        self.save_config()
+        
+        # Rest of the closeEvent method...
+    
     def init_ui(self):
         """Initialize the user interface."""
         self.setWindowTitle(t('app_title', self.lang, version=get_version()))
@@ -704,81 +700,14 @@ class ImageDeduplicatorApp(QMainWindow):
         self.apply_style(self.current_style)
         self.apply_theme(self.current_theme)
         
-        self.setup_menu_bar()
+        # Initialize menu manager
+        self.menu_manager = MenuManager(self, self.lang)
+        self.setMenuBar(self.menu_manager.get_menubar())
+        
         self.setup_central_widget()
         
         # Check for updates
         self.check_for_updates()
-    
-    def setup_menu_bar(self):
-        """Set up the menu bar."""
-        menubar = self.menuBar()
-        
-        # File menu
-        file_menu = menubar.addMenu(t('file', self.lang))
-        
-        # Exit action
-        exit_action = QAction(t('exit', self.lang), self)
-        exit_action.setShortcut('Ctrl+Q')
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-        
-        # Language menu
-        lang_menu = menubar.addMenu(t('language', self.lang))
-        lang_group = QActionGroup(self)
-        lang_group.setExclusive(True)
-        
-        # Language code to name mapping
-        lang_names = {
-            'en': 'English',
-            'it': 'Italiano',
-            'es': 'Español',
-            'pt': 'Português',
-            'fr': 'Français',
-            'de': 'Deutsch',
-        }
-        
-        for lang_code in LANGUAGES:
-            action = QAction(lang_names.get(lang_code, lang_code), self, checkable=True)
-            action.setData(lang_code)
-            action.triggered.connect(lambda checked, l=lang_code: self.set_language(l))
-            
-            if lang_code == self.lang:
-                action.setChecked(True)
-                
-            lang_group.addAction(action)
-            lang_menu.addAction(action)
-        
-        # Help menu
-        help_menu = menubar.addMenu(t('help', self.lang))
-        
-        # About action
-        about_action = QAction(t('about', self.lang), self)
-        about_action.triggered.connect(self.show_about)
-        help_menu.addAction(about_action)
-        
-        # Help action
-        help_action = QAction(t('help', self.lang) + '...', self)
-        help_action.triggered.connect(self.show_help)
-        help_menu.addAction(help_action)
-        
-        # View Logs action
-        view_logs_action = QAction(t('view_logs', self.lang, default="View Logs"), self)
-        view_logs_action.triggered.connect(self.show_log_viewer)
-        help_menu.addAction(view_logs_action)
-        
-        # Add separator
-        help_menu.addSeparator()
-        
-        # Check for updates action
-        update_action = QAction(t('check_for_updates', self.lang), self)
-        update_action.triggered.connect(lambda: self.check_for_updates())
-        help_menu.addAction(update_action)
-        
-        # Sponsor menu
-        sponsor_action = QAction("❤️ " + t('sponsor', self.lang), self)
-        sponsor_action.triggered.connect(self.show_sponsor)
-        menubar.addAction(sponsor_action)
     
     def setup_central_widget(self):
         """Set up the central widget."""
@@ -911,35 +840,36 @@ class ImageDeduplicatorApp(QMainWindow):
         action = self.sender()
         if action and action.isChecked():
             self.lang = action.data()
+            self.menu_manager.update_language(lang_code)
             self.retranslate_ui()
-    
+        
     def retranslate_ui(self):
         """Retranslate all UI elements to the current language."""
         self.setWindowTitle(t('app_title', self.lang, version=get_version()))
+        self.status_bar.showMessage(t('ready', self.lang))
         
-        # Update menu bar
-        self.menuBar().actions()[0].setText(t('file', self.lang))  # File menu
-        self.menuBar().actions()[1].setText(t('language', self.lang))  # Language menu
-        self.menuBar().actions()[2].setText(t('help', self.lang))  # Help menu
+    def closeEvent(self, event):
+        """Handle the window close event."""
+        # Stop the update checker thread
+        if hasattr(self, 'update_checker'):
+            if hasattr(self.update_checker, 'worker'):
+                if self.update_checker.worker:
+                    self.update_checker.worker.stop()
+            
+        # Clean up thread
+        if hasattr(self, 'thread') and isinstance(self.thread, QThread):
+            self.thread.quit()
+            self.thread.wait()
+            self.thread.deleteLater()
         
-        # Update buttons and labels
-        self.compare_button.setText(t('compare_images', self.lang))
-        self.select_all_button.setText(t('select_all', self.lang))
-        self.delete_selected_button.setText(t('delete_selected', self.lang))
-        self.delete_all_button.setText(t('delete_all_duplicates', self.lang))
+        # Clean up worker
+        if hasattr(self, 'worker'):
+            if self.worker:
+                self.worker.stop()
+                self.worker.deleteLater()
         
-        # Update folder selection
-        self.folder_label.setText(t('select_folder', self.lang))
-        self.browse_button.setText(t('browse', self.lang))
-        self.recursive_check.setText(t('search_subfolders', self.lang))
-        
-        # Update preview frames
-        for widget in self.findChildren(QGroupBox):
-            if 'duplicate' in widget.title().lower():
-                widget.setTitle(t('duplicate_image_preview', self.lang))
-            elif 'original' in widget.title().lower():
-                widget.setTitle(t('original_image_preview', self.lang))
-    
+        event.accept()
+
     def browse_folder(self):
         """Open a folder selection dialog."""
         folder = QFileDialog.getExistingDirectory(
@@ -957,13 +887,18 @@ class ImageDeduplicatorApp(QMainWindow):
         """Start the image comparison process."""
         folder = self.folder_entry.text().strip()
         if not folder:
-            self.update_status(t('please_select_folder', self.lang))
+            QMessageBox.warning(self, t('warning', self.lang), t('no_folder_selected', self.lang))
             return
-            
-        if self.comparison_in_progress:
-            self.update_status(t('comparison_in_progress', self.lang))
+
+        if not os.path.isdir(folder):
+            QMessageBox.warning(self, t('warning', self.lang), t('invalid_folder', self.lang))
             return
-            
+
+        # Get comparison settings from config
+        comparison = self.config.get('comparison', {})
+        similarity_threshold = comparison.get('similarity_threshold', 85)
+        recursive = comparison.get('recursive_search', True)
+
         self.comparison_in_progress = True
         self.compare_button.setEnabled(False)
         self.update_status(t('scanning_folder', self.lang, folder=folder))
@@ -977,7 +912,8 @@ class ImageDeduplicatorApp(QMainWindow):
         # Create and start worker
         self.worker = ImageComparisonWorker(
             folder,
-            self.recursive_check.isChecked()
+            recursive=recursive,
+            similarity_threshold=similarity_threshold
         )
         
         # Connect signals
@@ -1024,12 +960,16 @@ class ImageDeduplicatorApp(QMainWindow):
     
     def update_preview(self):
         """Update the preview panes with the selected duplicate and original images."""
+        if not self.comparison_in_progress:
+            self._load_preview_images()
+
+    def _load_preview_images(self):
+        """Internal method to load and display preview images."""
         selected_items = self.duplicates_list.selectedItems()
         if not selected_items:
             return
             
         selected_item = selected_items[0]
-        # Get the tuple of (duplicate_path, original_path)
         file_paths = selected_item.data(Qt.ItemDataRole.UserRole)
         
         if not file_paths or not isinstance(file_paths, tuple) or len(file_paths) != 2:
@@ -1040,77 +980,41 @@ class ImageDeduplicatorApp(QMainWindow):
         duplicate_path, original_path = file_paths
         
         try:
-            # Load and display the duplicate image
+            # Load and display duplicate image
             if os.path.exists(duplicate_path):
-                duplicate_pixmap = QPixmap(duplicate_path)
-                if not duplicate_pixmap.isNull():
-                    # Scale the pixmap to fit the preview area while maintaining aspect ratio
-                    duplicate_pixmap = duplicate_pixmap.scaled(
-                        self.duplicate_preview.size(),
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-                    self.duplicate_preview.setPixmap(duplicate_pixmap)
-                else:
-                    self.duplicate_preview.clear()
+                with Image.open(duplicate_path) as img:
+                    if img.mode == 'P' and 'transparency' in img.info:
+                        img = img.convert('RGBA')
+                    pixmap = QPixmap.fromImage(ImageQt.ImageQt(img))
+                    self.duplicate_preview.setPixmap(pixmap)
             else:
                 self.duplicate_preview.clear()
             
-            # Load and display the original image
+            # Load and display original image
             if os.path.exists(original_path):
-                original_pixmap = QPixmap(original_path)
-                if not original_pixmap.isNull():
-                    original_pixmap = original_pixmap.scaled(
-                        self.original_preview.size(),
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation
-                    )
-                    self.original_preview.setPixmap(original_pixmap)
-                else:
-                    self.original_preview.clear()
+                with Image.open(original_path) as img:
+                    if img.mode == 'P' and 'transparency' in img.info:
+                        img = img.convert('RGBA')
+                    pixmap = QPixmap.fromImage(ImageQt.ImageQt(img))
+                    self.original_preview.setPixmap(pixmap)
             else:
                 self.original_preview.clear()
                     
         except Exception as e:
-            print(f"Error loading preview: {e}")
+            logger.error(f"Error loading preview: {str(e)}")
             self.duplicate_preview.clear()
             self.original_preview.clear()
-    
+
     def resizeEvent(self, event):
         """Handle window resize events to update previews."""
         super().resizeEvent(event)
-        self.update_preview()  # Update previews when window is resized
-    
+        if not self.comparison_in_progress:
+            self._load_preview_images()
+
     def preview_image(self):
         """Preview the selected duplicate and original images."""
-        selected_items = self.duplicates_list.selectedItems()
-        if not selected_items:
-            return
-        
-        # Get the last selected item
-        item = selected_items[-1]
-        duplicate_path, original_path = item.data(Qt.ItemDataRole.UserRole)
-        
-        try:
-            # Load and display duplicate image
-            duplicate_img = Image.open(duplicate_path)
-            duplicate_img = duplicate_img.convert("RGBA")
-            duplicate_pixmap = QPixmap.fromImage(ImageQt.ImageQt(duplicate_img))
-            self.duplicate_preview.setPixmap(duplicate_pixmap)
-            
-            # Load and display original image
-            original_img = Image.open(original_path)
-            original_img = original_img.convert("RGBA")
-            original_pixmap = QPixmap.fromImage(ImageQt.ImageQt(original_img))
-            self.original_preview.setPixmap(original_pixmap)
-            
-        except Exception as e:
-            error_msg = t('error_loading_image', self.lang, error=str(e))
-            QMessageBox.critical(
-                self,
-                t('error', self.lang),
-                error_msg
-            )
+        if not self.comparison_in_progress:
+            self._load_preview_images()
     
     def select_all_duplicates(self):
         """Select all items in the duplicates list."""
@@ -1318,7 +1222,7 @@ class ImageDeduplicatorApp(QMainWindow):
     
     def show_help(self):
         """Show help dialog."""
-        dialog = HelpDialog(self, self.lang)
+        dialog = HelpDialogScript(self, self.lang)
         dialog.exec()
     
     def show_sponsor(self):
@@ -1345,101 +1249,18 @@ class ImageDeduplicatorApp(QMainWindow):
                 t('log_viewer_error', self.lang, default="Failed to open log viewer: {error}").format(error=str(e))
             )
 
-    def closeEvent(self, event):
-        """Handle the window close event."""
-        # Stop any running worker
-        if self.worker and self.comparison_in_progress:
-            self.worker.stop()
-            
-            # Wait for the thread pool to finish
-            self.thread_pool.waitForDone(5000)  # 5 second timeout
-        
-        # Clean up update checker thread if it exists
-        if hasattr(self, 'update_thread') and self.update_thread.isRunning():
-            self.update_thread.quit()
-            self.update_thread.wait(2000)  # Wait up to 2 seconds for thread to finish
-        
-        event.accept()
+    def show_settings(self):
+        """Show the settings dialog."""
+        dialog = SettingsDialog(self, self.lang, self.config)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            pass  # Settings saved automatically through config
 
     def set_language(self, lang_code):
-        """Change the application language and update the UI."""
-        if lang_code == self.lang:
-            return
-            
+        """Change the application language."""
         self.lang = lang_code
-        
-        # Update window title
-        self.setWindowTitle(t('app_title', self.lang, version=get_version()))
-        
-        # Store references to all menus and actions before changing anything
-        menubar = self.menuBar()
-        
-        # Helper function to find menu by title
-        def find_menu(menubar, title):
-            for action in menubar.actions():
-                menu = action.menu()
-                if menu:
-                    # Check both current and English title for better matching
-                    menu_title = menu.title()
-                    if (menu_title and title.lower() in menu_title.lower()) or \
-                       (t(title, 'en').lower() in menu_title.lower()):
-                        return menu
-            return None
-        
-        # Update File menu
-        file_menu = find_menu(menubar, 'file')
-        if file_menu and file_menu.actions():
-            file_menu.setTitle(t('file', self.lang))
-            exit_action = next((a for a in file_menu.actions() if a.text().lower() in ('exit', 'esci', 'sortir', 'beenden', 'sair', 'uscita')), None)
-            if exit_action:
-                exit_action.setText(t('exit', self.lang))
-        
-        # Update Help menu
-        help_menu = find_menu(menubar, 'help')
-        if help_menu and help_menu.actions():
-            help_menu.setTitle(t('help', self.lang))
-            
-            # Update help menu actions
-            for action in help_menu.actions():
-                text = action.text().lower()
-                if 'about' in text:
-                    action.setText(t('about', self.lang))
-                elif 'check for updates' in text.lower():
-                    action.setText(t('check_for_updates', self.lang))
-                elif 'view logs' in text.lower():
-                    action.setText(t('view_logs', self.lang, default="View Logs"))
-        
-        # Update Language menu
-        lang_menu = find_menu(menubar, 'language')
-        if lang_menu:
-            lang_menu.setTitle(t('language', self.lang))
-            
-            # Update language menu items
-            lang_group = lang_menu.findChild(QActionGroup)
-            if lang_group:
-                lang_actions = lang_group.actions()
-                for action in lang_actions:
-                    lang_code = action.data()
-                    # Only update the text if it's a language code (not a custom name)
-                    if action.text() in LANGUAGES:
-                        action.setText(lang_code.upper())
-        
-        # Update Sponsor action (should be the last action in the menu bar)
-        if menubar.actions():
-            last_action = menubar.actions()[-1]
-            if '❤️' in last_action.text():
-                last_action.setText("❤️ " + t('sponsor', self.lang))
-        
-        # Update other UI elements
+        self.menu_manager.update_language(lang_code)
         self.retranslate_ui()
         
-        # Save language preference
-        self.settings.setValue('language', lang_code)
-        
-        # Update status bar
-        if hasattr(self, 'statusBar'):
-            self.statusBar().showMessage(t('language_changed', self.lang))
-    
     def apply_style(self, style_name='Fusion', save=True, apply_theme=True):
         """
         Apply the selected style to the application.

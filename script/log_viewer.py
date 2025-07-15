@@ -146,9 +146,9 @@ class LogViewer(QDialog):
         was_at_bottom = scrollbar.value() == scrollbar.maximum()
         
         # Get selected log level
-        selected_level = self.level_combo.currentText().upper()
-        if selected_level == t('all_levels', self.lang, default="All Levels").upper():
-            selected_level = 'ALL'
+        selected_level = self.level_combo.currentData()
+        if selected_level == "ALL":
+            selected_level = None
             
         # Clear and update content
         self.log_display.clear()
@@ -175,11 +175,9 @@ class LogViewer(QDialog):
                 
             # Add newline for proper formatting
             line = line + '\n'
-            # Default values
-            log_level = 'INFO'
-            show_line = False
             
-            # Check for log level patterns in the line
+            # Get log level from line
+            log_level = None
             if ' - CRITICAL - ' in line:
                 log_level = 'CRITICAL'
             elif ' - ERROR - ' in line:
@@ -191,21 +189,8 @@ class LogViewer(QDialog):
             elif ' - DEBUG - ' in line:
                 log_level = 'DEBUG'
             
-            # Determine if line should be shown based on selected level
-            if selected_level == 'ALL':
-                show_line = True
-            elif selected_level == 'DEBUG':
-                show_line = True
-            elif selected_level == 'INFO' and log_level in ['INFO', 'WARNING', 'ERROR', 'CRITICAL']:
-                show_line = True
-            elif selected_level == 'WARNING' and log_level in ['WARNING', 'ERROR', 'CRITICAL']:
-                show_line = True
-            elif selected_level == 'ERROR' and log_level in ['ERROR', 'CRITICAL']:
-                show_line = True
-            elif selected_level == 'CRITICAL' and log_level == 'CRITICAL':
-                show_line = True
-            
-            if not show_line:
+            # Skip line if it doesn't match selected level
+            if selected_level and log_level != selected_level:
                 continue
             
             # Apply appropriate format based on log level

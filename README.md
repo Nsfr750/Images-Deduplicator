@@ -36,9 +36,17 @@ A powerful desktop application for finding and managing duplicate images in your
   - Multi-language support with dynamic language switching
   - Menu-driven navigation with Help, About, and Sponsor options
   - Status bar with operation feedback
-  - Tabbed Help system with rich content
+  - Tabbed Help system with rich content and search functionality
   - Image preview functionality with side-by-side comparison
   - Built-in log viewer with filtering options
+  - Consistent dark theme across all components for better visibility
+
+- **Help System**
+  - Comprehensive tabbed interface with Usage, Features, and Tips sections
+  - Real-time search with highlighting
+  - Language support for all help content
+  - Dark theme integration with proper text contrast
+  - Organized content with easy navigation
 
 - **File Management**
   - Easy folder selection and browsing
