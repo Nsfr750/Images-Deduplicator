@@ -225,72 +225,6 @@ class ImagePreview(QLabel):
         super().resizeEvent(event)
 
 
-class AboutDialog(QDialog):
-    """About dialog showing application information."""
-    
-    def __init__(self, parent=None, lang='en'):
-        super().__init__(parent)
-        self.lang = lang
-        self.setWindowTitle(t('about', self.lang))
-        self.setMinimumSize(500, 400)
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        
-        self.setup_ui()
-    
-    def setup_ui(self):
-        """Initialize the UI components."""
-        layout = QVBoxLayout(self)
-        
-        # App title and version
-        title = QLabel('Image Deduplicator')
-        title.setStyleSheet("font-size: 18px; font-weight: bold;")
-        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        version = QLabel(f"{t('version', self.lang)}: {get_version()}")
-        version.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        # Description
-        description = QLabel(t('about_description', self.lang))
-        description.setWordWrap(True)
-        description.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        # Features
-        features_frame = QGroupBox(t('features', self.lang))
-        features_layout = QVBoxLayout(features_frame)
-        
-        features = [
-            t('feature_1', self.lang),
-            t('feature_2', self.lang),
-            t('feature_3', self.lang),
-            t('feature_4', self.lang)
-        ]
-        
-        for feature in features:
-            label = QLabel(f"• {feature}")
-            label.setWordWrap(True)
-            features_layout.addWidget(label)
-        
-        # Copyright
-        copyright_label = QLabel(" 2025 Nsfr750")
-        copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
-        # Close button
-        close_button = QPushButton(t('close', self.lang))
-        close_button.clicked.connect(self.accept)
-        
-        # Add widgets to layout
-        layout.addWidget(title)
-        layout.addWidget(version)
-        layout.addSpacing(20)
-        layout.addWidget(description)
-        layout.addSpacing(20)
-        layout.addWidget(features_frame)
-        layout.addStretch()
-        layout.addWidget(copyright_label)
-        layout.addSpacing(10)
-        layout.addWidget(close_button)
-
-
 class SponsorDialog(QDialog):
     """Dialog for sponsoring the project."""
     
@@ -684,8 +618,26 @@ class ImageDeduplicatorApp(QMainWindow):
         self.config['style'] = self.current_style
         self.save_config()
         
-        # Rest of the closeEvent method...
-    
+        # Clean up preview widgets to prevent QPainter errors
+        if hasattr(self, 'duplicate_preview'):
+            self.duplicate_preview.clear()
+        if hasattr(self, 'original_preview'):
+            self.original_preview.clear()
+        
+        # Clean up thread
+        if hasattr(self, 'thread') and isinstance(self.thread, QThread):
+            self.thread.quit()
+            self.thread.wait()
+            self.thread.deleteLater()
+        
+        # Clean up worker
+        if hasattr(self, 'worker'):
+            if self.worker:
+                self.worker.stop()
+                self.worker.deleteLater()
+        
+        event.accept()
+
     def init_ui(self):
         """Initialize the user interface."""
         self.setWindowTitle(t('app_title', self.lang, version=get_version()))
@@ -850,12 +802,18 @@ class ImageDeduplicatorApp(QMainWindow):
         
     def closeEvent(self, event):
         """Handle the window close event."""
-        # Stop the update checker thread
-        if hasattr(self, 'update_checker'):
-            if hasattr(self.update_checker, 'worker'):
-                if self.update_checker.worker:
-                    self.update_checker.worker.stop()
-            
+        # Save current settings to config
+        self.config['language'] = self.lang
+        self.config['theme'] = self.current_theme
+        self.config['style'] = self.current_style
+        self.save_config()
+        
+        # Clean up preview widgets to prevent QPainter errors
+        if hasattr(self, 'duplicate_preview'):
+            self.duplicate_preview.clear()
+        if hasattr(self, 'original_preview'):
+            self.original_preview.clear()
+        
         # Clean up thread
         if hasattr(self, 'thread') and isinstance(self.thread, QThread):
             self.thread.quit()
@@ -870,6 +828,29 @@ class ImageDeduplicatorApp(QMainWindow):
         
         event.accept()
 
+    def init_ui(self):
+        """Initialize the user interface."""
+        self.setWindowTitle(t('app_title', self.lang, version=get_version()))
+        self.setGeometry(100, 100, 1200, 800)
+        
+        # Set up status bar first
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+        self.status_bar.showMessage(t('ready', self.lang))
+        
+        # Apply style and theme
+        self.apply_style(self.current_style)
+        self.apply_theme(self.current_theme)
+        
+        # Initialize menu manager
+        self.menu_manager = MenuManager(self, self.lang)
+        self.setMenuBar(self.menu_manager.get_menubar())
+        
+        self.setup_central_widget()
+        
+        # Check for updates
+        self.check_for_updates()
+    
     def browse_folder(self):
         """Open a folder selection dialog."""
         folder = QFileDialog.getExistingDirectory(
@@ -1143,8 +1124,9 @@ class ImageDeduplicatorApp(QMainWindow):
     
     def show_about(self):
         """Show the about dialog."""
-        dialog = AboutDialog(self, self.lang)
-        dialog.exec()
+        from script.about import AboutDialog
+        about_dialog = AboutDialog(self)
+        about_dialog.exec()
     
     def check_for_updates(self, silent=False):
         """Check for application updates."""
