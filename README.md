@@ -21,7 +21,7 @@ A powerful desktop application for finding and managing duplicate images in your
   - More responsive interface with proper threading
   - Built-in log viewer with filtering capabilities
   - Automatic update checking
-  - Multi-language support (English, Spanish, French, German, Portuguese, Italian)
+  - Multi-language support (English, Italian)
 
 ## Features
 
