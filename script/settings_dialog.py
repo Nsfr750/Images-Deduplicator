@@ -1,178 +1,222 @@
 """
 Settings dialog for Image Deduplicator.
+Handles all application settings including UI, comparison, and quality settings.
 """
 import os
-import logging
+import json
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton,
-    QFileDialog, QCheckBox, QSpinBox, QGroupBox, QFormLayout, QMessageBox,
-    QLineEdit
+    QGroupBox, QFormLayout, QMessageBox, QCheckBox, QSlider, QDialogButtonBox
 )
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 
-logger = logging.getLogger(__name__)
+from script.logger import logger
 
 class SettingsDialog(QDialog):
-    """Dialog for application settings."""
+    """Dialog for all application settings."""
     
     settings_updated = pyqtSignal(dict)  # Signal emitted when settings are saved
     
     def __init__(self, parent=None, lang='en', config=None):
-        """Initialize the settings dialog.
-        
-        Args:
-            parent: Parent widget
-            lang: Current language code
-            config: Current configuration dictionary
-        """
+        """Initialize the settings dialog."""
         super().__init__(parent)
         self.lang = lang
         self.config = config or {}
         self.setWindowTitle(self.tr("Settings"))
-        self.setMinimumSize(500, 400)
+        self.setMinimumSize(600, 600)  # Increased height for new options
         
-        self.init_ui()
+        # Initialize UI
+        self.setup_ui()
         self.load_settings()
     
-    def tr(self, text):
-        """Simple translation helper."""
-        # This is a placeholder - in a real app, you'd use your translation system
-        translations = {
-            'Settings': {'en': 'Settings', 'it': 'Impostazioni'},
-            'Language': {'en': 'Language', 'it': 'Lingua'},
-            'Theme': {'en': 'Theme', 'it': 'Tema'},
-            'Light': {'en': 'Light', 'it': 'Chiaro'},
-            'Dark': {'en': 'Dark', 'it': 'Scuro'},
-            'System': {'en': 'System', 'it': 'Sistema'},
-            'Default Image Folder': {'en': 'Default Image Folder', 'it': 'Cartella Immagini Predefinita'},
-            'Browse': {'en': 'Browse...', 'it': 'Sfoglia...'},
-            'Save': {'en': 'Save', 'it': 'Salva'},
-            'Cancel': {'en': 'Cancel', 'it': 'Annulla'},
-            'Settings saved': {'en': 'Settings saved successfully', 'it': 'Impostazioni salvate con successo'},
-        }
-        return translations.get(text, {}).get(self.lang, text)
-    
-    def init_ui(self):
-        """Initialize the user interface."""
-        layout = QVBoxLayout(self)
+    def retranslate_ui(self):
+        """Update all UI text with current translations."""
+        self.setWindowTitle(self.tr("Settings"))
         
-        # Language settings
-        lang_group = QGroupBox(self.tr("Language"))
-        lang_layout = QFormLayout()
+        # Appearance Group
+        self.appearance_group.setTitle(self.tr("Appearance"))
+        self.language_label.setText(self.tr("Language:"))
+        self.theme_label.setText(self.tr("Theme:"))
         
-        self.language_combo = QComboBox()
-        self.language_combo.addItem("English", "en")
-        self.language_combo.addItem("Italiano", "it")
-        
-        lang_layout.addRow(QLabel(self.tr("Language")), self.language_combo)
-        lang_group.setLayout(lang_layout)
-        
-        # Theme settings
-        theme_group = QGroupBox(self.tr("Theme"))
-        theme_layout = QFormLayout()
-        
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItem(self.tr("System"), "system")
-        self.theme_combo.addItem(self.tr("Light"), "light")
+        # Update theme combo items
+        current_theme = self.theme_combo.currentData()
+        self.theme_combo.clear()
         self.theme_combo.addItem(self.tr("Dark"), "dark")
         
-        theme_layout.addRow(QLabel(self.tr("Theme")), self.theme_combo)
-        theme_group.setLayout(theme_layout)
+        # Set current theme if it exists
+        index = self.theme_combo.findData(current_theme or "dark")
+        if index >= 0:
+            self.theme_combo.setCurrentIndex(index)
         
-        # Default folder settings
-        folder_group = QGroupBox(self.tr("Default Image Folder"))
-        folder_layout = QHBoxLayout()
+        # Comparison Group
+        self.comparison_group.setTitle(self.tr("Comparison Settings"))
+        self.threshold_label.setText(self.tr("Similarity Threshold:"))
+        self.recursive_check.setText(self.tr("Search subdirectories"))
+        self.quality_check.setText(self.tr("Keep better quality images"))
+        self.quality_check.setToolTip(self.tr(
+            "When enabled, keeps the highest quality image from duplicates. "
+            "Quality is determined by resolution and file size."
+        ))
         
-        self.folder_edit = QLineEdit()
-        self.folder_edit.setReadOnly(True)
-        browse_btn = QPushButton(self.tr("Browse..."))
-        browse_btn.clicked.connect(self.browse_folder)
+        # File Handling Group
+        self.file_handling_group.setTitle(self.tr("File Handling"))
+        self.preserve_metadata_check.setText(self.tr("Preserve metadata when keeping best quality"))
+        self.preserve_metadata_check.setToolTip(self.tr(
+            "When enabled, preserves EXIF, IPTC, and XMP metadata "
+            "from the original image when keeping the best quality version."
+        ))
         
-        folder_layout.addWidget(self.folder_edit)
-        folder_layout.addWidget(browse_btn)
-        folder_group.setLayout(folder_layout)
+        # Update threshold value display
+        self.update_threshold_display()
+    
+    def update_threshold_display(self):
+        """Update the threshold percentage display."""
+        self.threshold_value.setText(f"{self.threshold_slider.value()}%")
+    
+    def setup_ui(self):
+        """Setup the user interface."""
+        layout = QVBoxLayout(self)
         
-        # Add all groups to main layout
-        layout.addWidget(lang_group)
-        layout.addWidget(theme_group)
-        layout.addWidget(folder_group)
+        # Appearance Group
+        self.appearance_group = QGroupBox()
+        appearance_layout = QVBoxLayout()
         
-        # Add stretch to push buttons to bottom
-        layout.addStretch()
+        # Language selection
+        lang_layout = QHBoxLayout()
+        self.language_label = QLabel()
+        lang_layout.addWidget(self.language_label)
+        
+        self.language_combo = QComboBox()
+        self.language_combo.addItem(self.tr("English"), "en")
+        self.language_combo.addItem(self.tr("Italiano"), "it")
+        lang_layout.addWidget(self.language_combo, 1)
+        appearance_layout.addLayout(lang_layout)
+        
+        # Theme selection
+        theme_layout = QHBoxLayout()
+        self.theme_label = QLabel()
+        theme_layout.addWidget(self.theme_label)
+        
+        self.theme_combo = QComboBox()
+        theme_layout.addWidget(self.theme_combo, 1)
+        appearance_layout.addLayout(theme_layout)
+        
+        self.appearance_group.setLayout(appearance_layout)
+        
+        # Comparison Group
+        self.comparison_group = QGroupBox()
+        comparison_layout = QVBoxLayout()
+        
+        # Similarity threshold
+        threshold_layout = QHBoxLayout()
+        self.threshold_label = QLabel()
+        threshold_layout.addWidget(self.threshold_label)
+        
+        self.threshold_slider = QSlider(Qt.Orientation.Horizontal)
+        self.threshold_slider.setRange(70, 100)
+        self.threshold_slider.setTickInterval(5)
+        self.threshold_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self.threshold_slider.valueChanged.connect(self.update_threshold_display)
+        
+        self.threshold_value = QLabel()
+        threshold_layout.addWidget(self.threshold_slider, 1)
+        threshold_layout.addWidget(self.threshold_value)
+        comparison_layout.addLayout(threshold_layout)
+        
+        # Recursive search
+        self.recursive_check = QCheckBox()
+        comparison_layout.addWidget(self.recursive_check)
+        
+        # Keep better quality option
+        self.quality_check = QCheckBox()
+        comparison_layout.addWidget(self.quality_check)
+        
+        self.comparison_group.setLayout(comparison_layout)
+        
+        # File Handling Group
+        self.file_handling_group = QGroupBox()
+        file_handling_layout = QVBoxLayout()
+        
+        # Metadata preservation
+        self.preserve_metadata_check = QCheckBox()
+        file_handling_layout.addWidget(self.preserve_metadata_check)
+        
+        # Add a note about metadata support
+        metadata_note = QLabel(self.tr(
+            "Note: Metadata preservation is supported for JPEG, PNG, TIFF, and WebP formats."
+        ))
+        metadata_note.setWordWrap(True)
+        metadata_note.setStyleSheet("color: #888; font-style: italic;")
+        file_handling_layout.addWidget(metadata_note)
+        
+        self.file_handling_group.setLayout(file_handling_layout)
         
         # Dialog buttons
-        button_layout = QHBoxLayout()
-        button_layout.addStretch()
+        self.button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | 
+            QDialogButtonBox.StandardButton.Cancel
+        )
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
         
-        self.save_btn = QPushButton(self.tr("Save"))
-        self.save_btn.clicked.connect(self.save_settings)
+        # Add all to main layout
+        layout.addWidget(self.appearance_group)
+        layout.addWidget(self.comparison_group)
+        layout.addWidget(self.file_handling_group)
+        layout.addStretch()
+        layout.addWidget(self.button_box)
         
-        cancel_btn = QPushButton(self.tr("Cancel"))
-        cancel_btn.clicked.connect(self.reject)
-        
-        button_layout.addWidget(cancel_btn)
-        button_layout.addWidget(self.save_btn)
-        
-        layout.addLayout(button_layout)
+        # Set up translations
+        self.retranslate_ui()
     
     def load_settings(self):
-        """Load current settings into the UI."""
-        # Language
+        """Load settings from config."""
+        # Appearance
         current_lang = self.config.get('language', 'en')
         index = self.language_combo.findData(current_lang)
         if index >= 0:
             self.language_combo.setCurrentIndex(index)
         
-        # Theme
-        current_theme = self.config.get('theme', 'system')
-        index = self.theme_combo.findData(current_theme)
-        if index >= 0:
-            self.theme_combo.setCurrentIndex(index)
+        current_theme = self.config.get('theme', 'dark')
+        self.theme_combo.clear()
+        self.theme_combo.addItem(self.tr("Dark"), "dark")
+        theme_index = self.theme_combo.findData(current_theme)
+        if theme_index >= 0:
+            self.theme_combo.setCurrentIndex(theme_index)
         
-        # Default folder
-        default_folder = self.config.get('default_folder', '')
-        self.folder_edit.setText(default_folder)
-    
-    def browse_folder(self):
-        """Open a folder selection dialog."""
-        folder = QFileDialog.getExistingDirectory(
-            self,
-            self.tr("Select Default Image Folder"),
-            self.folder_edit.text() or str(Path.home())
-        )
+        # Comparison settings
+        self.threshold_slider.setValue(int(self.config.get('similarity_threshold', 85)))
+        self.recursive_check.setChecked(bool(self.config.get('recursive', True)))
+        self.quality_check.setChecked(bool(self.config.get('keep_better_quality', True)))
         
-        if folder:
-            self.folder_edit.setText(folder)
+        # File handling settings
+        self.preserve_metadata_check.setChecked(bool(self.config.get('preserve_metadata', True)))
     
-    def save_settings(self):
-        """Save settings and close the dialog."""
-        try:
-            # Get values from UI
-            settings = {
-                'language': self.language_combo.currentData(),
-                'theme': self.theme_combo.currentData(),
-                'default_folder': self.folder_edit.text()
-            }
+    def get_settings(self):
+        """Get the current settings as a dictionary."""
+        return {
+            # Appearance
+            'language': self.language_combo.currentData(),
+            'theme': self.theme_combo.currentData(),
             
-            # Emit signal with new settings
-            self.settings_updated.emit(settings)
+            # Comparison settings
+            'similarity_threshold': self.threshold_slider.value(),
+            'recursive': self.recursive_check.isChecked(),
+            'keep_better_quality': self.quality_check.isChecked(),
             
-            # Show success message
-            QMessageBox.information(
-                self,
-                self.tr("Settings"),
-                self.tr("Settings saved"),
-                QMessageBox.StandardButton.Ok
-            )
-            
-            # Close the dialog
-            self.accept()
-            
-        except Exception as e:
-            logger.error(f"Error saving settings: {e}", exc_info=True)
-            QMessageBox.critical(
-                self,
-                self.tr("Error"),
-                f"Error saving settings: {str(e)}"
-            )
+            # File handling settings
+            'preserve_metadata': self.preserve_metadata_check.isChecked(),
+        }
+    
+    def changeEvent(self, event):
+        """Handle language change events."""
+        if event.type() == QEvent.Type.LocaleChange:
+            self.retranslate_ui()
+        super().changeEvent(event)
+    
+    def accept(self):
+        """Handle dialog acceptance."""
+        settings = self.get_settings()
+        self.settings_updated.emit(settings)
+        super().accept()

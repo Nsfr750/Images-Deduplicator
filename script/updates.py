@@ -2,7 +2,6 @@
 Update checking functionality for the Images-Deduplicator application.
 """
 import json
-import logging
 import sys
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any
@@ -17,11 +16,10 @@ from PyQt6.QtGui import QDesktopServices, QTextCursor
 
 # Get the application directory
 APP_DIR = Path(__file__).parent.parent
-UPDATES_FILE = APP_DIR / 'updates.json'
+UPDATES_FILE = APP_DIR / 'config' /'updates.json'
 
-# Configure logging
-logger = logging.getLogger(__name__)
-
+# Import logger from our centralized module
+from script.logger import logger
 from script import translations, version
 
 # Get the current version

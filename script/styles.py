@@ -6,7 +6,7 @@ from PyQt6.QtWidgets import QApplication, QStyleFactory
 from PyQt6.QtGui import QPalette, QColor
 from PyQt6.QtCore import Qt
 
-logger = logging.getLogger(__name__)
+from script.logger import logger
 
 def setup_dark_theme(app):
     """Set up the dark theme palette."""

@@ -4,7 +4,8 @@ UI module for Image Deduplicator application.
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 import os
-import logging
+import json
+from datetime import datetime
 from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl, QThread
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
@@ -23,9 +24,10 @@ from script.menu import MenuManager
 from script.updates import UpdateChecker
 from script.version import __version__
 from script.workers import ImageComparisonWorker
-from script.settings_dialog import SettingsDialog  # Add this import
-
-logger = logging.getLogger(__name__)
+from script.settings_dialog import SettingsDialog  
+from script.logger import logger  # Import logger from our centralized module
+from script.undo_manager import UndoManager, FileOperation
+import sip
 
 class ImagePreview(QLabel):
     """Custom widget for displaying image previews with aspect ratio preservation."""
@@ -136,6 +138,10 @@ class UI(QMainWindow):
         # Set up thread pool
         self.thread_pool = QThreadPool()
         
+        # Initialize undo manager
+        self.undo_manager = UndoManager()
+        self.undo_action = None  # Will be set by MenuManager
+        
         # Initialize UI
         self.init_ui()
         self.setup_connections()
@@ -150,7 +156,7 @@ class UI(QMainWindow):
         
         # Check for updates on startup
         QTimer.singleShot(1000, self.check_for_updates_on_startup)
-    
+
     def init_ui(self):
         """Initialize the user interface."""
         self.setWindowTitle(t('app_title', self.lang, version=__version__))
@@ -391,19 +397,19 @@ class UI(QMainWindow):
         self.progress_label.setText(t('scanning_folder', self.lang))
         self.status_bar.showMessage(t('scanning_folder', self.lang))
         
-        # Disable UI during comparison
-        self.set_ui_enabled(False)
-        self.comparison_in_progress = True
+        # Get settings from config
+        recursive = self.config.get('recursive', True)
+        similarity_threshold = self.config.get('similarity_threshold', 85)
+        keep_better_quality = self.config.get('keep_better_quality', True)
+        preserve_metadata = self.config.get('preserve_metadata', True)
         
-        # Get comparison settings from config
-        similarity_threshold = self.config.get('comparison', {}).get('similarity_threshold', 85)
-        recursive = self.config.get('comparison', {}).get('recursive_search', True)
-        
-        # Create and start the worker
+        # Create and configure worker
         self.worker = ImageComparisonWorker(
             folder=folder,
             recursive=recursive,
-            similarity_threshold=similarity_threshold
+            similarity_threshold=similarity_threshold,
+            keep_better_quality=keep_better_quality,
+            preserve_metadata=preserve_metadata
         )
         
         # Connect signals
@@ -413,7 +419,9 @@ class UI(QMainWindow):
         
         # Start the worker in the thread pool
         self.thread_pool.start(self.worker)
-    
+        self.comparison_in_progress = True
+        self.set_ui_enabled(False)
+
     def _handle_worker_error(self, msg):
         """Handle errors from the worker thread."""
         QMessageBox.critical(self, t('error', self.lang), msg)
@@ -446,7 +454,7 @@ class UI(QMainWindow):
                 
         except Exception as e:
             error_msg = f"Error processing comparison results: {str(e)}"
-            logger.error(error_msg, exc_info=True)
+            logger.error(f"Error processing comparison results: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
                 t('error', self.lang),
@@ -495,30 +503,28 @@ class UI(QMainWindow):
             
             # Get the first selected item
             item = selected_items[0]
-            try:
-                # Get the stored data (original_path, duplicate_path)
-                original_path, duplicate_path = item.data(Qt.ItemDataRole.UserRole)
-                
-                # Load and display original image
-                self.load_image_preview(original_path, self.original_preview, self.original_path)
-                
-                # Load and display duplicate image
-                self.load_image_preview(duplicate_path, self.duplicate_preview, self.duplicate_path)
-                
-            except (TypeError, ValueError) as e:
-                logger.error(f"Error getting image paths from selected item: {e}")
-                QMessageBox.critical(
-                    self,
-                    t('error', self.lang),
-                    t('error_loading_preview', self.lang)
-                )
+            item_data = item.data(Qt.ItemDataRole.UserRole)
+            
+            # Handle different data formats
+            if isinstance(item_data, tuple) and len(item_data) == 2:
+                # Standard format: (original_path, duplicate_path)
+                original_path, duplicate_path = item_data
+            elif isinstance(item_data, str):
+                # Single path provided, use it for both
+                original_path = duplicate_path = item_data
+            else:
+                raise ValueError(f"Unexpected item data format: {type(item_data)}")
+            
+            # Load and display images
+            self.load_image_preview(original_path, self.original_preview, self.original_path)
+            self.load_image_preview(duplicate_path, self.duplicate_preview, self.duplicate_path)
                 
         except Exception as e:
             logger.error(f"Error in update_preview: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
                 t('error', self.lang),
-                f"An unexpected error occurred: {str(e)}"
+                f"An error occurred while loading the preview: {str(e)}"
             )
     
     def load_image_preview(self, image_path, preview_widget, path_label):
@@ -558,31 +564,49 @@ class UI(QMainWindow):
             path_label.setText(img_path.name)
             path_label.setToolTip(str(img_path.absolute()))
             
-            # Load and process image using Pillow
+            # Load and process image using Pillow with additional error handling
             try:
-                with Image.open(img_path) as img:
-                    # Convert to RGB if needed (e.g., for PNG with transparency)
-                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                        background = Image.new('RGB', img.size, (60, 63, 65))  # Match dark theme
-                        background.paste(img, mask=img.split()[-1])  # Paste with alpha mask
-                        img = background
+                # First try to open the file with a timeout
+                img = None
+                try:
+                    with Image.open(img_path) as img:
+                        # Create a copy of the image data in memory
+                        img.load()
+                        
+                        # Store in a variable to use outside the context manager
+                        img_data = img.copy()
+                except Exception as open_error:
+                    logger.error(f"Error opening image {img_path}: {open_error}", exc_info=True)
+                    path_label.setText(t('error_loading_image', self.lang))
+                    return
+                
+                try:
+                    # Process the image (now using the in-memory copy)
+                    if img_data.mode in ('RGBA', 'LA') or (img_data.mode == 'P' and 'transparency' in img_data.info):
+                        background = Image.new('RGB', img_data.size, (60, 63, 65))  # Match dark theme
+                        background.paste(img_data, mask=img_data.split()[-1])  # Paste with alpha mask
+                        img_data = background
+                    elif img_data.mode != 'RGB':
+                        img_data = img_data.convert('RGB')
                     
                     # Convert to QPixmap
-                    qimg = ImageQt.ImageQt(img)
+                    qimg = ImageQt.ImageQt(img_data)
                     pixmap = QPixmap.fromImage(qimg)
                     
-                    # Set the pixmap
-                    if hasattr(preview_widget, 'setPixmap'):
+                    # Set the pixmap if the widget is still valid
+                    if not sip.isdeleted(preview_widget) and hasattr(preview_widget, 'setPixmap'):
                         preview_widget.setPixmap(pixmap)
-                    else:
-                        logger.error(f"Preview widget does not support setPixmap: {preview_widget}")
-                        
-            except Exception as img_error:
-                logger.error(f"Error processing image {img_path}: {img_error}", exc_info=True)
-                path_label.setText(t('error_processing_image', self.lang))
+                    
+                except Exception as process_error:
+                    logger.error(f"Error processing image {img_path}: {process_error}", exc_info=True)
+                    path_label.setText(t('error_processing_image', self.lang))
+                
+            except Exception as e:
+                logger.error(f"Unexpected error with image {img_path}: {e}", exc_info=True)
+                path_label.setText(t('error_loading_image', self.lang))
                 
         except Exception as e:
-            logger.error(f"Error loading image {image_path}: {e}", exc_info=True)
+            logger.error(f"Error in load_image_preview for {image_path}: {e}", exc_info=True)
             path_label.setText(t('error_loading_image', self.lang))
     
     def select_all_duplicates(self):
@@ -594,40 +618,85 @@ class UI(QMainWindow):
         self.duplicates_list.clearSelection()
     
     def delete_selected(self):
-        """Delete the selected duplicate files."""
+        """Delete the selected duplicate files with undo support."""
         selected_items = self.duplicates_list.selectedItems()
         if not selected_items:
+            QMessageBox.information(
+                self,
+                t('info', self.lang),
+                t('no_items_selected', self.lang)
+            )
             return
+
+        # Get the full paths of selected items - handle both tuples and strings
+        selected_paths = []
+        for item in selected_items:
+            path_data = item.data(Qt.ItemDataRole.UserRole)
+            # If it's a tuple (original, duplicate), take the duplicate path
+            if isinstance(path_data, tuple) and len(path_data) == 2:
+                selected_paths.append(path_data[1])  # Take the duplicate path
+            else:
+                selected_paths.append(str(path_data))
         
-        # Confirm deletion
-        reply = QMessageBox.question(
+        # Ask for confirmation
+        confirm = QMessageBox.question(
             self,
-            t('confirm_deletion', self.lang),
-            t('confirm_delete_selected', self.lang).format(count=len(selected_items)),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            t('confirm_delete', self.lang),
+            t('confirm_delete_selected', self.lang, count=len(selected_paths)),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.StandardButton.Yes:
-            deleted = 0
-            for item in selected_items:
-                _, duplicate_path = item.data(Qt.ItemDataRole.UserRole)
-                try:
-                    Path(duplicate_path).unlink()
-                    deleted += 1
-                except Exception as e:
-                    logger.error(f"Error deleting file {duplicate_path}: {e}")
-            
-            # Update UI
-            self.status_bar.showMessage(t('deleted_files', self.lang).format(count=deleted))
-            self.update_duplicates_list()
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        # Process deletions with undo support
+        failed_deletions = []
+        
+        for i, file_path in enumerate(selected_paths):
+            try:
+                # Move to trash instead of deleting
+                trash_path = self.undo_manager.move_to_trash(file_path)
+                
+                # Create an operation for undo
+                operation = FileOperation(
+                    operation_type='delete',
+                    source=trash_path,
+                    metadata={'original_path': file_path}
+                )
+                self.undo_manager.add_operation(operation)
+                
+                # Update the UI
+                if i < len(selected_items):
+                    self.duplicates_list.takeItem(self.duplicates_list.row(selected_items[i]))
+                
+                # Enable undo action
+                if self.undo_action:
+                    self.undo_action.setEnabled(True)
+                    
+            except Exception as e:
+                logger.error(f"Failed to delete {file_path}: {e}")
+                error_msg = f"{file_path}: {str(e)}" if isinstance(file_path, str) else f"{file_path[1]}: {str(e)}"
+                failed_deletions.append(error_msg)
+        
+        # Show error message if any deletions failed
+        if failed_deletions:
+            QMessageBox.warning(
+                self,
+                t('error', self.lang),
+                t('failed_to_delete_items', self.lang, 
+                  count=len(failed_deletions), 
+                  error='\n'.join(failed_deletions))
+            )
+        
+        # Update the UI
+        self.update_button_states()
     
     def delete_all_duplicates(self):
         """Delete all duplicate files, keeping only the originals."""
         if self.duplicates_list.count() == 0:
             return
         
-        # Confirm deletion
+        # Show confirmation dialog
         reply = QMessageBox.question(
             self,
             t('confirm_deletion', self.lang),
@@ -637,19 +706,39 @@ class UI(QMainWindow):
         )
         
         if reply == QMessageBox.StandardButton.Yes:
+            self.set_ui_enabled(False)
+            self.status_bar.showMessage(t('deleting_files', self.lang))
+            QApplication.processEvents()  # Update UI
+            
             deleted = 0
+            errors = []
+            
             for i in range(self.duplicates_list.count()):
-                item = self.duplicates_list.item(i)
-                _, duplicate_path = item.data(Qt.ItemDataRole.UserRole)
                 try:
+                    _, duplicate_path = self.duplicates_list.item(i).data(Qt.ItemDataRole.UserRole)
                     Path(duplicate_path).unlink()
                     deleted += 1
                 except Exception as e:
-                    logger.error(f"Error deleting file {duplicate_path}: {e}")
+                    error_msg = f"{duplicate_path}: {str(e)}"
+                    logger.error(f"Error deleting file: {error_msg}")
+                    errors.append(error_msg)
+            
+            # Show result
+            if errors:
+                error_details = "\n\n".join(errors[:10])  # Show first 10 errors to avoid huge dialog
+                if len(errors) > 10:
+                    error_details += f"\n\n... and {len(errors) - 10} more errors"
+                
+                QMessageBox.warning(
+                    self,
+                    t('error_deleting', self.lang),
+                    f"{t('some_files_not_deleted', self.lang)}\n\n{error_details}"
+                )
             
             # Update UI
-            self.status_bar.showMessage(t('deleted_files', self.lang).format(count=deleted))
+            self.status_bar.showMessage(t('files_deleted', self.lang).format(count=deleted))
             self.update_duplicates_list()
+            self.set_ui_enabled(True)
     
     def update_button_states(self):
         """Update the state of the action buttons based on the current selection."""
@@ -682,7 +771,7 @@ class UI(QMainWindow):
     
     def show_log_viewer(self):
         """Show the log viewer dialog."""
-        dialog = LogViewer(self, self.lang)
+        dialog = LogViewer(self)  
         dialog.exec()
     
     def show_settings(self):
@@ -889,6 +978,42 @@ class UI(QMainWindow):
                 )
             self.status_bar.showMessage(t('update_check_failed', self.lang))
     
+    def undo_last_operation(self):
+        """Undo the last file operation."""
+        if not self.undo_manager.can_undo():
+            QMessageBox.information(
+                self,
+                t('info', self.lang),
+                t('edit_menu.nothing_to_undo', self.lang)
+            )
+            return
+            
+        try:
+            if self.undo_manager.undo_last_operation():
+                # Show success message
+                self.status_bar.showMessage(t('edit_menu.undo_success', self.lang))
+                
+                # Update undo action state
+                if self.undo_action:
+                    self.undo_action.setEnabled(self.undo_manager.can_undo())
+                    
+                # Refresh the duplicates list
+                self.compare_images()
+            else:
+                QMessageBox.warning(
+                    self,
+                    t('error', self.lang),
+                    t('edit_menu.undo_failed', self.lang, error="Unknown error")
+                )
+                
+        except Exception as e:
+            logger.error(f"Error during undo: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                t('error', self.lang),
+                t('edit_menu.undo_failed', self.lang, error=str(e))
+            )
+    
     def closeEvent(self, event):
         """
         Handle the close event to ensure proper cleanup of resources.
@@ -897,17 +1022,94 @@ class UI(QMainWindow):
             event: The close event
         """
         # Stop any running operations
-        if hasattr(self, 'worker') and self.worker is not None:
-            self.worker.stop()
-            self.worker.wait()
+        if hasattr(self, 'worker') and self.worker and self.worker.isRunning():
+            reply = QMessageBox.question(
+                self,
+                t('operation_in_progress', self.lang),
+                t('confirm_close_during_operation', self.lang),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.No:
+                event.ignore()
+                return
+            else:
+                # Try to stop the worker gracefully
+                self.worker.requestInterruption()
+                self.worker.wait(2000)  # Wait up to 2 seconds for clean exit
         
-        # Save window geometry
-        self.settings.setValue('geometry', self.saveGeometry())
-        self.settings.setValue('windowState', self.saveState())
+        # Clean up resources
+        if hasattr(self, 'update_thread') and self.update_thread.isRunning():
+            self.update_thread.quit()
+            self.update_thread.wait()
         
-        # Log application shutdown
+        # Save window state and geometry
+        self.settings.setValue("windowState", self.saveState())
+        self.settings.setValue("geometry", self.saveGeometry())
+        
+        # Save config
+        self._save_config()
+        
+        # Log application exit
         logger.info("Image Deduplicator shutting down")
         logger.info("=" * 50)
         
         # Accept the close event
         event.accept()
+
+    def save_duplicates_report(self):
+        """Save a report of all duplicates to a file."""
+        if not self.duplicates:
+            QMessageBox.information(
+                self,
+                t('info', self.lang),
+                t('no_duplicates_found_message', self.lang)
+            )
+            return
+            
+        # Get save file path
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            t('save_report', self.lang),
+            'duplicates_report.txt',
+            'Text Files (*.txt);;All Files (*)'
+        )
+        
+        if not file_path:
+            return  # User cancelled
+            
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                # Write header
+                f.write(f"=== Image Deduplicator Report ===\n")
+                f.write(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"Total duplicate groups: {len(self.duplicates)}\n")
+                f.write(f"Total duplicate files: {sum(len(dupes) for dupes in self.duplicates.values())}\n\n")
+                
+                # Write each group of duplicates
+                for i, (original, duplicates) in enumerate(self.duplicates.items(), 1):
+                    f.write(f"\n--- Group {i} ---\n")
+                    f.write(f"Original: {original}\n")
+                    f.write("Duplicates:\n")
+                    
+                    # Sort duplicates by path for consistent ordering
+                    for dup in sorted(duplicates):
+                        # Get file size in KB
+                        size_kb = os.path.getsize(dup) / 1024
+                        # Get modification time
+                        mtime = datetime.fromtimestamp(os.path.getmtime(dup))
+                        f.write(f"  - {dup} ({size_kb:.2f} KB, modified: {mtime})\n")
+                    
+            # Show success message
+            self.status_bar.showMessage(t('report_saved', self.lang, path=file_path))
+            logger.info(f"Saved duplicates report to {file_path}")
+            
+        except Exception as e:
+            error_msg = t('error_saving_report', self.lang, error=str(e))
+            logger.error(f"Error saving report: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                t('error', self.lang),
+                error_msg
+            )

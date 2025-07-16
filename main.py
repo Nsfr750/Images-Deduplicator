@@ -35,26 +35,10 @@ from script.styles import setup_styles, apply_theme, apply_style
 from script.translations import t, LANGUAGES
 from script.updates import UpdateChecker
 from script.version import get_version, __version__
-from script.settings import SettingsDialog
+from script.settings_dialog import SettingsDialog
 from script.menu import MenuManager
 from script.UI import UI
-import logging
-
-# Configure logging
-LOG_FILE = "image_dedup.log"
-log_dir = Path("logs")
-log_dir.mkdir(exist_ok=True)
-log_path = log_dir / LOG_FILE
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(log_path, encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger(__name__)
+from script.logger import logger
 
 class WorkerSignals(QObject):
     """Defines the signals available from a running worker thread."""
@@ -192,19 +176,5 @@ def main():
 
 
 if __name__ == "__main__":
-    # Set up basic logging
-    log_dir = Path("logs")
-    log_dir.mkdir(exist_ok=True)
-    
-    # Configure root logger
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_dir / 'image_dedup.log', encoding='utf-8'),
-            logging.StreamHandler()
-        ]
-    )
-    
     # Start the application
     main()

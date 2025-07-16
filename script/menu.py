@@ -20,6 +20,10 @@ class MenuManager:
         self.file_menu = self.menubar.addMenu(t('file', self.lang))
         self.setup_file_menu()
         
+        # Edit menu
+        self.edit_menu = self.menubar.addMenu(t('edit', self.lang))
+        self.setup_edit_menu()
+        
         # Language menu
         self.lang_menu = self.menubar.addMenu(t('language', self.lang))
         self.setup_language_menu()
@@ -33,11 +37,32 @@ class MenuManager:
         
     def setup_file_menu(self):
         """Set up the File menu."""
+        # Save Report action
+        self.action_save_report = QAction(t('save_report', self.lang), self.parent)
+        self.action_save_report.setShortcut('Ctrl+S')
+        self.action_save_report.triggered.connect(self.parent.save_duplicates_report)
+        self.file_menu.addAction(self.action_save_report)
+        
+        # Add separator
+        self.file_menu.addSeparator()
+        
         # Exit action
         self.action_exit = QAction(t('exit', self.lang), self.parent)
         self.action_exit.setShortcut('Ctrl+Q')
         self.action_exit.triggered.connect(self.parent.close)
         self.file_menu.addAction(self.action_exit)
+        
+    def setup_edit_menu(self):
+        """Set up the Edit menu."""
+        # Undo action
+        self.action_undo = QAction(t('edit_menu.undo', self.lang), self.parent)
+        self.action_undo.setShortcut('Ctrl+Z')
+        self.action_undo.triggered.connect(self.parent.undo_last_operation)
+        self.action_undo.setEnabled(False)  # Will be enabled when there are operations to undo
+        self.edit_menu.addAction(self.action_undo)
+        
+        # Store a reference to the action for later enabling/disabling
+        self.parent.undo_action = self.action_undo
         
     def setup_language_menu(self):
         """Set up the Language menu."""
