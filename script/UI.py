@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 import os
 import logging
-from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl
+from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl, QThread
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
@@ -833,42 +833,31 @@ class UI(QMainWindow):
             
             def update_check_complete(update_available, version_info):
                 if update_available:
-                    msg = t('update_available', self.lang).format(
-                        current=__version__,
-                        latest=version_info.get('tag_name', 'unknown')
+                    self._show_update_dialog(
+                        t('update_available', self.lang).format(
+                            current=__version__,
+                            latest=version_info.get('version', 'unknown')
+                        ),
+                        version_info.get('version', ''),
+                        version_info.get('notes', '')
                     )
-                    
-                    # Add release notes if available
-                    if 'body' in version_info:
-                        msg += f"\n\n{version_info['body']}"
-                    
-                    # Add download URL if available
-                    if 'html_url' in version_info:
-                        msg += f"\n\n{t('download_at', self.lang)}: {version_info['html_url']}"
-                    
-                    # Show update dialog
-                    reply = QMessageBox.information(
-                        self,
-                        t('update_available_title', self.lang),
-                        msg,
-                        QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Ignore,
-                        QMessageBox.StandardButton.Ok
-                    )
-                    
-                    if reply == QMessageBox.StandardButton.Ok and 'html_url' in version_info:
-                        QDesktopServices.openUrl(QUrl(version_info['html_url']))
+                    self.status_bar.showMessage(t('update_available', self.lang))
                 elif not silent:
                     QMessageBox.information(
                         self,
                         t('no_updates_title', self.lang),
                         t('no_updates_available', self.lang).format(version=__version__)
                     )
-                
-                self.status_bar.showMessage(t('ready', self.lang))
+                    self.status_bar.showMessage(t('ready', self.lang))
             
             # Run update check in a separate thread
             self.update_checker = UpdateChecker(current_version=__version__)
-            self.update_checker.update_available.connect(update_check_complete)
+            self.update_checker.update_available.connect(
+                lambda version_info: update_check_complete(True, version_info)
+            )
+            self.update_checker.no_updates.connect(
+                lambda: update_check_complete(False, {})
+            )
             self.update_checker.error_occurred.connect(
                 lambda error: (
                     logger.error(f"Error checking for updates: {error}"),
@@ -880,7 +869,15 @@ class UI(QMainWindow):
                     ) if not silent else None
                 )
             )
-            self.update_checker.start()
+            
+            # Create and start a thread for the update check
+            self.update_thread = QThread()
+            self.update_checker.moveToThread(self.update_thread)
+            self.update_thread.started.connect(self.update_checker.check_for_updates)
+            self.update_checker.no_updates.connect(self.update_thread.quit)
+            self.update_checker.update_available.connect(self.update_thread.quit)
+            self.update_checker.error_occurred.connect(lambda _: self.update_thread.quit())
+            self.update_thread.start()
             
         except Exception as e:
             logger.error(f"Error in check_for_updates: {e}", exc_info=True)

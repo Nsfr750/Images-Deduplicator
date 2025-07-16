@@ -1,0 +1,32 @@
+2025-07-16 17:44:41,368 - script.styles - INFO - Applying theme: dark
+2025-07-16 17:44:41,371 - script.UI - INFO - ==================================================
+2025-07-16 17:44:41,371 - script.UI - INFO - Starting Image Deduplicator v1.5.0
+2025-07-16 17:44:41,371 - script.UI - INFO - Log file: logs\image_dedup.log
+2025-07-16 17:44:44,541 - script.UI - ERROR - Error in check_for_updates: 'UpdateChecker' object has no attribute 'start'
+Traceback (most recent call last):
+  File "X:\GitHub\Images-Deduplicator\script\UI.py", line 883, in check_for_updates
+    self.update_checker.start()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UpdateChecker' object has no attribute 'start'
+2025-07-16 17:45:53,916 - script.UI - INFO - Image Deduplicator shutting down
+2025-07-16 17:45:53,917 - script.UI - INFO - ==================================================
+2025-07-16 17:45:59,004 - script.styles - INFO - Applying theme: dark
+2025-07-16 17:45:59,007 - script.UI - INFO - ==================================================
+2025-07-16 17:45:59,007 - script.UI - INFO - Starting Image Deduplicator v1.5.0
+2025-07-16 17:45:59,007 - script.UI - INFO - Log file: logs\image_dedup.log
+2025-07-16 17:46:04,439 - script.updates - INFO - Checking for updates...
+2025-07-16 17:46:04,735 - script.updates - INFO - No updates available
+2025-07-16 17:46:09,862 - script.updates - INFO - Checking for updates...
+2025-07-16 17:46:09,994 - script.updates - INFO - No updates available
+2025-07-16 17:46:13,860 - script.UI - INFO - Image Deduplicator shutting down
+2025-07-16 17:46:13,861 - script.UI - INFO - ==================================================
+2025-07-16 17:48:25,731 - script.styles - INFO - Applying theme: dark
+2025-07-16 17:48:25,734 - script.UI - INFO - ==================================================
+2025-07-16 17:48:25,735 - script.UI - INFO - Starting Image Deduplicator v1.5.0
+2025-07-16 17:48:25,735 - script.UI - INFO - Log file: logs\image_dedup.log
+2025-07-16 17:48:29,743 - script.updates - INFO - Checking for updates...
+2025-07-16 17:48:30,154 - script.updates - INFO - No updates available
+2025-07-16 17:49:12,238 - script.workers - INFO - Scanning for images in: X:\[NEW]\Dati Test\IMG
+2025-07-16 17:49:12,240 - script.workers - INFO - Found 65 images to process
+2025-07-16 17:49:13,964 - script.UI - INFO - Image comparison finished
+2025-07-16 17:49:13,964 - script.UI - INFO - Found 12 duplicates to display
