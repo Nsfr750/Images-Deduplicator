@@ -113,8 +113,13 @@ htmlcov/
 *.test.*
 *.sample.*
 *.example.*
-go.bat
-Comparatore.exe
-Comparatore.bat
-*.bat
 plan.md
+
+# da ignorare
+Nuitka_config.yaml
+Nuitka_crash_report.xml
+comp.bat
+#compila.bat
+docs/HELP-ITA.exe
+docs/HELP-ENG.exe
+compila.bat

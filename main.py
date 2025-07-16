@@ -624,17 +624,27 @@ class ImageDeduplicatorApp(QMainWindow):
         if hasattr(self, 'original_preview'):
             self.original_preview.clear()
         
-        # Clean up thread
+        # Clean up main worker thread
         if hasattr(self, 'thread') and isinstance(self.thread, QThread):
             self.thread.quit()
             self.thread.wait()
             self.thread.deleteLater()
         
-        # Clean up worker
+        # Clean up main worker
         if hasattr(self, 'worker'):
             if self.worker:
                 self.worker.stop()
                 self.worker.deleteLater()
+        
+        # Clean up update thread and worker
+        if hasattr(self, 'update_thread') and isinstance(self.update_thread, QThread):
+            if self.update_thread.isRunning():
+                self.update_thread.quit()
+                self.update_thread.wait()
+            self.update_thread.deleteLater()
+            
+        if hasattr(self, 'update_worker'):
+            self.update_worker.deleteLater()
         
         event.accept()
 
@@ -814,17 +824,27 @@ class ImageDeduplicatorApp(QMainWindow):
         if hasattr(self, 'original_preview'):
             self.original_preview.clear()
         
-        # Clean up thread
+        # Clean up main worker thread
         if hasattr(self, 'thread') and isinstance(self.thread, QThread):
             self.thread.quit()
             self.thread.wait()
             self.thread.deleteLater()
         
-        # Clean up worker
+        # Clean up main worker
         if hasattr(self, 'worker'):
             if self.worker:
                 self.worker.stop()
                 self.worker.deleteLater()
+        
+        # Clean up update thread and worker
+        if hasattr(self, 'update_thread') and isinstance(self.update_thread, QThread):
+            if self.update_thread.isRunning():
+                self.update_thread.quit()
+                self.update_thread.wait()
+            self.update_thread.deleteLater()
+            
+        if hasattr(self, 'update_worker'):
+            self.update_worker.deleteLater()
         
         event.accept()
 
