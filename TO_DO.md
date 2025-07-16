@@ -12,7 +12,7 @@
 - [x] Implement dark mode theme support
 - [x] Add drag and drop support for folder selection
 - [ ] Add image thumbnails in the list view
-- [ ] Add keyboard shortcuts for common actions
+- [x] Add keyboard shortcuts for common actions
 - [x] Add visual feedback for long-running operations
 - [x] Add language selection menu
 - [x] Enhance About dialog with version information
@@ -51,7 +51,7 @@
 - [ ] Add confirmation dialogs for destructive actions
 
 ## Localization
-- [x] Complete translations for all PyQt6 dialogs
+- [ ] Complete translations for all PyQt6 dialogs
 - [ ] Add language auto-detection
 
 ## Documentation
@@ -62,8 +62,6 @@
 - [ ] Add API documentation
 
 ## Future Enhancements
-- [ ] Implement AI-based image comparison
-- [ ] Add batch processing for multiple folders
 - [ ] Create installers for different platforms
 
 ## Completed in v1.5.0
