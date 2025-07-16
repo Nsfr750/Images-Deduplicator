@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 1.5.1 (2025-07-17)
+### Added
+- Added robust error handling for image preview loading
+- Improved memory management for image processing
+- Added widget safety checks to prevent crashes
+- Added detailed error logging for image loading issues
+
+### Fixed
+- Fixed application crash when selecting images with invalid formats
+- Fixed handling of temporary files during metadata preservation
+- Improved error messages for better user feedback
+- Fixed import issue with sip module in PyQt6
+
 ## Version 1.5.0 (2025-07-10)
 ### Added
 - Added comprehensive logging system with log viewer
