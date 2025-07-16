@@ -27,7 +27,7 @@ from script.workers import ImageComparisonWorker
 from script.settings_dialog import SettingsDialog  
 from script.logger import logger  # Import logger from our centralized module
 from script.undo_manager import UndoManager, FileOperation
-import sip
+from PyQt6 import sip
 
 class ImagePreview(QLabel):
     """Custom widget for displaying image previews with aspect ratio preservation."""

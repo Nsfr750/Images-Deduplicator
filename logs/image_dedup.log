@@ -1,9 +1,0 @@
-2025-07-16 23:00:39,156 - script.logger - INFO - Applying theme: dark
-2025-07-16 23:00:39,159 - script.logger - INFO - ==================================================
-2025-07-16 23:00:39,159 - script.logger - INFO - Starting Image Deduplicator v1.5.0
-2025-07-16 23:00:39,159 - script.logger - INFO - Log file: logs\image_dedup.log
-2025-07-16 23:00:55,889 - script.logger - INFO - Scanning for images in: X:\1
-2025-07-16 23:00:55,890 - script.logger - INFO - Found 50 images to process
-2025-07-16 23:00:55,893 - script.logger - INFO - Processing duplicate groups...
-2025-07-16 23:00:55,911 - script.logger - INFO - Image comparison finished
-2025-07-16 23:00:55,911 - script.logger - INFO - Found 7 duplicates to display
