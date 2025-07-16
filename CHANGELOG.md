@@ -72,7 +72,7 @@
 
 ## Version 1.4.0 (2025-06-23)
 ### Added
-- Multi-language support (English, Spanish, French, German, Portuguese, Italian)
+- Multi-language support (English, Italian)
 - Automatic update checking on startup
 - Language selection menu
 - Enhanced About dialog with version information
