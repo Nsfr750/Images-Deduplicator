@@ -64,7 +64,7 @@ coverage.xml
 *.cover
 
 # Logs
-*.log
+#*.log
 
 # Compiled files
 *.pyc
@@ -116,10 +116,6 @@ htmlcov/
 plan.md
 
 # da ignorare
-Nuitka_config.yaml
-Nuitka_crash_report.xml
 comp.bat
-#compila.bat
 docs/HELP-ITA.exe
 docs/HELP-ENG.exe
-compila.bat

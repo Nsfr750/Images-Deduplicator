@@ -1,0 +1,27 @@
+# Default owners for everything in the repo
+*       @Nsfr750
+
+# Documentation
+/docs/    @Nsfr750
+/README.md @Nsfr750
+/CONTRIBUTING.md @Nsfr750
+/PREREQUISITES.md @Nsfr750
+/TO_DO.md @Nsfr750
+/CHANGELOG.md @Nsfr750
+/updates.json @Nsfr750
+/config.json @Nsfr750
+
+# Source code
+/script/  @Nsfr750
+main.py   @Nsfr750
+
+# Configuration files
+/requirements*.txt @Nsfr750
+/setup.py @Nsfr750
+
+# GitHub specific
+/.github/ @Nsfr750
+
+# Build and distribution
+/dist/    @NsfR750
+/build/   @Nsfr750

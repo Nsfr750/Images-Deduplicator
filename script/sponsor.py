@@ -2,10 +2,10 @@
 Sponsor dialog for the Image Deduplicator application.
 """
 from PyQt6.QtWidgets import (
-    QDialog, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QWidget, QSizePolicy
+    QDialog, QVBoxLayout, QPushButton, QLabel, QHBoxLayout, QWidget, QSizePolicy, QApplication
 )
 from PyQt6.QtCore import Qt, QUrl
-from PyQt6.QtGui import QDesktopServices, QIcon, QPixmap
+from PyQt6.QtGui import QDesktopServices, QIcon, QPixmap, QPalette, QColor
 
 class SponsorDialog(QDialog):
     """Sponsor dialog with links to support the project."""
@@ -17,43 +17,77 @@ class SponsorDialog(QDialog):
         self.setMinimumSize(600, 200)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
         
+        # Apply Fusion style
+        QApplication.setStyle("Fusion")
+        
+        # Create dark palette
+        dark_palette = QPalette()
+        dark_palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Base, QColor(35, 35, 35))
+        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(25, 25, 25))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        dark_palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+        
+        # Apply the palette
+        self.setPalette(dark_palette)
+        
         # Set application style
         self.setStyleSheet("""
             QDialog {
-                background-color: #f8f9fa;
+                background-color: #2d2d2d;
             }
             QLabel {
-                color: #2c3e50;
+                color: #f0f0f0;
                 font-size: 12pt;
                 margin: 10px 0;
             }
             QPushButton {
-                background-color: #4a90e2;
-                color: white;
-                border: none;
+                background-color: #3a3a3a;
+                color: #f0f0f0;
+                border: 1px solid #555;
                 padding: 12px 20px;
-                border-radius: 6px;
+                border-radius: 4px;
                 font-weight: bold;
                 min-width: 180px;
                 margin: 5px;
                 text-align: center;
             }
             QPushButton:hover {
-                background-color: #357abd;
+                background-color: #4a4a4a;
+                border: 1px solid #777;
+            }
+            QPushButton:pressed {
+                background-color: #2a2a2a;
             }
             #closeButton {
-                background-color: #6c757d;
+                background-color: #3a3a3a;
                 min-width: 120px;
             }
             #closeButton:hover {
-                background-color: #5a6268;
+                background-color: #4a4a4a;
             }
             #buttonContainer {
-                background-color: white;
-                border-radius: 8px;
+                background-color: #353535;
+                border-radius: 6px;
                 padding: 15px;
                 margin: 10px;
-                border: 1px solid #dee2e6;
+                border: 1px solid #444;
+            }
+            #headerLabel {
+                font-size: 16pt;
+                font-weight: bold;
+                color: #4a9cff;
+                padding: 10px;
+                border-bottom: 1px solid #444;
+                margin-bottom: 15px;
             }
         """)
         
@@ -65,7 +99,7 @@ class SponsorDialog(QDialog):
         
         # Header
         header = QLabel("❤️ Support Image Deduplicator")
-        header.setStyleSheet("font-size: 16pt; font-weight: bold; color: #2c3e50;")
+        header.setObjectName("headerLabel")
         header.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         # Description
@@ -80,18 +114,34 @@ class SponsorDialog(QDialog):
         button_container = QWidget()
         button_container.setObjectName("buttonContainer")
         button_layout = QVBoxLayout(button_container)
+        button_layout.setSpacing(10)
         
-        # Sponsor buttons
+        # Sponsor buttons with icons and colors
         buttons = [
-            ("💖 Sponsor on GitHub", "https://github.com/sponsors/Nsfr750"),
-            ("💬 Join Discord", "https://discord.gg/q5Pcgrju"),
-            ("☕ Buy Me a Coffee", "https://paypal.me/3dmega"),
-            ("🎗️ Join Patreon", "https://www.patreon.com/Nsfr750")
+            ("💖 Sponsor on GitHub", "https://github.com/sponsors/Nsfr750", "#2d2d2d"),
+            ("💬 Join Discord", "https://discord.gg/q5Pcgrju", "#5865F2"),
+            ("☕ Buy Me a Coffee", "https://paypal.me/3dmega", "#FFDD00"),
+            ("🎗️ Join Patreon", "https://www.patreon.com/Nsfr750", "#FF424D")
         ]
         
-        for text, url in buttons:
+        for text, url, color in buttons:
             btn = QPushButton(text)
             btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color};
+                    color: {'#000000' if color == '#FFDD00' else '#ffffff'};
+                    border: 1px solid {color};
+                    padding: 10px 15px;
+                    border-radius: 4px;
+                    font-weight: bold;
+                    text-align: center;
+                }}
+                QPushButton:hover {{
+                    background-color: transparent;
+                    color: {color};
+                }}
+            """)
             btn.clicked.connect(lambda checked, u=url: self.open_url(u))
             button_layout.addWidget(btn)
         

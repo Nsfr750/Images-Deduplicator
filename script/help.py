@@ -288,13 +288,42 @@ class HelpDialog(QDialog):
         lang_layout.setContentsMargins(0, 0, 0, 0)
         
         self.lang_label = QLabel(t('language', self.lang) + ":")
-        self.lang_combo = QComboBox()
-        self.lang_combo.addItems([code.upper() for code in LANGUAGES])
-        self.lang_combo.setCurrentText(self.lang.upper())
-        self.lang_combo.currentTextChanged.connect(self.change_language)
+        
+        # Create language buttons
+        self.english_button = QPushButton("English")
+        self.english_button.setCheckable(True)
+        self.english_button.setChecked(self.lang == 'en')
+        self.english_button.clicked.connect(lambda: self.change_language('en'))
+        
+        self.italian_button = QPushButton("Italiano")
+        self.italian_button.setCheckable(True)
+        self.italian_button.setChecked(self.lang == 'it')
+        self.italian_button.clicked.connect(lambda: self.change_language('it'))
+        
+        # Style the active button
+        button_style = """
+            QPushButton {
+                background-color: #2d2d2d;
+                border: 1px solid #444;
+                padding: 5px 12px;
+                border-radius: 4px;
+                margin: 0 2px;
+            }
+            QPushButton:checked {
+                background-color: #357abd;
+                border-color: #2c6599;
+            }
+            QPushButton:hover {
+                background-color: #3a3a3a;
+            }
+        """
+        self.english_button.setStyleSheet(button_style)
+        self.italian_button.setStyleSheet(button_style)
         
         lang_layout.addWidget(self.lang_label)
-        lang_layout.addWidget(self.lang_combo)
+        lang_layout.addWidget(self.english_button)
+        lang_layout.addWidget(self.italian_button)
+        lang_layout.addStretch()
         
         # Add search layout to header
         header_layout.addLayout(search_layout)
@@ -339,8 +368,9 @@ class HelpDialog(QDialog):
         layout.addLayout(button_layout)
         
         # Set tab order
-        self.setTabOrder(self.search_input, self.lang_combo)
-        self.setTabOrder(self.lang_combo, self.tabs)
+        self.setTabOrder(self.search_input, self.english_button)
+        self.setTabOrder(self.english_button, self.italian_button)
+        self.setTabOrder(self.italian_button, self.tabs)
         self.setTabOrder(self.tabs, self.close_button)
     
     def create_search_options_menu(self):
@@ -639,8 +669,13 @@ class HelpDialog(QDialog):
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         
+        # Create a widget to hold the scroll area's contents
         content_widget = QWidget()
-        content_layout = QVBoxLayout()  # No parent widget
+        
+        # Create the main layout for the content widget
+        content_layout = QVBoxLayout(content_widget)  # Set parent widget here
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(15)
         
         # Title and introduction
         title = QLabel(t('help_usage_title', self.lang, version=get_version()))
@@ -656,12 +691,16 @@ class HelpDialog(QDialog):
         intro.setStyleSheet("""
             font-size: 14px;
             margin-bottom: 20px;
-            color: #34495e;
+            color: #e0e0e0;
         """)
+        
+        # Add title and intro to content layout
+        content_layout.addWidget(title)
+        content_layout.addWidget(intro)
         
         # Features section
         features_group = QGroupBox(t('help_features_title', self.lang))
-        features_layout = QVBoxLayout()  # No parent widget
+        features_layout = QVBoxLayout(features_group)  # Set parent widget here
         
         features_text = QTextBrowser()
         features_text.setReadOnly(True)
@@ -674,22 +713,29 @@ class HelpDialog(QDialog):
             padding: 15px;
         """)
         
-        features_content = f"""
+        features_content = """
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;"><b>{t('help_feature_1', self.lang)}</b></li>
-            <li style="margin-bottom: 10px;"><b>{t('help_feature_2', self.lang)}</b></li>
-            <li style="margin-bottom: 10px;"><b>{t('help_feature_3', self.lang)}</b></li>
-            <li style="margin-bottom: 10px;"><b>{t('help_feature_4', self.lang)}</b></li>
+            <li style="margin-bottom: 10px;"><b>{}</b></li>
+            <li style="margin-bottom: 10px;"><b>{}</b></li>
+            <li style="margin-bottom: 10px;"><b>{}</b></li>
+            <li style="margin-bottom: 10px;"><b>{}</b></li>
         </ul>
-        """
+        """.format(
+            t('help_feature_1', self.lang),
+            t('help_feature_2', self.lang),
+            t('help_feature_3', self.lang),
+            t('help_feature_4', self.lang)
+        )
         
         features_text.setHtml(features_content)
         features_layout.addWidget(features_text)
-        features_group.setLayout(features_layout)
+        
+        # Add features group to content layout
+        content_layout.addWidget(features_group)
         
         # Usage steps section
         steps_group = QGroupBox(t('help_usage_title_2', self.lang))
-        steps_layout = QVBoxLayout()  # No parent widget
+        steps_layout = QVBoxLayout(steps_group)  # Set parent widget here
         
         steps_text = QTextBrowser()
         steps_text.setReadOnly(True)
@@ -702,29 +748,38 @@ class HelpDialog(QDialog):
             padding: 15px;
         """)
         
-        steps_content = f"""
+        steps_content = """
         <ol style="list-style-type: decimal; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_usage_step_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_usage_step_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_usage_step_3', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_usage_step_4', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_usage_step_5', self.lang)}
-                <ul style="list-style-type: square; margin-left: 30px;">
-                    <li><b>{t('help_usage_select_all', self.lang)}</b></li>
-                    <li><b>{t('help_usage_delete_selected', self.lang)}</b></li>
-                    <li><b>{t('help_usage_delete_all', self.lang)}</b></li>
-                </ul>
-            </li>
+            <li style="margin-bottom: 10px;">{}</li>
+            <li style="margin-bottom: 10px;">{}</li>
+            <li style="margin-bottom: 10px;">{}</li>
+            <li style="margin-bottom: 10px;">{}</li>
+            <li style="margin-bottom: 10px;">{}<ul style="list-style-type: square; margin-left: 30px;">
+                <li><b>{}</b></li>
+                <li><b>{}</b></li>
+                <li><b>{}</b></li>
+            </ul></li>
         </ol>
-        """
+        """.format(
+            t('help_usage_step_1', self.lang),
+            t('help_usage_step_2', self.lang),
+            t('help_usage_step_3', self.lang),
+            t('help_usage_step_4', self.lang),
+            t('help_usage_step_5', self.lang),
+            t('help_usage_select_all', self.lang),
+            t('help_usage_delete_selected', self.lang),
+            t('help_usage_delete_all', self.lang)
+        )
         
         steps_text.setHtml(steps_content)
         steps_layout.addWidget(steps_text)
-        steps_group.setLayout(steps_layout)
+        
+        # Add steps group to content layout
+        content_layout.addWidget(steps_group)
         
         # Supported formats section
         formats_group = QGroupBox(t('help_supported_formats', self.lang))
-        formats_layout = QVBoxLayout()  # No parent widget
+        formats_layout = QVBoxLayout(formats_group)  # Set parent widget here
         
         formats_text = QTextBrowser()
         formats_text.setReadOnly(True)
@@ -737,64 +792,35 @@ class HelpDialog(QDialog):
             padding: 15px;
         """)
         
-        formats_content = f"""
+        formats_content = """
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_formats_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_formats_2', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{}</li>
+            <li style="margin-bottom: 10px;">{}</li>
         </ul>
-        """
+        """.format(
+            t('help_formats_1', self.lang),
+            t('help_formats_2', self.lang)
+        )
         
         formats_text.setHtml(formats_content)
         formats_layout.addWidget(formats_text)
-        formats_group.setLayout(formats_layout)
         
-        # Website link
-        website_group = QGroupBox(t('help_visit_website', self.lang))
-        website_layout = QVBoxLayout()  # No parent widget
-        
-        website_text = QTextBrowser()
-        website_text.setReadOnly(True)
-        website_text.setStyleSheet("""
-            font-family: Arial;
-            font-size: 12pt;
-            background: #1a1a1a;
-            border: 1px solid #333333;
-            border-radius: 8px;
-            padding: 15px;
-        """)
-        
-        website_content = f"""
-        <p style="margin-bottom: 10px;">
-            <a href="https://github.com/Nsfr750/Images-Deduplicator" 
-               style="color: #4a90e2; text-decoration: none;"
-               onclick="window.open(this.href); return false;">
-                https://github.com/Nsfr750/Images-Deduplicator
-            </a>
-        </p>
-        """
-        
-        website_text.setHtml(website_content)
-        website_text.setOpenExternalLinks(True)
-        website_layout.addWidget(website_text)
-        website_group.setLayout(website_layout)
-        
-        # Add all groups to content layout
-        content_layout.addWidget(title)
-        content_layout.addWidget(intro)
-        content_layout.addWidget(features_group)
-        content_layout.addWidget(steps_group)
+        # Add formats group to content layout
         content_layout.addWidget(formats_group)
-        content_layout.addWidget(website_group)
+        
+        # Add stretch to push content to the top
         content_layout.addStretch()
         
-        # Set content widget and scroll area
-        content_widget.setLayout(content_layout)
+        # Set the content widget as the scroll area's widget
         scroll.setWidget(content_widget)
         
-        # Create layout for usage tab and set it
-        layout = QVBoxLayout()
-        layout.addWidget(scroll)
-        self.usage_tab.setLayout(layout)
+        # Create a layout for the tab and add the scroll area
+        tab_layout = QVBoxLayout()
+        tab_layout.addWidget(scroll)
+        tab_layout.setContentsMargins(0, 0, 0, 0)
+        
+        # Set the layout on the tab widget
+        self.usage_tab.setLayout(tab_layout)
     
     def setup_features_tab(self):
         """Setup the features tab content."""
@@ -804,7 +830,9 @@ class HelpDialog(QDialog):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         
         content_widget = QWidget()
-        content_layout = QVBoxLayout()  # No parent widget
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(15)
         
         # Title
         title = QLabel(t('help_features_title_full', self.lang))
@@ -817,7 +845,7 @@ class HelpDialog(QDialog):
         
         # Image Comparison section
         image_group = QGroupBox(t('help_features_image_title', self.lang))
-        image_layout = QVBoxLayout()  # No parent widget
+        image_layout = QVBoxLayout(image_group)
         
         image_text = QTextBrowser()
         image_text.setReadOnly(True)
@@ -840,11 +868,10 @@ class HelpDialog(QDialog):
         
         image_text.setHtml(image_content)
         image_layout.addWidget(image_text)
-        image_group.setLayout(image_layout)
         
         # Batch Operations section
         batch_group = QGroupBox(t('help_features_batch_title', self.lang))
-        batch_layout = QVBoxLayout()  # No parent widget
+        batch_layout = QVBoxLayout(batch_group)
         
         batch_text = QTextBrowser()
         batch_text.setReadOnly(True)
@@ -867,11 +894,10 @@ class HelpDialog(QDialog):
         
         batch_text.setHtml(batch_content)
         batch_layout.addWidget(batch_text)
-        batch_group.setLayout(batch_layout)
         
         # Quality Control section
         quality_group = QGroupBox(t('help_features_quality_title', self.lang))
-        quality_layout = QVBoxLayout()  # No parent widget
+        quality_layout = QVBoxLayout(quality_group)
         
         quality_text = QTextBrowser()
         quality_text.setReadOnly(True)
@@ -894,7 +920,6 @@ class HelpDialog(QDialog):
         
         quality_text.setHtml(quality_content)
         quality_layout.addWidget(quality_text)
-        quality_group.setLayout(quality_layout)
         
         # Add all groups to content layout
         content_layout.addWidget(title)
@@ -904,12 +929,12 @@ class HelpDialog(QDialog):
         content_layout.addStretch()
         
         # Set content widget and scroll area
-        content_widget.setLayout(content_layout)
         scroll.setWidget(content_widget)
         
         # Create layout for features tab and set it
         layout = QVBoxLayout()
         layout.addWidget(scroll)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.features_tab.setLayout(layout)
     
     def setup_tips_tab(self):
@@ -920,7 +945,9 @@ class HelpDialog(QDialog):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         
         content_widget = QWidget()
-        content_layout = QVBoxLayout()  # No parent widget
+        content_layout = QVBoxLayout(content_widget)
+        content_layout.setContentsMargins(10, 10, 10, 10)
+        content_layout.setSpacing(15)
         
         # Title
         title = QLabel(t('help_tips_title', self.lang))
@@ -933,7 +960,7 @@ class HelpDialog(QDialog):
         
         # Large Collections section
         large_group = QGroupBox(t('help_tips_large_title', self.lang))
-        large_layout = QVBoxLayout()  # No parent widget
+        large_layout = QVBoxLayout(large_group)
         
         large_text = QTextBrowser()
         large_text.setReadOnly(True)
@@ -956,11 +983,10 @@ class HelpDialog(QDialog):
         
         large_text.setHtml(large_content)
         large_layout.addWidget(large_text)
-        large_group.setLayout(large_layout)
         
         # Image Formats section
         formats_group = QGroupBox(t('help_tips_formats_title', self.lang))
-        formats_layout = QVBoxLayout()  # No parent widget
+        formats_layout = QVBoxLayout(formats_group)
         
         formats_text = QTextBrowser()
         formats_text.setReadOnly(True)
@@ -983,11 +1009,10 @@ class HelpDialog(QDialog):
         
         formats_text.setHtml(formats_content)
         formats_layout.addWidget(formats_text)
-        formats_group.setLayout(formats_layout)
         
         # Performance section
         perf_group = QGroupBox(t('help_tips_perf_title', self.lang))
-        perf_layout = QVBoxLayout()  # No parent widget
+        perf_layout = QVBoxLayout(perf_group)
         
         perf_text = QTextBrowser()
         perf_text.setReadOnly(True)
@@ -1010,7 +1035,6 @@ class HelpDialog(QDialog):
         
         perf_text.setHtml(perf_content)
         perf_layout.addWidget(perf_text)
-        perf_group.setLayout(perf_layout)
         
         # Add all groups to content layout
         content_layout.addWidget(title)
@@ -1020,33 +1044,54 @@ class HelpDialog(QDialog):
         content_layout.addStretch()
         
         # Set content widget and scroll area
-        content_widget.setLayout(content_layout)
         scroll.setWidget(content_widget)
         
         # Create layout for tips tab and set it
         layout = QVBoxLayout()
         layout.addWidget(scroll)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.tips_tab.setLayout(layout)
     
     def change_language(self, lang_code):
         """Change the UI language."""
-        self.lang = lang_code.lower()
+        if lang_code == self.lang:
+            return  # No change needed
+            
+        self.lang = lang_code
+        
+        # Update button states
+        self.english_button.setChecked(lang_code == 'en')
+        self.italian_button.setChecked(lang_code == 'it')
+        
+        # Update UI
         self.setWindowTitle(t('help', self.lang))
         self.retranslate_ui()
         
-        # Update search history combo placeholder
+        # Update search options menu
+        self.search_options_button.setMenu(self.create_search_options_menu())
+        
+        # Update search input placeholder
         self.search_input.setPlaceholderText(t('search_help', self.lang))
         
-        # Update search options menu
-        self.case_sensitive_action.setText(t('search_case_sensitive', self.lang))
-        self.whole_words_action.setText(t('search_whole_words', self.lang))
-        self.highlight_action.setText(t('search_highlight', self.lang))
-        self.fuzzy_action.setText(t('search_fuzzy', self.lang))
+        # Update close button text
+        self.close_button.setText(t('help_close', self.lang))
+        
+        # Update tab names
+        self.tabs.setTabText(0, t('usage', self.lang))
+        self.tabs.setTabText(1, t('help_features', self.lang))
+        self.tabs.setTabText(2, t('help_tips', self.lang))
+        
+        # Update language label
+        self.lang_label.setText(t('language', self.lang) + ":")
         
         # Update tab contents
         self.setup_usage_tab()
         self.setup_features_tab()
         self.setup_tips_tab()
+        
+        # Re-apply search if there was one
+        if hasattr(self, 'last_search') and self.last_search:
+            self.perform_search()
     
     def retranslate_ui(self):
         """Update all UI text elements to the current language."""

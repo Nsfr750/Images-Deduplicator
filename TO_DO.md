@@ -52,9 +52,6 @@
 
 ## Localization
 - [x] Complete translations for all PyQt6 dialogs
-- [ ] Add more language translations
-- [ ] Implement RTL language support
-- [ ] Create translation documentation
 - [ ] Add language auto-detection
 
 ## Documentation
