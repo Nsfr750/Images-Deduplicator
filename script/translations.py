@@ -70,6 +70,7 @@ TRANSLATIONS = {
         'qt_version': 'PyQt Version:',
         'cpu_info': 'CPU:',
         'memory_info': 'RAM:',
+        'github': 'GitHub',
         
         # Help dialog
         'help_title': 'Image Deduplicator Help',
@@ -130,7 +131,13 @@ TRANSLATIONS = {
         'log_level': 'Log Level',
         'all_levels': 'All Levels',
         'refresh': 'Refresh',
-        
+        'select_log_file': 'Select Log File',
+        'no_logs_found': 'No logs found.',
+        'log_level_filters': 'Log Level Filters',
+        'clear_log': 'Clear Log',
+        'save_as': 'Save As',
+        'no_logs_available': 'No logs available.',
+
         # Settings
         'settings': 'Settings',
         'appearance': 'Appearance',
@@ -150,10 +157,14 @@ TRANSLATIONS = {
         
         # Edit menu
         'edit_menu': {
-            'undo': 'Undo',
-            'nothing_to_undo': 'Nothing to undo',
-            'undo_success': 'Undo successful',
-            'undo_failed': 'Failed to undo operation: {error}',
+            'edit_menu.undo': 'Undo',
+            'edit_menu.nothing_to_undo': 'Nothing to undo',
+            'edit_menu.undo_success': 'Undo successful',
+            'edit_menu.undo_failed': 'Failed to undo operation: {error}',
+            'edit_menu.empty_trash_success': 'Trash emptied successfully',
+            'edit_menu.empty_trash': 'Empty Trash',
+            'edit_menu.confirm_empry_trash': 'Are you sure you want to empty the trash? This will permanently delete all files in the system recycle bin.',
+            'edit_menu.empry_trash_failed': 'Failed to empty trash: {error}',
         },
         
         # Update checker
@@ -171,6 +182,9 @@ TRANSLATIONS = {
         'release_notes': 'Release Notes',
         'download': 'Download',
         'view_changes': 'View Changes',
+        'update_available_title': 'Update Available',
+        'current_version': 'Your version: {current_version}',
+        'latest_version': 'Latest version: {latest_version}',
 
         #missing
         'preparing_scan': 'Preparing Scan',
@@ -186,6 +200,7 @@ TRANSLATIONS = {
         'view_logs': 'View Logs',
         'edit_menu.undo': 'Undo',
         'some_delection_failed': 'Some delection Failed',
+        'system_information': 'System Information',
     },
     'it': {
         # Application
@@ -250,6 +265,7 @@ TRANSLATIONS = {
         'qt_version': 'Versione PyQt:',
         'cpu_info': 'CPU:',
         'memory_info': 'RAM:',
+        'github': 'GitHub',
 
         # Help dialog
         'help_title': 'Guida di Image Deduplicator',
@@ -310,6 +326,12 @@ TRANSLATIONS = {
         'log_level': 'Livello di Log',
         'all_levels': 'Tutti i Livelli',
         'refresh': 'Aggiorna',
+        'select_log_file': 'Seleziona File di Log',
+        'no_logs_found': 'Nessun Log Trovato',
+        'log_level_filters': 'Filtri Livello Log',
+        'clear_log': 'Pulisci Log',
+        'save_as': 'Salva come',
+        'no_logs_available': 'Nessun Log Disponibile',
         
         # Settings
         'settings': 'Impostazioni',
@@ -330,10 +352,14 @@ TRANSLATIONS = {
         
         # Edit menu
         'edit_menu': {
-            'undo': 'Annulla',
-            'nothing_to_undo': 'Niente da annullare',
-            'undo_success': 'Annullamento riuscito',
-            'undo_failed': 'Impossibile annullare l\'operazione: {error}',
+            'edit_menu.undo': 'Annulla',
+            'edit_menu.nothing_to_undo': 'Nessuna operazione da annullare',
+            'edit_menu.undo_success': 'Annullamento completato',
+            'edit_menu.undo_failed': 'Errore durante l\'annullamento: {error}',
+            'edit_menu.empty_trash_success': 'Cestino svuotato con successo',
+            'edit_menu.empty_trash': 'Svuota Cestino',
+            'edit_menu.confirm_empty_trash': 'Sei sicuro di voler svuotare il cestino? Questa operazione eliminerà definitivamente tutti i file presenti nel cestino di sistema.',
+            'edit_menu.empty_trash_failed': 'Impossibile svuotare il cestino: {error}',
         },
         
         # Update checker
@@ -351,6 +377,9 @@ TRANSLATIONS = {
         'release_notes': 'Note di Rilascio',
         'download': 'Scarica',
         'view_changes': 'Visualizza Modifiche',
+        'update_available_title': 'Aggiornamento Disponibile',
+        'current_version': 'La tua versione: {current_version}',
+        'new_version': 'Ultima versione: {latest_version}',
 
         #missing
         'preparing_scan': 'Preparazione Scansione',
@@ -364,8 +393,8 @@ TRANSLATIONS = {
         'moved_to_trash': 'Spostato/i nel cestino',
         'check_for_updates': 'Controllo Aggiornamenti',
         'view_logs': 'Guarda Logs',
-        'edit_menu.undo': 'Annulla',
         'some_delection_failed': 'Alcune cancellazioni non sono riuscite',
+        'system_information': 'Informazioni Sistema'
     },
 }
 

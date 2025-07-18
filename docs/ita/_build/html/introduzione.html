@@ -48,12 +48,13 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduzione</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#caratteristiche-principali">Caratteristiche principali:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#requisiti-di-sistema">Requisiti di sistema:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#perche-wand-imagemagick">Perché Wand/ImageMagick?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installazione.html">Installazione</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utilizzo.html">Utilizzo</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configurazione.html">Configurazione</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Riferimento API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Cronologia delle modifiche</a></li>
 </ul>
 
@@ -83,24 +84,43 @@
              
   <section id="introduzione">
 <h1>Introduzione<a class="headerlink" href="#introduzione" title="Link to this heading"></a></h1>
-<p>Images Deduplicator è un’applicazione Python per la gestione e rimozione di immagini duplicate in modo efficiente e affidabile. Questo strumento utilizza tecniche avanzate di confronto visivo per identificare e rimuovere immagini duplicate, offrendo una soluzione robusta per la gestione delle immagini.</p>
+<p>Images Deduplicator è un’applicazione Python progettata per la gestione e la rimozione efficiente di immagini duplicate. Utilizzando la libreria Wand (basata su ImageMagick) per l’elaborazione delle immagini, questo strumento offre tecniche avanzate di confronto visivo per identificare e gestire i duplicati con elevata precisione.</p>
 <section id="caratteristiche-principali">
 <h2>Caratteristiche principali:<a class="headerlink" href="#caratteristiche-principali" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>Rilevamento di immagini duplicate basato su confronto visivo</p></li>
-<li><p>Interfaccia grafica intuitiva</p></li>
-<li><p>Supporto per diverse estensioni di file immagine</p></li>
-<li><p>Possibilità di configurazione avanzata</p></li>
-<li><p>Logging dettagliato delle operazioni</p></li>
+<li><p><strong>Elaborazione avanzata delle immagini</strong>: Basata su Wand/ImageMagick per un supporto superiore dei formati</p></li>
+<li><p><strong>Rilevamento duplicati visivi</strong>: Hashing percettivo per identificare immagini visivamente simili</p></li>
+<li><p><strong>Supporto completo dei formati</strong>: Gestisce tutti i principali formati tra cui JPEG, PNG, WEBP, PSD e altri</p></li>
+<li><p><strong>Interfaccia intuitiva</strong>: Interfaccia utente amichevole con supporto per temi scuro/chiaro</p></li>
+<li><p><strong>Supporto multilingua</strong>: Internazionalizzazione integrata con italiano e inglese</p></li>
+<li><p><strong>Elaborazione in batch</strong>: Processa efficientemente migliaia di immagini</p></li>
+<li><p><strong>Anteprima e confronto</strong>: Confronto affiancato prima di intraprendere azioni</p></li>
+<li><p><strong>Operazioni sicure</strong>: Spostamento nel cestino invece di cancellazione permanente</p></li>
+<li><p><strong>Log dettagliati</strong>: Registrazione completa delle operazioni per la tracciabilità</p></li>
 </ul>
 </section>
 <section id="requisiti-di-sistema">
 <h2>Requisiti di sistema:<a class="headerlink" href="#requisiti-di-sistema" title="Link to this heading"></a></h2>
 <ul class="simple">
-<li><p>Python 3.8 o superiore</p></li>
-<li><p>Windows, macOS o Linux</p></li>
-<li><p>Almeno 4GB di RAM</p></li>
-<li><p>Spazio su disco sufficiente per le immagini da processare</p></li>
+<li><p><strong>Python</strong>: 3.8 o superiore (3.10+ consigliato)</p></li>
+<li><p><strong>ImageMagick</strong>: Richiesto per l’elaborazione con Wand
+- Windows: Scarica da [ImageMagick Windows](<a class="reference external" href="https://imagemagick.org/script/download.php#windows">https://imagemagick.org/script/download.php#windows</a>)
+- macOS: <cite>brew install imagemagick</cite>
+- Linux: <cite>sudo apt-get install libmagickwand-dev</cite></p></li>
+<li><p><strong>Memoria</strong>: Minimo 4GB, 8GB+ consigliato per grandi collezioni di immagini</p></li>
+<li><p><strong>Spazio su disco</strong>: Sufficiente per le immagini da elaborare + file temporanei</p></li>
+<li><p><strong>Sistemi operativi</strong>: Windows 10/11, macOS 10.15+, Linux con X11/Wayland</p></li>
+</ul>
+</section>
+<section id="perche-wand-imagemagick">
+<h2>Perché Wand/ImageMagick?<a class="headerlink" href="#perche-wand-imagemagick" title="Link to this heading"></a></h2>
+<p>Images Deduplicator utilizza Wand (un binding Python per ImageMagick) per diversi vantaggi:</p>
+<ul class="simple">
+<li><p>Supporto più ampio per formati inclusi PSD, GIF e BMP</p></li>
+<li><p>Migliore gestione della memoria per immagini di grandi dimensioni</p></li>
+<li><p>Comportamento più coerente tra diverse piattaforme</p></li>
+<li><p>Funzionalità avanzate di manipolazione delle immagini</p></li>
+<li><p>Manutenzione attiva e aggiornamenti di sicurezza</p></li>
 </ul>
 </section>
 </section>

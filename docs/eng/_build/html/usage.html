@@ -48,13 +48,15 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#main-interface">Main Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#basic-procedure">Basic Procedure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#advanced-options">Advanced Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#usage-tips">Usage Tips</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#basic-workflow">Basic Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#advanced-features">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#performance-optimization">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
@@ -86,54 +88,99 @@
 <h1>Usage<a class="headerlink" href="#usage" title="Link to this heading"></a></h1>
 <section id="main-interface">
 <h2>Main Interface<a class="headerlink" href="#main-interface" title="Link to this heading"></a></h2>
-<p>The application features an intuitive graphical interface divided into several sections:</p>
+<p>The application features a modern, user-friendly interface with the following key components:</p>
 <ol class="arabic simple">
-<li><p><strong>Main Menu</strong>: Contains the main application options</p></li>
-<li><p><strong>Work Area</strong>: Displays images and results</p></li>
-<li><p><strong>Status Bar</strong>: Shows operation status information</p></li>
+<li><p><strong>Menu Bar</strong>: Access to all application functions and settings</p></li>
+<li><p><strong>Toolbar</strong>: Quick access to frequently used functions</p></li>
+<li><p><strong>Folder Browser</strong>: Navigate and select directories to scan</p></li>
+<li><p><strong>Preview Pane</strong>: View and compare images side by side</p></li>
+<li><p><strong>Results Panel</strong>: Displays found duplicates with similarity scores</p></li>
+<li><p><strong>Status Bar</strong>: Shows operation progress and system information</p></li>
 </ol>
 </section>
-<section id="basic-procedure">
-<h2>Basic Procedure<a class="headerlink" href="#basic-procedure" title="Link to this heading"></a></h2>
+<section id="basic-workflow">
+<h2>Basic Workflow<a class="headerlink" href="#basic-workflow" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
-<li><p><strong>Folder Selection</strong>
-- Click “Choose Folder” to select the directory to analyze
-- The folder will be automatically scanned</p></li>
-<li><p><strong>Image Analysis</strong>
-- The application automatically analyzes images in the selected folder
-- Progress is displayed in the status bar</p></li>
-<li><p><strong>Results</strong>
-- Duplicate images are shown in a list
-- Each image has a preview and detailed information</p></li>
+<li><p><strong>Select Source Folder</strong>
+- Click the “Open Folder” button or use <code class="docutils literal notranslate"><span class="pre">File</span> <span class="pre">&gt;</span> <span class="pre">Open</span> <span class="pre">Folder</span></code>
+- The application will scan for supported image formats
+- Supported formats: JPEG, PNG, WEBP, PSD, BMP, GIF, and more (via Wand/ImageMagick)</p></li>
+<li><p><strong>Configure Scan Settings</strong>
+- Adjust similarity threshold (default: 90%)
+- Set minimum image size to consider
+- Choose which image properties to compare (size, date, content hash)</p></li>
+<li><p><strong>Start the Scan</strong>
+- Click “Start Scan” to begin duplicate detection
+- Progress is shown in the status bar
+- Pause or stop the scan at any time</p></li>
+<li><p><strong>Review Results</strong>
+- Duplicate groups are displayed with previews
+- Sort by file size, date, or similarity score
+- Use the side-by-side comparison tool for verification</p></li>
+<li><p><strong>Manage Duplicates</strong>
+- Select images to keep or delete
+- Move duplicates to trash (recoverable) or delete permanently
+- Export results to CSV/JSON for reference</p></li>
 </ol>
 </section>
-<section id="advanced-options">
-<h2>Advanced Options<a class="headerlink" href="#advanced-options" title="Link to this heading"></a></h2>
+<section id="advanced-features">
+<h2>Advanced Features<a class="headerlink" href="#advanced-features" title="Link to this heading"></a></h2>
+<p><strong>Batch Processing</strong>
+- Process multiple folders in sequence
+- Save and load scan configurations
+- Schedule automatic scans</p>
+<p><strong>Smart Selection</strong>
+- Auto-select images by criteria (oldest, smallest, etc.)
+- Keep highest resolution version
+- Preserve images with specific naming patterns</p>
+<p><strong>Image Comparison Tools</strong>
+- Side-by-side and overlay comparison modes
+- Zoom and pan synchronized between images
+- Histogram and EXIF data comparison</p>
+<p><strong>Custom Filters</strong>
+- Filter by image dimensions
+- Filter by creation/modification date
+- Filter by image format or color profile</p>
+<p><strong>Wand/ImageMagick Integration</strong>
+- Advanced image format support
+- Better handling of color profiles and metadata
+- Support for RAW camera formats when enabled in ImageMagick</p>
+</section>
+<section id="keyboard-shortcuts">
+<h2>Keyboard Shortcuts<a class="headerlink" href="#keyboard-shortcuts" title="Link to this heading"></a></h2>
+</section>
+<section id="performance-optimization">
+<h2>Performance Optimization<a class="headerlink" href="#performance-optimization" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
-<li><p><strong>Precision Configuration</strong>
-- Modify the image comparison precision level
-- Lower values find more duplicates but may include false positives</p></li>
-<li><p><strong>Size Filter</strong>
-- Ignore images below a certain size
-- Useful for excluding icons or thumbnails</p></li>
-<li><p><strong>Folder Exclusion</strong>
-- Add folders to exclude from scanning
-- Practical for excluding system or temporary folders</p></li>
+<li><p><strong>For Large Collections</strong>
+- Use the “Quick Compare” mode for initial filtering
+- Increase the minimum file size to skip thumbnails
+- Schedule scans during off-hours for large collections</p></li>
+<li><p><strong>Memory Management</strong>
+- Close other memory-intensive applications
+- Adjust ImageMagick’s resource limits if needed (see Installation)
+- Process images in smaller batches</p></li>
+<li><p><strong>Storage Considerations</strong>
+- Ensure sufficient free space for temporary files
+- Process images directly from the source drive when possible
+- Consider using a fast SSD for better performance</p></li>
 </ol>
 </section>
-<section id="usage-tips">
-<h2>Usage Tips<a class="headerlink" href="#usage-tips" title="Link to this heading"></a></h2>
-<ol class="arabic simple">
-<li><p><strong>Backup</strong>
-- Always make a backup before deleting images
-- Use the results export option for reference</p></li>
-<li><p><strong>Manual Verification</strong>
-- Carefully examine images identified as duplicates
-- Don’t delete images without first comparing them</p></li>
-<li><p><strong>Performance</strong>
-- Avoid analyzing folders with too many images at once
-- Consider splitting analysis into subfolders if needed</p></li>
-</ol>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p><strong>Slow Performance</strong>
+- Check ImageMagick’s policy settings (see Installation)
+- Reduce the number of concurrent operations
+- Disable real-time preview for large collections</p>
+<p><strong>Missing Images</strong>
+- Verify ImageMagick supports the image format
+- Check file permissions
+- Look for error messages in the log viewer</p>
+<p><strong>Unexpected Results</strong>
+- Adjust the similarity threshold
+- Check if filters are too restrictive
+- Verify image metadata is being read correctly</p>
+<p>For additional help, refer to the <a class="reference internal" href="configuration.html"><span class="doc">Configuration</span></a> section or check the FAQ.</p>
 </section>
 </section>
 

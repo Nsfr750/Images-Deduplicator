@@ -48,14 +48,16 @@
 <li class="toctree-l1"><a class="reference internal" href="introduzione.html">Introduzione</a></li>
 <li class="toctree-l1"><a class="reference internal" href="installazione.html">Installazione</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Utilizzo</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#interfaccia-principale">Interfaccia principale</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#procedura-di-base">Procedura di base</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#opzioni-avanzate">Opzioni avanzate</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#consigli-di-utilizzo">Consigli di utilizzo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#interfaccia-principale">Interfaccia Principale</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flusso-di-lavoro-di-base">Flusso di Lavoro di Base</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#funzionalita-avanzate">Funzionalità Avanzate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#scorciatoie-da-tastiera">Scorciatoie da Tastiera</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ottimizzazione-delle-prestazioni">Ottimizzazione delle Prestazioni</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#risoluzione-dei-problemi">Risoluzione dei Problemi</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configurazione.html">Configurazione</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Riferimento API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Cronologia delle modifiche</a></li>
 </ul>
 
@@ -86,55 +88,99 @@
   <section id="utilizzo">
 <h1>Utilizzo<a class="headerlink" href="#utilizzo" title="Link to this heading"></a></h1>
 <section id="interfaccia-principale">
-<h2>Interfaccia principale<a class="headerlink" href="#interfaccia-principale" title="Link to this heading"></a></h2>
-<p>L’applicazione dispone di un’interfaccia grafica intuitiva divisa in diverse sezioni:</p>
+<h2>Interfaccia Principale<a class="headerlink" href="#interfaccia-principale" title="Link to this heading"></a></h2>
+<p>L’applicazione presenta un’interfaccia moderna e intuitiva con i seguenti componenti principali:</p>
 <ol class="arabic simple">
-<li><p><strong>Menu principale</strong>: Contiene le opzioni principali dell’applicazione</p></li>
-<li><p><strong>Area di lavoro</strong>: Visualizza le immagini e i risultati</p></li>
-<li><p><strong>Barra di stato</strong>: Mostra informazioni sullo stato dell’operazione</p></li>
+<li><p><strong>Barra dei menu</strong>: Accesso a tutte le funzioni e impostazioni</p></li>
+<li><p><strong>Barra degli strumenti</strong>: Accesso rapido alle funzioni più utilizzate</p></li>
+<li><p><strong>Esplora cartelle</strong>: Naviga e seziona le directory da analizzare</p></li>
+<li><p><strong>Anteprima</strong>: Visualizza e confronta le immagini affiancate</p></li>
+<li><p><strong>Pannello risultati</strong>: Mostra i duplicati trovati con i punteggi di somiglianza</p></li>
+<li><p><strong>Barra di stato</strong>: Mostra lo stato delle operazioni e le informazioni di sistema</p></li>
 </ol>
 </section>
-<section id="procedura-di-base">
-<h2>Procedura di base<a class="headerlink" href="#procedura-di-base" title="Link to this heading"></a></h2>
+<section id="flusso-di-lavoro-di-base">
+<h2>Flusso di Lavoro di Base<a class="headerlink" href="#flusso-di-lavoro-di-base" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
-<li><p><strong>Selezione della cartella</strong>
-- Clicca su «Scegli cartella» per selezionare la directory da analizzare
-- La cartella verrà scansionata automaticamente</p></li>
-<li><p><strong>Analisi delle immagini</strong>
-- L’applicazione analizza automaticamente le immagini nella cartella selezionata
-- Il progresso viene mostrato nella barra di stato</p></li>
-<li><p><strong>Risultati</strong>
-- Le immagini duplicate vengono mostrate in una lista
-- Ogni immagine ha un’anteprima e informazioni dettagliate</p></li>
+<li><p><strong>Seleziona la Cartella Sorgente</strong>
+- Clicca su «Apri cartella» o usa <code class="docutils literal notranslate"><span class="pre">File</span> <span class="pre">&gt;</span> <span class="pre">Apri</span> <span class="pre">cartella</span></code>
+- L’applicazione scannerizzerà i formati immagine supportati
+- Formati supportati: JPEG, PNG, WEBP, PSD, BMP, GIF e altri (tramite Wand/ImageMagick)</p></li>
+<li><p><strong>Configura le Impostazioni di Scansione</strong>
+- Regola la soglia di somiglianza (predefinita: 90%)
+- Imposta la dimensione minima delle immagini da considerare
+- Scegli quali proprietà confrontare (dimensione, data, hash del contenuto)</p></li>
+<li><p><strong>Avvia la Scansione</strong>
+- Clicca su «Avvia scansione» per iniziare il rilevamento dei duplicati
+- Lo stato di avanzamento viene mostrato nella barra di stato
+- Puoi mettere in pausa o interrompere la scansione in qualsiasi momento</p></li>
+<li><p><strong>Esamina i Risultati</strong>
+- I gruppi di duplicati vengono visualizzati con le anteprime
+- Ordina per dimensione, data o punteggio di somiglianza
+- Usa lo strumento di confronto affiancato per la verifica</p></li>
+<li><p><strong>Gestisci i Duplicati</strong>
+- Seleziona le immagini da conservare o eliminare
+- Sposta i duplicati nel cestino (recuperabili) o eliminali definitivamente
+- Esporta i risultati in CSV/JSON per riferimento</p></li>
 </ol>
 </section>
-<section id="opzioni-avanzate">
-<h2>Opzioni avanzate<a class="headerlink" href="#opzioni-avanzate" title="Link to this heading"></a></h2>
+<section id="funzionalita-avanzate">
+<h2>Funzionalità Avanzate<a class="headerlink" href="#funzionalita-avanzate" title="Link to this heading"></a></h2>
+<p><strong>Elaborazione Batch</strong>
+- Elabora più cartelle in sequenza
+- Salva e carica le configurazioni di scansione
+- Pianifica scansioni automatiche</p>
+<p><strong>Selezione Intelligente</strong>
+- Selezione automatica in base a criteri (più vecchie, più piccole, ecc.)
+- Mantieni la versione con risoluzione più alta
+- Conserva immagini con modelli di denominazione specifici</p>
+<p><strong>Strumenti di Confronto Immagini</strong>
+- Modalità di confronto affiancato e sovrapposto
+- Zoom e scorrimento sincronizzati tra le immagini
+- Confronto di istogrammi e dati EXIF</p>
+<p><strong>Filtri Personalizzati</strong>
+- Filtra per dimensioni dell’immagine
+- Filtra per data di creazione/modifica
+- Filtra per formato immagine o profilo colore</p>
+<p><strong>Integrazione Wand/ImageMagick</strong>
+- Supporto avanzato per i formati immagine
+- Migliore gestione dei profili colore e dei metadati
+- Supporto per formati RAW delle fotocamere quando abilitato in ImageMagick</p>
+</section>
+<section id="scorciatoie-da-tastiera">
+<h2>Scorciatoie da Tastiera<a class="headerlink" href="#scorciatoie-da-tastiera" title="Link to this heading"></a></h2>
+</section>
+<section id="ottimizzazione-delle-prestazioni">
+<h2>Ottimizzazione delle Prestazioni<a class="headerlink" href="#ottimizzazione-delle-prestazioni" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
-<li><p><strong>Configurazione della precisione</strong>
-- Modifica il livello di precisione nel confronto delle immagini
-- Valori più bassi trovano più duplicati, ma potrebbero includere falsi positivi</p></li>
-<li><p><strong>Filtro per dimensione</strong>
-- Ignora le immagini sotto una certa dimensione
-- Utile per escludere icone o miniature</p></li>
-<li><p><strong>Esclusione di cartelle</strong>
-- Aggiungi cartelle da escludere dalla scansione
-- Pratico per escludere cartelle di sistema o temporanee</p></li>
+<li><p><strong>Per grandi collezioni</strong>
+- Usa la modalità «Confronto rapido» per un filtraggio iniziale
+- Aumenta la dimensione minima del file per saltare le miniature
+- Pianifica le scansioni in orari di minore attività per grandi collezioni</p></li>
+<li><p><strong>Gestione della Memoria</strong>
+- Chiudi altre applicazioni che utilizzano molta memoria
+- Aumenta i limiti delle risorse di ImageMagick se necessario (vedi guida all’installazione)
+- Considera l’utilizzo di un’unità SSD per migliorare le prestazioni di I/O</p></li>
+<li><p><strong>Suggerimenti per l’Analisi</strong>
+- Inizia con una soglia di somiglianza più alta e riducila se necessario
+- Usa i filtri per restringere la ricerca a tipi specifici di immagini
+- Salva i risultati intermedi per analisi successive</p></li>
 </ol>
 </section>
-<section id="consigli-di-utilizzo">
-<h2>Consigli di utilizzo<a class="headerlink" href="#consigli-di-utilizzo" title="Link to this heading"></a></h2>
-<ol class="arabic simple">
-<li><p><strong>Backup</strong>
-- Effettua sempre un backup prima di eliminare immagini
-- Utilizza l’opzione di esportazione dei risultati per avere un riferimento</p></li>
-<li><p><strong>Verifica manuale</strong>
-- Esamina attentamente le immagini identificate come duplicate
-- Non eliminare immagini senza averle prima confrontate</p></li>
-<li><p><strong>Performance</strong>
-- Evita di analizzare cartelle con troppe immagini in una volta
-- Considera di suddividere l’analisi per sottocartelle se necessario</p></li>
-</ol>
+<section id="risoluzione-dei-problemi">
+<h2>Risoluzione dei Problemi<a class="headerlink" href="#risoluzione-dei-problemi" title="Link to this heading"></a></h2>
+<p><strong>Problemi con le immagini</strong>
+- Se alcune immagini non vengono analizzate, verifica che siano in un formato supportato
+- Per i formati RAW, assicurati che i codec appropriati siano installati in ImageMagick
+- Controlla i log dell’applicazione per messaggi di errore specifici</p>
+<p><strong>Prestazioni lente</strong>
+- Riduci il numero di immagini analizzate in una singola sessione
+- Disattiva l’anteprima delle immagini durante la scansione
+- Verifica che il sistema soddisfi i requisiti minimi consigliati</p>
+<p><strong>Wand/ImageMagick non rilevato</strong>
+- Assicurati che ImageMagick sia installato correttamente
+- Riavvia l’applicazione dopo l’installazione di ImageMagick
+- Controlla che il percorso di ImageMagick sia nel PATH di sistema</p>
 </section>
 </section>
 

@@ -4,53 +4,124 @@ Usage
 Main Interface
 -------------
 
-The application features an intuitive graphical interface divided into several sections:
+The application features a modern, user-friendly interface with the following key components:
 
-1. **Main Menu**: Contains the main application options
-2. **Work Area**: Displays images and results
-3. **Status Bar**: Shows operation status information
+1. **Menu Bar**: Access to all application functions and settings
+2. **Toolbar**: Quick access to frequently used functions
+3. **Folder Browser**: Navigate and select directories to scan
+4. **Preview Pane**: View and compare images side by side
+5. **Results Panel**: Displays found duplicates with similarity scores
+6. **Status Bar**: Shows operation progress and system information
 
-Basic Procedure
+Basic Workflow
 --------------
 
-1. **Folder Selection**
-   - Click "Choose Folder" to select the directory to analyze
-   - The folder will be automatically scanned
+1. **Select Source Folder**
+   - Click the "Open Folder" button or use ``File > Open Folder``
+   - The application will scan for supported image formats
+   - Supported formats: JPEG, PNG, WEBP, PSD, BMP, GIF, and more (via Wand/ImageMagick)
 
-2. **Image Analysis**
-   - The application automatically analyzes images in the selected folder
-   - Progress is displayed in the status bar
+2. **Configure Scan Settings**
+   - Adjust similarity threshold (default: 90%)
+   - Set minimum image size to consider
+   - Choose which image properties to compare (size, date, content hash)
 
-3. **Results**
-   - Duplicate images are shown in a list
-   - Each image has a preview and detailed information
+3. **Start the Scan**
+   - Click "Start Scan" to begin duplicate detection
+   - Progress is shown in the status bar
+   - Pause or stop the scan at any time
 
-Advanced Options
----------------
+4. **Review Results**
+   - Duplicate groups are displayed with previews
+   - Sort by file size, date, or similarity score
+   - Use the side-by-side comparison tool for verification
 
-1. **Precision Configuration**
-   - Modify the image comparison precision level
-   - Lower values find more duplicates but may include false positives
+5. **Manage Duplicates**
+   - Select images to keep or delete
+   - Move duplicates to trash (recoverable) or delete permanently
+   - Export results to CSV/JSON for reference
 
-2. **Size Filter**
-   - Ignore images below a certain size
-   - Useful for excluding icons or thumbnails
+Advanced Features
+----------------
 
-3. **Folder Exclusion**
-   - Add folders to exclude from scanning
-   - Practical for excluding system or temporary folders
+**Batch Processing**
+- Process multiple folders in sequence
+- Save and load scan configurations
+- Schedule automatic scans
 
-Usage Tips
-----------
+**Smart Selection**
+- Auto-select images by criteria (oldest, smallest, etc.)
+- Keep highest resolution version
+- Preserve images with specific naming patterns
 
-1. **Backup**
-   - Always make a backup before deleting images
-   - Use the results export option for reference
+**Image Comparison Tools**
+- Side-by-side and overlay comparison modes
+- Zoom and pan synchronized between images
+- Histogram and EXIF data comparison
 
-2. **Manual Verification**
-   - Carefully examine images identified as duplicates
-   - Don't delete images without first comparing them
+**Custom Filters**
+- Filter by image dimensions
+- Filter by creation/modification date
+- Filter by image format or color profile
 
-3. **Performance**
-   - Avoid analyzing folders with too many images at once
-   - Consider splitting analysis into subfolders if needed
+**Wand/ImageMagick Integration**
+- Advanced image format support
+- Better handling of color profiles and metadata
+- Support for RAW camera formats when enabled in ImageMagick
+
+Keyboard Shortcuts
+-----------------
+
++----------------+-----------------------------------+
+| Shortcut       | Action                            |
++================+===================================+
+| ``Ctrl+O``     | Open folder                       |
++----------------+-----------------------------------+
+| ``Ctrl+F``     | Start new scan                    |
++----------------+-----------------------------------+
+| ``Space``      | Toggle selection of current image  |
++----------------+-----------------------------------+
+| ``Del``        | Move selected to trash            |
++----------------+-----------------------------------+
+| ``Ctrl+Z``     | Undo last action                  |
++----------------+-----------------------------------+
+| ``F5``         | Refresh view                      |
++----------------+-----------------------------------+
+
+Performance Optimization
+-----------------------
+
+1. **For Large Collections**
+   - Use the "Quick Compare" mode for initial filtering
+   - Increase the minimum file size to skip thumbnails
+   - Schedule scans during off-hours for large collections
+
+2. **Memory Management**
+   - Close other memory-intensive applications
+   - Adjust ImageMagick's resource limits if needed (see Installation)
+   - Process images in smaller batches
+
+3. **Storage Considerations**
+   - Ensure sufficient free space for temporary files
+   - Process images directly from the source drive when possible
+   - Consider using a fast SSD for better performance
+
+Troubleshooting
+--------------
+
+**Slow Performance**
+- Check ImageMagick's policy settings (see Installation)
+- Reduce the number of concurrent operations
+- Disable real-time preview for large collections
+
+**Missing Images**
+- Verify ImageMagick supports the image format
+- Check file permissions
+- Look for error messages in the log viewer
+
+**Unexpected Results**
+- Adjust the similarity threshold
+- Check if filters are too restrictive
+- Verify image metadata is being read correctly
+
+For additional help, refer to the :doc:`configuration` section or check the FAQ.

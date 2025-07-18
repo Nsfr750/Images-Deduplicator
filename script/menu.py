@@ -45,6 +45,7 @@ class MenuManager:
         
         # Update edit menu items
         self.action_undo.setText(self.translate('edit_menu.undo'))
+        self.action_empty_trash.setText(self.translate('edit_menu.empty_trash'))
         
         # Update help menu items
         self.action_about.setText(self.translate('about'))
@@ -110,6 +111,14 @@ class MenuManager:
         self.action_undo.triggered.connect(self.parent.undo_last_operation)
         self.action_undo.setEnabled(False)  # Will be enabled when there are operations to undo
         self.edit_menu.addAction(self.action_undo)
+        
+        # Add separator
+        self.edit_menu.addSeparator()
+        
+        # Empty Trash action
+        self.action_empty_trash = QAction(self.translate('edit_menu.empty_trash'), self.parent)
+        self.action_empty_trash.triggered.connect(self.parent.empty_trash)
+        self.edit_menu.addAction(self.action_empty_trash)
         
         # Store a reference to the action for later enabling/disabling
         self.parent.undo_action = self.action_undo

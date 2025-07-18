@@ -76,11 +76,15 @@ class UI(QMainWindow):
         self.current_style = self.config.get('appearance', {}).get('style', 'Fusion')
         self.current_theme = self.config.get('appearance', {}).get('theme', 'dark')
         
+        # Load similarity threshold from config with default of 90%
+        self.similarity_threshold = self.config.get('similarity_threshold', 90)
+        
         # Log initialization
         self.logger.info("=" * 50)
         self.logger.info(f"Starting Image Deduplicator v{__version__}")
         self.logger.info(f"Log file: {self.log_file}")
         self.logger.debug(f"Configuration: {self.config}")
+        self.logger.debug(f"Using similarity threshold: {self.similarity_threshold}%")
         
         # Load settings
         self.settings = QSettings("ImageDeduplicator", "ImageDeduplicator")
@@ -162,8 +166,8 @@ class UI(QMainWindow):
         self.similarity_label = QLabel(self.lang_manager.translate('similarity_threshold'))
         self.similarity_slider = QSlider(Qt.Orientation.Horizontal)
         self.similarity_slider.setRange(70, 100)  # 70% to 100% similarity
-        self.similarity_slider.setValue(85)  # Default value
-        self.similarity_value = QLabel("85%")
+        self.similarity_slider.setValue(self.similarity_threshold)
+        self.similarity_value = QLabel(f"{self.similarity_threshold}%")
         self.similarity_slider.valueChanged.connect(
             lambda v: self.similarity_value.setText(f"{v}%"))
         
@@ -540,32 +544,34 @@ class UI(QMainWindow):
             # Show the dialog
             self.preview_dialog.show()
             self.preview_dialog.raise_()
-            self.preview_dialog.activateWindow()
-            
-            # Load and display the images
-            self.load_image_preview(original_path, self.original_preview, self.original_path_label)
-            self.load_image_preview(duplicate_path, self.duplicate_preview, self.duplicate_path_label)
-            
-            # Update status bar with basic info
-            self.status_bar.showMessage(
-                self.lang_manager.translate('selected_duplicates').format(
-                    original=os.path.basename(original_path),
-                    duplicate=os.path.basename(duplicate_path)
-                )
-            )
             
         except Exception as e:
-            self.logger.error(f"Error in update_preview: {str(e)}", exc_info=True)
-            self.status_bar.showMessage(self.lang_manager.translate('error_loading_preview'))
+            logger.error(f"Error updating preview: {e}")
+            self.status_bar.showMessage(self.lang_manager.translate('error_updating_preview'))
     
-    def clear_previews(self):
-        """Clear all preview widgets."""
+    def update_duplicates_list(self):
+        """Update the duplicates list with the current duplicates."""
+        self.duplicates_list.clear()
+        
         try:
-            if hasattr(self, 'preview_dialog') and self.preview_dialog:
-                self.preview_dialog.close()
-                self.preview_dialog = None
+            # The duplicates dictionary is now {original_path: [duplicate1_path, duplicate2_path, ...]}
+            for original_path, dup_paths in self.duplicates.items():
+                for dup_path in dup_paths:
+                    # Create a display name that shows the relative path from the search directory
+                    display_name = os.path.relpath(dup_path, self.folder_entry.text()) if self.folder_entry.text() else dup_path
+                    
+                    # Create and add the list item
+                    item = QListWidgetItem(display_name)
+                    item.setData(Qt.ItemDataRole.UserRole, (original_path, dup_path))
+                    self.duplicates_list.addItem(item)
+            
+            # Update status with total number of duplicates found (not the number of groups)
+            total_duplicates = sum(len(dups) for dups in self.duplicates.values())
+            self.status_bar.showMessage(self.lang_manager.translate('duplicates_found').format(count=total_duplicates))
+                
         except Exception as e:
-            self.logger.error(f"Error clearing previews: {e}")
+            logger.error(f"Error updating duplicates list: {e}")
+            self.status_bar.showMessage(self.lang_manager.translate('error_updating_list'))
     
     def select_all_duplicates(self):
         """Select all items in the duplicates list."""
@@ -802,13 +808,26 @@ class UI(QMainWindow):
         dialog.exec()
     
     def show_settings(self):
-        """Show the settings dialog."""
+        """Show the settings dialog and handle settings updates."""
         dialog = SettingsDialog(self, self.lang_manager, self.config)
-        if dialog.exec():
-            # Apply any changed settings
-            if 'appearance' in dialog.config:
-                new_style = dialog.config['appearance'].get('style', 'Fusion')
-                new_theme = dialog.config['appearance'].get('theme', 'dark')
+        
+        # Connect the settings_updated signal to handle updates
+        dialog.settings_updated.connect(self.on_settings_updated)
+        
+        # Show the dialog
+        dialog.exec()
+
+    def on_settings_updated(self, settings):
+        """Handle settings updates from the settings dialog.
+        
+        Args:
+            settings: Dictionary containing the updated settings
+        """
+        try:
+            # Update appearance settings
+            if 'appearance' in self.config:
+                new_style = self.config['appearance'].get('style', 'Fusion')
+                new_theme = self.config['appearance'].get('theme', 'dark')
                 
                 if new_style != self.current_style:
                     self.current_style = new_style
@@ -816,6 +835,20 @@ class UI(QMainWindow):
                 elif new_theme != self.current_theme:
                     self.current_theme = new_theme
                     self.apply_theme(new_theme, apply_style_flag=False)
+            
+            # Update similarity threshold if changed
+            new_threshold = settings.get('similarity_threshold', 90)
+            if new_threshold != self.similarity_threshold:
+                self.similarity_threshold = new_threshold
+                self.similarity_slider.setValue(new_threshold)
+                self.logger.info(f"Updated similarity threshold to {new_threshold}%")
+                
+                # Update the UI to reflect the new threshold
+                if hasattr(self, 'similarity_value'):
+                    self.similarity_value.setText(f"{new_threshold}%")
+        
+        except Exception as e:
+            self.logger.error(f"Error applying updated settings: {e}")
     
     def show_sponsor(self):
         """Show the sponsor dialog."""
@@ -1138,6 +1171,55 @@ class UI(QMainWindow):
                 self,
                 self.lang_manager.translate('error'),
                 f"Failed to open download page: {str(e)}"
+            )
+    
+    def empty_trash(self):
+        """Empty the system trash/recycle bin."""
+        try:
+            # Ask for confirmation
+            reply = QMessageBox.question(
+                self,
+                self.lang_manager.translate('confirm'),
+                self.lang_manager.translate('edit_menu.confirm_empty_trash'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No
+            )
+            
+            if reply == QMessageBox.StandardButton.No:
+                return
+                
+            # Import send2trash here to avoid making it a hard dependency
+            try:
+                import send2trash
+                send2trash.cleanup()
+                self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_success'))
+                self.logger.info("Successfully emptied trash")
+            except ImportError:
+                self.status_bar.showMessage("send2trash module not available")
+                self.logger.error("send2trash module not available")
+                QMessageBox.warning(
+                    self,
+                    self.lang_manager.translate('error'),
+                    "The 'send2trash' module is required to empty the trash. Please install it with: pip install send2trash"
+                )
+            except Exception as e:
+                error_msg = str(e)
+                self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg))
+                self.logger.error(f"Failed to empty trash: {error_msg}", exc_info=True)
+                QMessageBox.critical(
+                    self,
+                    self.lang_manager.translate('error'),
+                    self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg)
+                )
+                
+        except Exception as e:
+            error_msg = str(e)
+            self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg))
+            self.logger.error(f"Error emptying trash: {error_msg}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                self.lang_manager.translate('error'),
+                self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg)
             )
     
     def undo_last_operation(self):

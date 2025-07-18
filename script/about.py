@@ -147,6 +147,21 @@ class AboutDialog(QDialog):
         
         # GitHub button
         self.github_btn = QPushButton()
+        self.github_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1976D2;
+                color: white;
+                border: none;
+                padding: 6px 12px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #1565C0;
+            }
+            QPushButton:pressed {
+                background-color: #0D47A1;
+            }
+        """)
         self.github_btn.clicked.connect(lambda: QDesktopServices.openUrl(
             QUrl("https://github.com/Nsfr750/Images-Deduplicator")))
         

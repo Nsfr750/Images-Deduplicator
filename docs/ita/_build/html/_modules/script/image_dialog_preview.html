@@ -1,0 +1,759 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="it" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script.image_dialog_preview &mdash; Documentazione Images Deduplicator 1.0.0 </title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=eba8e968"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/translations.js?v=45930005"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Indice" href="../../genindex.html" />
+    <link rel="search" title="Cerca" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Images Deduplicator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Cerca documenti" aria-label="Cerca documenti" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Menu di navigazione">
+              <p class="caption" role="heading"><span class="caption-text">Contenuti:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduzione.html">Introduzione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installazione.html">Installazione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utilizzo.html">Utilizzo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configurazione.html">Configurazione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Riferimento API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Cronologia delle modifiche</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Menu navigazione dispositivi mobili" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Images Deduplicator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Naviga tra le pagine">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Codice del modulo</a></li>
+      <li class="breadcrumb-item active">script.image_dialog_preview</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Codice sorgente per script.image_dialog_preview</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module for displaying image previews in a dialog window.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span><span class="p">,</span> <span class="n">QSize</span><span class="p">,</span> <span class="n">QPoint</span><span class="p">,</span> <span class="n">QRectF</span><span class="p">,</span> <span class="n">QTimerEvent</span><span class="p">,</span> <span class="n">QThread</span><span class="p">,</span> <span class="n">QMetaObject</span><span class="p">,</span> <span class="n">QBuffer</span><span class="p">,</span> <span class="n">QIODevice</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPixmap</span><span class="p">,</span> <span class="n">QImage</span><span class="p">,</span> <span class="n">QPainter</span><span class="p">,</span> <span class="n">QWheelEvent</span><span class="p">,</span> <span class="n">QMouseEvent</span><span class="p">,</span> <span class="n">QPaintEvent</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QDialog</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QHBoxLayout</span><span class="p">,</span>
+    <span class="n">QGraphicsView</span><span class="p">,</span> <span class="n">QGraphicsScene</span><span class="p">,</span> <span class="n">QGraphicsPixmapItem</span><span class="p">,</span> <span class="n">QSizePolicy</span><span class="p">,</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QFrame</span><span class="p">,</span> <span class="n">QMessageBox</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wand.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span> <span class="k">as</span> <span class="n">WandImage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wand.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">WandException</span>
+
+<span class="c1"># Import the enhanced logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">script.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+
+<div class="viewcode-block" id="ImagePreviewWidget">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget">[documenti]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ImagePreviewWidget</span><span class="p">(</span><span class="n">QGraphicsView</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom widget for displaying and interacting with image previews.&quot;&quot;&quot;</span>
+    
+    <span class="n">MAX_IMAGE_DIMENSION</span> <span class="o">=</span> <span class="mi">4000</span>  <span class="c1"># Maximum width/height for images to prevent memory issues</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scene</span> <span class="o">=</span> <span class="n">QGraphicsScene</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setScene</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_scene</span><span class="p">)</span>
+        
+        <span class="c1"># Initialize logger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span> <span class="o">=</span> <span class="n">QGraphicsPixmapItem</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scene</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">setRenderHint</span><span class="p">(</span><span class="n">QPainter</span><span class="o">.</span><span class="n">RenderHint</span><span class="o">.</span><span class="n">SmoothPixmapTransform</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTransformationAnchor</span><span class="p">(</span><span class="n">QGraphicsView</span><span class="o">.</span><span class="n">ViewportAnchor</span><span class="o">.</span><span class="n">AnchorUnderMouse</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setResizeAnchor</span><span class="p">(</span><span class="n">QGraphicsView</span><span class="o">.</span><span class="n">ViewportAnchor</span><span class="o">.</span><span class="n">AnchorUnderMouse</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setVerticalScrollBarPolicy</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">ScrollBarPolicy</span><span class="o">.</span><span class="n">ScrollBarAsNeeded</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setHorizontalScrollBarPolicy</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">ScrollBarPolicy</span><span class="o">.</span><span class="n">ScrollBarAsNeeded</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setBackgroundBrush</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">darkGray</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QFrame</span><span class="o">.</span><span class="n">Shape</span><span class="o">.</span><span class="n">NoFrame</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pan_start</span> <span class="o">=</span> <span class="n">QPoint</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_panning</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setMinimumSize</span><span class="p">(</span><span class="mi">400</span><span class="p">,</span> <span class="mi">400</span><span class="p">)</span>
+        
+        <span class="c1"># Store the current pixmap reference to prevent garbage collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="kc">None</span>
+    
+<div class="viewcode-block" id="ImagePreviewWidget.clear">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.clear">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the current image and free resources.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scene</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span> <span class="o">=</span> <span class="n">QGraphicsPixmapItem</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scene</span><span class="o">.</span><span class="n">addItem</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resetTransform</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.load_image">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.load_image">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_data</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">QImage</span><span class="p">,</span> <span class="n">QPixmap</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">WandImage</span><span class="p">]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Load an image from various sources.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            image_data: Can be a QImage, QPixmap, file path (str/Path), or Wand Image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading image from source: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_data</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">)):</span>
+                <span class="c1"># Load from file using Wand</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading image from file: </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                
+                <span class="k">with</span> <span class="n">WandImage</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">file_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">img</span><span class="p">:</span>
+                    <span class="c1"># Convert Wand image to QPixmap</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wand_to_qpixmap</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_data</span><span class="p">,</span> <span class="n">WandImage</span><span class="p">):</span>
+                <span class="c1"># Already a Wand image</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wand_to_qpixmap</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_data</span><span class="p">,</span> <span class="n">QImage</span><span class="p">):</span>
+                <span class="c1"># Convert QImage to QPixmap</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="n">QPixmap</span><span class="o">.</span><span class="n">fromImage</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span>
+            
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_data</span><span class="p">,</span> <span class="n">QPixmap</span><span class="p">):</span>
+                <span class="c1"># Already a QPixmap</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="o">=</span> <span class="n">image_data</span>
+            
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported image type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image_data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Set the pixmap and fit to view</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span><span class="o">.</span><span class="n">isNull</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="o">.</span><span class="n">setPixmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_pixmap</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fitInView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AspectRatioMode</span><span class="o">.</span><span class="n">KeepAspectRatio</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="k">return</span> <span class="kc">True</span>
+            
+            <span class="k">return</span> <span class="kc">False</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading image: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_wand_to_qpixmap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wand_img</span><span class="p">:</span> <span class="n">WandImage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">QPixmap</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a Wand Image to QPixmap.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Convert to RGB if not already</span>
+            <span class="k">if</span> <span class="n">wand_img</span><span class="o">.</span><span class="n">alpha_channel</span><span class="p">:</span>
+                <span class="n">wand_img</span><span class="o">.</span><span class="n">background_color</span> <span class="o">=</span> <span class="s1">&#39;white&#39;</span>
+                <span class="n">wand_img</span><span class="o">.</span><span class="n">alpha_channel</span> <span class="o">=</span> <span class="s1">&#39;remove&#39;</span>
+            
+            <span class="c1"># Convert to 8-bit RGB</span>
+            <span class="n">wand_img</span><span class="o">.</span><span class="n">depth</span> <span class="o">=</span> <span class="mi">8</span>
+            
+            <span class="c1"># Get image data as bytes</span>
+            <span class="n">blob</span> <span class="o">=</span> <span class="n">wand_img</span><span class="o">.</span><span class="n">make_blob</span><span class="p">(</span><span class="s1">&#39;RGB&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Create QImage from raw data</span>
+            <span class="n">qimage</span> <span class="o">=</span> <span class="n">QImage</span><span class="p">(</span>
+                <span class="n">blob</span><span class="p">,</span> 
+                <span class="n">wand_img</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> 
+                <span class="n">wand_img</span><span class="o">.</span><span class="n">height</span><span class="p">,</span> 
+                <span class="n">wand_img</span><span class="o">.</span><span class="n">width</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># 3 bytes per pixel for RGB</span>
+                <span class="n">QImage</span><span class="o">.</span><span class="n">Format</span><span class="o">.</span><span class="n">Format_RGB888</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Convert to QPixmap and return</span>
+            <span class="k">return</span> <span class="n">QPixmap</span><span class="o">.</span><span class="n">fromImage</span><span class="p">(</span><span class="n">qimage</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error converting Wand image to QPixmap: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">QPixmap</span><span class="p">()</span>
+    
+<div class="viewcode-block" id="ImagePreviewWidget.wheelEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.wheelEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">wheelEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QWheelEvent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle mouse wheel events for zooming.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">modifiers</span><span class="p">()</span> <span class="o">&amp;</span> <span class="n">Qt</span><span class="o">.</span><span class="n">KeyboardModifier</span><span class="o">.</span><span class="n">ControlModifier</span><span class="p">:</span>
+            <span class="c1"># Zoom with Ctrl + Wheel</span>
+            <span class="n">zoom_in</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">angleDelta</span><span class="p">()</span><span class="o">.</span><span class="n">y</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span>
+            <span class="k">if</span> <span class="n">zoom_in</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zoom_in</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">zoom_out</span><span class="p">()</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Default behavior for scrolling</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">wheelEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.mousePressEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.mousePressEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mousePressEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QMouseEvent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle mouse press events for panning.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span> <span class="o">==</span> <span class="n">Qt</span><span class="o">.</span><span class="n">MouseButton</span><span class="o">.</span><span class="n">LeftButton</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_panning</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pan_start</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setCursor</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">CursorShape</span><span class="o">.</span><span class="n">ClosedHandCursor</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mousePressEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.mouseReleaseEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.mouseReleaseEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mouseReleaseEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QMouseEvent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle mouse release events for panning.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">button</span><span class="p">()</span> <span class="o">==</span> <span class="n">Qt</span><span class="o">.</span><span class="n">MouseButton</span><span class="o">.</span><span class="n">LeftButton</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_panning</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setCursor</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">CursorShape</span><span class="o">.</span><span class="n">ArrowCursor</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mouseReleaseEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.mouseMoveEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.mouseMoveEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mouseMoveEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QMouseEvent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle mouse move events for panning.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_panning</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="o">.</span><span class="n">pixmap</span><span class="p">()</span><span class="o">.</span><span class="n">isNull</span><span class="p">():</span>
+            <span class="c1"># Calculate the difference in mouse position</span>
+            <span class="n">delta</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pan_start</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_pan_start</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pos</span><span class="p">()</span>
+            
+            <span class="c1"># Scroll the scrollbars by the difference</span>
+            <span class="n">h_scroll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">horizontalScrollBar</span><span class="p">()</span>
+            <span class="n">v_scroll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">verticalScrollBar</span><span class="p">()</span>
+            <span class="n">h_scroll</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">h_scroll</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">-</span> <span class="n">delta</span><span class="o">.</span><span class="n">x</span><span class="p">())</span>
+            <span class="n">v_scroll</span><span class="o">.</span><span class="n">setValue</span><span class="p">(</span><span class="n">v_scroll</span><span class="o">.</span><span class="n">value</span><span class="p">()</span> <span class="o">-</span> <span class="n">delta</span><span class="o">.</span><span class="n">y</span><span class="p">())</span>
+            
+            <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">mouseMoveEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.zoom_in">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.zoom_in">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zoom_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.25</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Zoom in on the image.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            factor: The zoom factor (must be greater than 1.0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.25</span>  <span class="c1"># Default to 1.25 if invalid factor is provided</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_image</span><span class="p">(</span><span class="n">factor</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.zoom_out">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.zoom_out">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zoom_out</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.25</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Zoom out from the image.</span>
+<span class="sd">        </span>
+<span class="sd">        Args:</span>
+<span class="sd">            factor: The zoom factor (must be greater than 1.0)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">factor</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.25</span>  <span class="c1"># Default to 1.25 if invalid factor is provided</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_image</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="n">factor</span><span class="p">)</span></div>
+
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_scale_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scale the image by the given factor.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="o">.</span><span class="n">pixmap</span><span class="p">()</span><span class="o">.</span><span class="n">isNull</span><span class="p">():</span>
+            <span class="k">return</span>
+        
+        <span class="c1"># Calculate new scale factor</span>
+        <span class="n">old_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">*=</span> <span class="n">factor</span>
+        
+        <span class="c1"># Limit zoom levels</span>
+        <span class="n">min_scale</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="n">max_scale</span> <span class="o">=</span> <span class="mf">10.0</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">&lt;</span> <span class="n">min_scale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="n">min_scale</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="n">min_scale</span> <span class="o">/</span> <span class="n">old_scale</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">&gt;</span> <span class="n">max_scale</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="n">max_scale</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="n">max_scale</span> <span class="o">/</span> <span class="n">old_scale</span>
+        
+        <span class="c1"># Apply the scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span>
+    
+<div class="viewcode-block" id="ImagePreviewWidget.fit_to_view">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.fit_to_view">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_to_view</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the image to the current view.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="o">.</span><span class="n">pixmap</span><span class="p">()</span><span class="o">.</span><span class="n">isNull</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fitInView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">AspectRatioMode</span><span class="o">.</span><span class="n">KeepAspectRatio</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span><span class="o">.</span><span class="n">m11</span><span class="p">()</span>  <span class="c1"># Update scale factor</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewWidget.resizeEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewWidget.resizeEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">resizeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle resize events to maintain aspect ratio.&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">resizeEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="o">.</span><span class="n">pixmap</span><span class="p">()</span><span class="o">.</span><span class="n">isNull</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fit_to_view</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ImagePreviewDialog">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog">[documenti]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ImagePreviewDialog</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Dialog for displaying image previews with navigation controls.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Initializing ImagePreviewDialog&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Initialize instance variables</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nav_buttons</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span> <span class="o">=</span> <span class="kc">None</span>
+            
+            <span class="c1"># Set dialog properties</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="s2">&quot;Image Preview&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setMinimumSize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWindowModality</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">WindowModality</span><span class="o">.</span><span class="n">ApplicationModal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWindowFlags</span><span class="p">(</span>
+                <span class="n">Qt</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">Window</span> <span class="o">|</span>
+                <span class="n">Qt</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">WindowTitleHint</span> <span class="o">|</span>
+                <span class="n">Qt</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">WindowSystemMenuHint</span> <span class="o">|</span>
+                <span class="n">Qt</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">WindowMinMaxButtonsHint</span> <span class="o">|</span>
+                <span class="n">Qt</span><span class="o">.</span><span class="n">WindowType</span><span class="o">.</span><span class="n">WindowCloseButtonHint</span>
+            <span class="p">)</span>
+            
+            <span class="c1"># Set up the UI</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">init_ui</span><span class="p">()</span>
+            
+            <span class="c1"># Load images if provided</span>
+            <span class="k">if</span> <span class="n">image_paths</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_image_paths</span><span class="p">(</span><span class="n">image_paths</span><span class="p">)</span>
+                
+            <span class="c1"># Set up a timer to check for visibility issues</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_visibility_timer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startTimer</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>  <span class="c1"># Check every second</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;ImagePreviewDialog initialized successfully&quot;</span><span class="p">)</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error initializing ImagePreviewDialog: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span>
+    
+<div class="viewcode-block" id="ImagePreviewDialog.set_image_paths">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.set_image_paths">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_image_paths</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image_paths</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the list of image paths to display.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Setting image paths: </span><span class="si">{</span><span class="n">image_paths</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Convert all paths to strings and filter out non-existent files</span>
+            <span class="n">valid_paths</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">image_paths</span><span class="p">:</span>
+                <span class="n">path_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">path_str</span><span class="p">):</span>
+                    <span class="n">valid_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path_str</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image file not found: </span><span class="si">{</span><span class="n">path_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span> <span class="o">=</span> <span class="n">valid_paths</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span>
+            
+            <span class="c1"># Update UI based on new paths</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_navigation_buttons</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_window_title</span><span class="p">()</span>
+            
+            <span class="c1"># Load the first image if available</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">clear_preview</span><span class="p">()</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error setting image paths: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.init_ui">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.init_ui">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the user interface components.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Main layout</span>
+            <span class="n">main_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            
+            <span class="c1"># Title label</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignmentFlag</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;font-weight: bold; font-size: 12px;&quot;</span><span class="p">)</span>
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="p">)</span>
+            
+            <span class="c1"># Path label</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="o">.</span><span class="n">setAlignment</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">AlignmentFlag</span><span class="o">.</span><span class="n">AlignCenter</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;color: gray; font-size: 10px;&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="o">.</span><span class="n">setWordWrap</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="p">)</span>
+            
+            <span class="c1"># Image preview area</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span> <span class="o">=</span> <span class="n">ImagePreviewWidget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>  <span class="c1"># Stretch factor of 1</span>
+            
+            <span class="c1"># Navigation controls</span>
+            <span class="n">nav_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            
+            <span class="c1"># Previous button</span>
+            <span class="n">prev_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Previous&quot;</span><span class="p">)</span>
+            <span class="n">prev_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">show_previous</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nav_buttons</span><span class="p">[</span><span class="s1">&#39;prev&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prev_btn</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">prev_btn</span><span class="p">)</span>
+            
+            <span class="c1"># Zoom out button</span>
+            <span class="n">zoom_out_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Zoom Out&quot;</span><span class="p">)</span>
+            <span class="n">zoom_out_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">zoom_out</span><span class="p">)</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">zoom_out_btn</span><span class="p">)</span>
+            
+            <span class="c1"># Fit to window button</span>
+            <span class="n">fit_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Fit to Window&quot;</span><span class="p">)</span>
+            <span class="n">fit_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fit_to_window</span><span class="p">)</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">fit_btn</span><span class="p">)</span>
+            
+            <span class="c1"># Zoom in button</span>
+            <span class="n">zoom_in_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Zoom In&quot;</span><span class="p">)</span>
+            <span class="n">zoom_in_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">zoom_in</span><span class="p">)</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">zoom_in_btn</span><span class="p">)</span>
+            
+            <span class="c1"># Next button</span>
+            <span class="n">next_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Next&quot;</span><span class="p">)</span>
+            <span class="n">next_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">show_next</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nav_buttons</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">next_btn</span>
+            <span class="n">nav_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">next_btn</span><span class="p">)</span>
+            
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">nav_layout</span><span class="p">)</span>
+            
+            <span class="c1"># Close button</span>
+            <span class="n">close_btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Close&quot;</span><span class="p">)</span>
+            <span class="n">close_btn</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">)</span>
+            <span class="n">close_btn</span><span class="o">.</span><span class="n">setDefault</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+            
+            <span class="n">btn_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+            <span class="n">btn_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+            <span class="n">btn_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">close_btn</span><span class="p">)</span>
+            <span class="n">btn_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+            
+            <span class="n">main_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">btn_layout</span><span class="p">)</span>
+            
+            <span class="c1"># Update UI state</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_navigation_buttons</span><span class="p">()</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error initializing UI: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">raise</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.load_image">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.load_image">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_image</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load and display the image at the specified index.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid image index: </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="n">image_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+            
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading image </span><span class="si">{</span><span class="n">index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">image_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Update UI</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setCursor</span><span class="p">(</span><span class="n">Qt</span><span class="o">.</span><span class="n">CursorShape</span><span class="o">.</span><span class="n">WaitCursor</span><span class="p">)</span>
+            <span class="n">QApplication</span><span class="o">.</span><span class="n">processEvents</span><span class="p">()</span>  <span class="c1"># Update UI before loading</span>
+            
+            <span class="c1"># Load the image using Wand</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">WandImage</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">image_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">img</span><span class="p">:</span>
+                    <span class="c1"># Update the preview widget</span>
+                    <span class="n">success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+                    
+                    <span class="k">if</span> <span class="n">success</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">update_window_title</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">update_path_label</span><span class="p">()</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">update_navigation_buttons</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load image: </span><span class="si">{</span><span class="n">image_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Failed to load image: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">False</span>
+                    
+                    <span class="k">return</span> <span class="kc">True</span>
+                    
+            <span class="k">except</span> <span class="n">WandException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Wand error loading image </span><span class="si">{</span><span class="n">image_path</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Error loading image: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">image_path</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">False</span>
+                
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error loading image at index </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">QMessageBox</span><span class="o">.</span><span class="n">critical</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;Error&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;Unexpected error loading image: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+            
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">unsetCursor</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.clear_preview">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.clear_preview">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_preview</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the current preview and update UI accordingly.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_navigation_buttons</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.update_window_title">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.update_window_title">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_window_title</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the window title with current image info.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">):</span>
+            <span class="n">file_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Image Preview - </span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+            
+            <span class="c1"># Update title label with image info</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">with</span> <span class="n">WandImage</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">])</span> <span class="k">as</span> <span class="n">img</span><span class="p">:</span>
+                    <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">width</span><span class="p">,</span> <span class="n">img</span><span class="o">.</span><span class="n">height</span>
+                    <span class="n">size_mb</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">file_name</span><span class="si">}</span><span class="s2"> • </span><span class="si">{</span><span class="n">width</span><span class="si">}</span><span class="s2">×</span><span class="si">{</span><span class="n">height</span><span class="si">}</span><span class="s2"> • </span><span class="si">{</span><span class="n">size_mb</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB • </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">format</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">hasattr</span><span class="p">(</span><span class="n">img</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;format&#39;</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;Unknown&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Could not get image info: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_title_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.update_path_label">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.update_path_label">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_path_label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the path label with the current image path.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_path_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">])</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.update_navigation_buttons">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.update_navigation_buttons">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_navigation_buttons</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the enabled state of navigation buttons.&quot;&quot;&quot;</span>
+        <span class="n">has_images</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nav_buttons</span><span class="p">[</span><span class="s1">&#39;prev&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">has_images</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nav_buttons</span><span class="p">[</span><span class="s1">&#39;next&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">setEnabled</span><span class="p">(</span><span class="n">has_images</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.show_previous">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.show_previous">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_previous</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show the previous image in the list.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.show_next">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.show_next">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show the next image in the list.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">load_image</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.zoom_in">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.zoom_in">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zoom_in</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Zoom in on the current image.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">zoom_in</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.zoom_out">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.zoom_out">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">zoom_out</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Zoom out from the current image.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">zoom_out</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.fit_to_window">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.fit_to_window">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_to_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the current image to the window.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_preview_widget&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">fitInView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">_pixmap_item</span><span class="p">,</span> 
+                                        <span class="n">Qt</span><span class="o">.</span><span class="n">AspectRatioMode</span><span class="o">.</span><span class="n">KeepAspectRatio</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">_scale_factor</span> <span class="o">=</span> <span class="mf">1.0</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.closeEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.closeEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">closeEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle the close event to ensure proper cleanup.&quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_visibility_timer&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visibility_timer</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">killTimer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_visibility_timer</span><span class="p">)</span>
+            
+            <span class="c1"># Clear the preview to free resources</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            
+            <span class="c1"># Clear references to help with garbage collection</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">image_paths</span> <span class="o">=</span> <span class="p">[]</span>
+            
+            <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>
+            
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during close event: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">accept</span><span class="p">()</span>  <span class="c1"># Still allow the window to close</span></div>
+
+    
+<div class="viewcode-block" id="ImagePreviewDialog.timerEvent">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.ImagePreviewDialog.timerEvent">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">timerEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">QTimerEvent</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle timer events for periodic checks.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">timerId</span><span class="p">()</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">_visibility_timer</span><span class="p">:</span>
+            <span class="c1"># Check if the dialog is still visible and properly initialized</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isActiveWindow</span><span class="p">():</span>
+                <span class="k">return</span>
+            
+            <span class="c1"># Check if the preview widget is visible and has a valid size</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">isVisible</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">width</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">10</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="o">.</span><span class="n">height</span><span class="p">()</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Preview widget has invalid size, attempting to fix...&quot;</span><span class="p">)</span>
+                <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;adjustSize&#39;</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
+                <span class="n">QMetaObject</span><span class="o">.</span><span class="n">invokeMethod</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_preview_widget</span><span class="p">,</span> <span class="s1">&#39;fit_to_view&#39;</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">ConnectionType</span><span class="o">.</span><span class="n">QueuedConnection</span><span class="p">)</span>
+        
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">timerEvent</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="show_image_preview">
+<a class="viewcode-back" href="../../api.html#script.image_dialog_preview.show_image_preview">[documenti]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">show_image_preview</span><span class="p">(</span><span class="n">image_paths</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]]],</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Show an image preview dialog in a way that&#39;s guaranteed to make it visible.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        image_paths: Single path or list of image paths to display</span>
+<span class="sd">        parent: Parent widget</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Optional[ImagePreviewDialog]: The created dialog instance, or None if creation failed</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;show_image_preview called with paths: </span><span class="si">{</span><span class="n">image_paths</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Convert single path to list if needed</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_paths</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">image_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">image_paths</span><span class="p">]</span>
+            
+        <span class="c1"># Create the dialog</span>
+        <span class="n">dialog</span> <span class="o">=</span> <span class="n">ImagePreviewDialog</span><span class="p">(</span><span class="n">image_paths</span><span class="p">,</span> <span class="n">parent</span><span class="p">)</span>
+        
+        <span class="c1"># Show the dialog and wait for it to be shown</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">raise_</span><span class="p">()</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">activateWindow</span><span class="p">()</span>
+        
+        <span class="c1"># Use a direct method call instead of invokeMethod</span>
+        <span class="n">QApplication</span><span class="o">.</span><span class="n">processEvents</span><span class="p">()</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">fit_to_window</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="n">dialog</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error showing image preview: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nsfr750.</p>
+  </div>
+
+  Realizzato con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    fornito da <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

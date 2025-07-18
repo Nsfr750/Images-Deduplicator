@@ -1,0 +1,700 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script.styles &mdash; Images Deduplicator 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Images Deduplicator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Changelog</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Images Deduplicator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">script.styles</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for script.styles</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Theme and style management for the application.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">QApplication</span><span class="p">,</span> <span class="n">QStyleFactory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QPalette</span><span class="p">,</span> <span class="n">QColor</span><span class="p">,</span> <span class="n">QFont</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span>
+
+<span class="c1"># Import the enhanced logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">script.logger</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
+
+<div class="viewcode-block" id="setup_dark_theme">
+<a class="viewcode-back" href="../../api.html#script.styles.setup_dark_theme">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_dark_theme</span><span class="p">(</span><span class="n">app</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set up the dark theme palette.&quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">dark_palette</span> <span class="o">=</span> <span class="n">QPalette</span><span class="p">()</span>
+        
+        <span class="c1"># Base colors</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Window</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">WindowText</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Base</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="mi">42</span><span class="p">,</span> <span class="mi">42</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">AlternateBase</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">66</span><span class="p">,</span> <span class="mi">66</span><span class="p">,</span> <span class="mi">66</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">ToolTipBase</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">ToolTipText</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Text</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Button</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">,</span> <span class="mi">53</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">ButtonText</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">white</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">BrightText</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">red</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Link</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">218</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Highlight</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">42</span><span class="p">,</span> <span class="mi">130</span><span class="p">,</span> <span class="mi">218</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">HighlightedText</span><span class="p">,</span> <span class="n">Qt</span><span class="o">.</span><span class="n">GlobalColor</span><span class="o">.</span><span class="n">black</span><span class="p">)</span>
+        
+        <span class="c1"># Set disabled colors using the correct method signature</span>
+        <span class="n">disabled_color</span> <span class="o">=</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">127</span><span class="p">,</span> <span class="mi">127</span><span class="p">,</span> <span class="mi">127</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorGroup</span><span class="o">.</span><span class="n">Disabled</span><span class="p">,</span> <span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">WindowText</span><span class="p">,</span> <span class="n">disabled_color</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorGroup</span><span class="o">.</span><span class="n">Disabled</span><span class="p">,</span> <span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Text</span><span class="p">,</span> <span class="n">disabled_color</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorGroup</span><span class="o">.</span><span class="n">Disabled</span><span class="p">,</span> <span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">ButtonText</span><span class="p">,</span> <span class="n">disabled_color</span><span class="p">)</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorGroup</span><span class="o">.</span><span class="n">Disabled</span><span class="p">,</span> <span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">Highlight</span><span class="p">,</span> <span class="n">QColor</span><span class="p">(</span><span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">80</span><span class="p">))</span>
+        <span class="n">dark_palette</span><span class="o">.</span><span class="n">setColor</span><span class="p">(</span><span class="n">QPalette</span><span class="o">.</span><span class="n">ColorGroup</span><span class="o">.</span><span class="n">Disabled</span><span class="p">,</span> <span class="n">QPalette</span><span class="o">.</span><span class="n">ColorRole</span><span class="o">.</span><span class="n">HighlightedText</span><span class="p">,</span> <span class="n">disabled_color</span><span class="p">)</span>
+        
+        <span class="n">app</span><span class="o">.</span><span class="n">setPalette</span><span class="p">(</span><span class="n">dark_palette</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Dark theme palette applied successfully&quot;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error applying dark theme: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">raise</span></div>
+
+
+<div class="viewcode-block" id="get_theme_stylesheet">
+<a class="viewcode-back" href="../../api.html#script.styles.get_theme_stylesheet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_theme_stylesheet</span><span class="p">(</span><span class="n">theme</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the stylesheet for the specified theme.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        theme: Theme name (only &#39;dark&#39; is supported)</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        str: The stylesheet for the theme</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">theme</span> <span class="o">!=</span> <span class="s1">&#39;dark&#39;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Theme &#39;</span><span class="si">{</span><span class="n">theme</span><span class="si">}</span><span class="s2">&#39; is not supported. Using &#39;dark&#39; theme.&quot;</span><span class="p">)</span>
+    
+    <span class="k">return</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">    /* Main window and general styling */</span>
+<span class="s2">    QMainWindow, QDialog, QWidget {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Text and labels */</span>
+<span class="s2">    QLabel, QCheckBox, QRadioButton, QGroupBox, QMenuBar, QMenu, QStatusBar {</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Push buttons */</span>
+<span class="s2">    QPushButton {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">        padding: 5px 15px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QPushButton:hover {</span>
+<span class="s2">        background-color: #4a4a4a;</span>
+<span class="s2">        border: 1px solid #777777;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QPushButton:pressed {</span>
+<span class="s2">        background-color: #2a2a2a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QPushButton:disabled {</span>
+<span class="s2">        background-color: #2a2a2a;</span>
+<span class="s2">        color: #777777;</span>
+<span class="s2">        border: 1px solid #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Line edits and text edits */</span>
+<span class="s2">    QLineEdit, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox, QComboBox, QComboBox QAbstractItemView {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">        padding: 5px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QLineEdit:disabled, QTextEdit:disabled, QPlainTextEdit:disabled,</span>
+<span class="s2">    QSpinBox:disabled, QDoubleSpinBox:disabled, QComboBox:disabled {</span>
+<span class="s2">        background-color: #2a2a2a;</span>
+<span class="s2">        color: #777777;</span>
+<span class="s2">        border: 1px solid #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Scroll bars */</span>
+<span class="s2">    QScrollBar:vertical {</span>
+<span class="s2">        border: none;</span>
+<span class="s2">        background: #2b2b2b;</span>
+<span class="s2">        width: 10px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QScrollBar::handle:vertical {</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">        min-height: 20px;</span>
+<span class="s2">        border-radius: 5px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {</span>
+<span class="s2">        height: 0px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {</span>
+<span class="s2">        background: none;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Tabs */</span>
+<span class="s2">    QTabBar::tab {</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        padding: 8px 20px;</span>
+<span class="s2">        border-top-left-radius: 4px;</span>
+<span class="s2">        border-top-right-radius: 4px;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-bottom: none;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTabBar::tab:selected {</span>
+<span class="s2">        background: #2b2b2b;</span>
+<span class="s2">        border-bottom: 1px solid #2b2b2b;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTabBar::tab:!selected {</span>
+<span class="s2">        margin-top: 2px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTabWidget::pane {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-top: none;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Group boxes */</span>
+<span class="s2">    QGroupBox {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">        margin-top: 1.5em;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QGroupBox::title {</span>
+<span class="s2">        subcontrol-origin: margin;</span>
+<span class="s2">        left: 10px;</span>
+<span class="s2">        padding: 0 5px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Progress bar */</span>
+<span class="s2">    QProgressBar {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">        text-align: center;</span>
+<span class="s2">        background: #2a2a2a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QProgressBar::chunk {</span>
+<span class="s2">        background-color: #2a82da;</span>
+<span class="s2">        width: 10px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Sliders */</span>
+<span class="s2">    QSlider::groove:horizontal {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        height: 8px;</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">        margin: 2px 0;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QSlider::handle:horizontal {</span>
+<span class="s2">        background: #2a82da;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        width: 18px;</span>
+<span class="s2">        margin: -5px 0;</span>
+<span class="s2">        border-radius: 3px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Checkboxes and radio buttons */</span>
+<span class="s2">    QCheckBox::indicator, QRadioButton::indicator {</span>
+<span class="s2">        width: 16px;</span>
+<span class="s2">        height: 16px;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCheckBox::indicator:checked, QRadioButton::indicator:checked {</span>
+<span class="s2">        background: #2a82da;</span>
+<span class="s2">        border: 1px solid #2a82da;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Combo box */</span>
+<span class="s2">    QComboBox::drop-down {</span>
+<span class="s2">        border: none;</span>
+<span class="s2">        background: transparent;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QComboBox::down-arrow {</span>
+<span class="s2">        image: url(none);</span>
+<span class="s2">        width: 0;</span>
+<span class="s2">        height: 0;</span>
+<span class="s2">        border-left: 4px solid none;</span>
+<span class="s2">        border-right: 4px solid none;</span>
+<span class="s2">        border-top: 5px solid #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Menu bar */</span>
+<span class="s2">    QMenuBar {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border-bottom: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QMenuBar::item {</span>
+<span class="s2">        background: transparent;</span>
+<span class="s2">        padding: 5px 10px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QMenuBar::item:selected {</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Menus */</span>
+<span class="s2">    QMenu {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QMenu::item:selected {</span>
+<span class="s2">        background-color: #2a82da;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Tool tips */</span>
+<span class="s2">    QToolTip {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Status bar */</span>
+<span class="s2">    QStatusBar {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border-top: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Scroll area */</span>
+<span class="s2">    QScrollArea {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Tree view */</span>
+<span class="s2">    QTreeView {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTreeView::item:selected {</span>
+<span class="s2">        background-color: #2a82da;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTreeView::item:hover {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Table view */</span>
+<span class="s2">    QTableView {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTableView::item:selected {</span>
+<span class="s2">        background-color: #2a82da;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QTableView::item:hover {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Header view */</span>
+<span class="s2">    QHeaderView::section {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        padding: 5px;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Toolbar */</span>
+<span class="s2">    QToolBar {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        border-bottom: 1px solid #555555;</span>
+<span class="s2">        spacing: 3px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Dock widget */</span>
+<span class="s2">    QDockWidget {</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        titlebar-close-icon: url(none);</span>
+<span class="s2">        titlebar-normal-icon: url(none);</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QDockWidget::title {</span>
+<span class="s2">        text-align: left;</span>
+<span class="s2">        padding: 5px;</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Splitter */</span>
+<span class="s2">    QSplitter::handle {</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">        width: 1px;</span>
+<span class="s2">        height: 1px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Tool button */</span>
+<span class="s2">    QToolButton {</span>
+<span class="s2">        background-color: transparent;</span>
+<span class="s2">        border: 1px solid transparent;</span>
+<span class="s2">        border-radius: 4px;</span>
+<span class="s2">        padding: 3px;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QToolButton:hover {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QToolButton:pressed {</span>
+<span class="s2">        background-color: #2a2a2a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Spin box buttons */</span>
+<span class="s2">    QSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {</span>
+<span class="s2">        width: 16px;</span>
+<span class="s2">        border: 1px solid #555555;</span>
+<span class="s2">        background: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QSpinBox::up-arrow, QDoubleSpinBox::up-arrow {</span>
+<span class="s2">        image: url(none);</span>
+<span class="s2">        width: 0;</span>
+<span class="s2">        height: 0;</span>
+<span class="s2">        border-left: 4px solid transparent;</span>
+<span class="s2">        border-right: 4px solid transparent;</span>
+<span class="s2">        border-bottom: 5px solid #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {</span>
+<span class="s2">        image: url(none);</span>
+<span class="s2">        width: 0;</span>
+<span class="s2">        height: 0;</span>
+<span class="s2">        border-left: 4px solid transparent;</span>
+<span class="s2">        border-right: 4px solid transparent;</span>
+<span class="s2">        border-top: 5px solid #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Calendar widget */</span>
+<span class="s2">    QCalendarWidget {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCalendarWidget QWidget#qt_calendar_navigationbar {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCalendarWidget QToolButton {</span>
+<span class="s2">        background-color: transparent;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCalendarWidget QMenu {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCalendarWidget QSpinBox {</span>
+<span class="s2">        background-color: #3a3a3a;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QCalendarWidget QAbstractItemView:enabled {</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        selection-background-color: #2a82da;</span>
+<span class="s2">        selection-color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Message box */</span>
+<span class="s2">    QMessageBox {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QMessageBox QLabel {</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Input dialog */</span>
+<span class="s2">    QInputDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* File dialog */</span>
+<span class="s2">    QFileDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    QFileDialog QLabel, QFileDialog QTreeView, QFileDialog QListView {</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Color dialog */</span>
+<span class="s2">    QColorDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Font dialog */</span>
+<span class="s2">    QFontDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Print dialog */</span>
+<span class="s2">    QPrintDialog, QPageSetupDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Progress dialog */</span>
+<span class="s2">    QProgressDialog {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Wizard */</span>
+<span class="s2">    QWizard {</span>
+<span class="s2">        background-color: #2b2b2b;</span>
+<span class="s2">        color: #ffffff;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Scroll area viewport */</span>
+<span class="s2">    QAbstractScrollArea {</span>
+<span class="s2">        background: #2b2b2b;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Focus rectangle */</span>
+<span class="s2">    QWidget:focus, QMenuBar:focus {</span>
+<span class="s2">        border: 1px solid #2a82da;</span>
+<span class="s2">    }</span>
+<span class="s2">    </span>
+<span class="s2">    /* Disabled text color */</span>
+<span class="s2">    QLabel:disabled, QCheckBox:disabled, QRadioButton:disabled, QGroupBox:disabled {</span>
+<span class="s2">        color: #777777;</span>
+<span class="s2">    }</span>
+<span class="s2">    &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="apply_style">
+<a class="viewcode-back" href="../../api.html#script.styles.apply_style">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_style</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">style_name</span><span class="o">=</span><span class="s1">&#39;Fusion&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply the specified style to the application.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        app: QApplication instance</span>
+<span class="sd">        style_name: Name of the style to apply (only &#39;Fusion&#39; is supported)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">style_name</span> <span class="o">!=</span> <span class="s1">&#39;Fusion&#39;</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Style &#39;</span><span class="si">{</span><span class="n">style_name</span><span class="si">}</span><span class="s2">&#39; is not supported. Using &#39;Fusion&#39; instead.&quot;</span><span class="p">)</span>
+    
+    <span class="c1"># Always use Fusion style</span>
+    <span class="n">fusion</span> <span class="o">=</span> <span class="n">QStyleFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s1">&#39;Fusion&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fusion</span><span class="p">:</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">setStyle</span><span class="p">(</span><span class="n">fusion</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Failed to create Fusion style. Using default style.&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="apply_theme">
+<a class="viewcode-back" href="../../api.html#script.styles.apply_theme">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_theme</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">theme</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply the specified theme to the application.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        app: QApplication instance</span>
+<span class="sd">        theme: Theme name (only &#39;dark&#39; is supported)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">theme</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;dark&#39;</span><span class="p">:</span>
+            <span class="n">setup_dark_theme</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Dark theme applied successfully&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported theme: </span><span class="si">{</span><span class="n">theme</span><span class="si">}</span><span class="s2">. Only &#39;dark&#39; theme is currently supported.&quot;</span><span class="p">)</span>
+            
+        <span class="c1"># Apply the Fusion style for a more consistent look across platforms</span>
+        <span class="n">apply_style</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="s1">&#39;Fusion&#39;</span><span class="p">)</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error applying theme &#39;</span><span class="si">{</span><span class="n">theme</span><span class="si">}</span><span class="s2">&#39;: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Fall back to default theme if there&#39;s an error</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">app</span><span class="o">.</span><span class="n">setStyle</span><span class="p">(</span><span class="s1">&#39;Fusion&#39;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Fell back to default Fusion style&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">fallback_error</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to apply fallback style: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">fallback_error</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="setup_styles">
+<a class="viewcode-back" href="../../api.html#script.styles.setup_styles">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup_styles</span><span class="p">(</span><span class="n">app</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set up the application styles and themes.</span>
+<span class="sd">    </span>
+<span class="sd">    Args:</span>
+<span class="sd">        app: QApplication instance</span>
+<span class="sd">        </span>
+<span class="sd">    Returns:</span>
+<span class="sd">        dict: Default configuration for appearance settings</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># Default appearance settings</span>
+        <span class="n">default_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;theme&#39;</span><span class="p">:</span> <span class="s1">&#39;dark&#39;</span><span class="p">,</span>  <span class="c1"># Default theme</span>
+            <span class="s1">&#39;style&#39;</span><span class="p">:</span> <span class="s1">&#39;Fusion&#39;</span><span class="p">,</span>  <span class="c1"># Default style</span>
+            <span class="s1">&#39;font_size&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>   <span class="c1"># Default font size</span>
+            <span class="s1">&#39;font_family&#39;</span><span class="p">:</span> <span class="s1">&#39;Segoe UI&#39;</span>  <span class="c1"># Default font family (Windows)</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Set the default style</span>
+        <span class="n">apply_style</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;style&#39;</span><span class="p">])</span>
+        
+        <span class="c1"># Apply the default theme</span>
+        <span class="n">apply_theme</span><span class="p">(</span><span class="n">app</span><span class="p">,</span> <span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">])</span>
+        
+        <span class="c1"># Set the default font</span>
+        <span class="n">font</span> <span class="o">=</span> <span class="n">app</span><span class="o">.</span><span class="n">font</span><span class="p">()</span>
+        <span class="n">font</span><span class="o">.</span><span class="n">setFamily</span><span class="p">(</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;font_family&#39;</span><span class="p">])</span>
+        <span class="n">font</span><span class="o">.</span><span class="n">setPointSize</span><span class="p">(</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;font_size&#39;</span><span class="p">])</span>
+        <span class="n">app</span><span class="o">.</span><span class="n">setFont</span><span class="p">(</span><span class="n">font</span><span class="p">)</span>
+        
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Application styles initialized successfully&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using style: </span><span class="si">{</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;style&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using theme: </span><span class="si">{</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;theme&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using font: </span><span class="si">{</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;font_family&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">default_config</span><span class="p">[</span><span class="s1">&#39;font_size&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">pt&quot;</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">default_config</span>
+        
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error setting up application styles: </span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Return default config even if there&#39;s an error</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s1">&#39;theme&#39;</span><span class="p">:</span> <span class="s1">&#39;dark&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;style&#39;</span><span class="p">:</span> <span class="s1">&#39;Fusion&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;font_size&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+            <span class="s1">&#39;font_family&#39;</span><span class="p">:</span> <span class="s1">&#39;Segoe UI&#39;</span>
+        <span class="p">}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nsfr750.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

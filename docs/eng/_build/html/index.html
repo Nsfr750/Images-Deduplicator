@@ -47,7 +47,7 @@
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
@@ -84,19 +84,25 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#key-features">Key Features:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="introduction.html#system-requirements">System Requirements:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="introduction.html#why-wand-imagemagick">Why Wand/ImageMagick?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installing-imagemagick">Installing ImageMagick</a></li>
 <li class="toctree-l2"><a class="reference internal" href="installation.html#installation-via-pip">Installation via pip</a></li>
-<li class="toctree-l2"><a class="reference internal" href="installation.html#installation-from-source">Installation from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#installation-from-source">Installation from Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#verifying-the-installation">Verifying the Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="installation.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="usage.html#main-interface">Main Interface</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#basic-procedure">Basic Procedure</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#advanced-options">Advanced Options</a></li>
-<li class="toctree-l2"><a class="reference internal" href="usage.html#usage-tips">Usage Tips</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#basic-workflow">Basic Workflow</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#advanced-features">Advanced Features</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#keyboard-shortcuts">Keyboard Shortcuts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#performance-optimization">Performance Optimization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="usage.html#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a><ul>
@@ -104,17 +110,14 @@
 <li class="toctree-l2"><a class="reference internal" href="configuration.html#configuration-tips">Configuration Tips</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.AboutDialog"><code class="docutils literal notranslate"><span class="pre">AboutDialog</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.HelpDialog"><code class="docutils literal notranslate"><span class="pre">HelpDialog</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.ImageComparisonWorker"><code class="docutils literal notranslate"><span class="pre">ImageComparisonWorker</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.ImageDeduplicatorApp"><code class="docutils literal notranslate"><span class="pre">ImageDeduplicatorApp</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.ImagePreview"><code class="docutils literal notranslate"><span class="pre">ImagePreview</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.SponsorDialog"><code class="docutils literal notranslate"><span class="pre">SponsorDialog</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.StylePreviewDialog"><code class="docutils literal notranslate"><span class="pre">StylePreviewDialog</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.UpdateCheckerWorker"><code class="docutils literal notranslate"><span class="pre">UpdateCheckerWorker</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.WorkerSignals"><code class="docutils literal notranslate"><span class="pre">WorkerSignals</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="api.html#main.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-main">Core Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#image-processing">Image Processing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#user-interface">User Interface</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#core-functionality">Core Functionality</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#internationalization">Internationalization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#module-script.logger">Utilities</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#wand-imagemagick-integration">Wand/ImageMagick Integration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="api.html#notes">Notes</a></li>
 </ul>
 </li>

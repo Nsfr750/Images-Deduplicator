@@ -1,0 +1,1256 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="it" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>script.help &mdash; Documentazione Images Deduplicator 1.0.0 </title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=eba8e968"></script>
+      <script src="../../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../../_static/translations.js?v=45930005"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Indice" href="../../genindex.html" />
+    <link rel="search" title="Cerca" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Images Deduplicator
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Cerca documenti" aria-label="Cerca documenti" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Menu di navigazione">
+              <p class="caption" role="heading"><span class="caption-text">Contenuti:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduzione.html">Introduzione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../installazione.html">Installazione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utilizzo.html">Utilizzo</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../configurazione.html">Configurazione</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">Riferimento API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../changelog.html">Cronologia delle modifiche</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Menu navigazione dispositivi mobili" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Images Deduplicator</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Naviga tra le pagine">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Codice del modulo</a></li>
+      <li class="breadcrumb-item active">script.help</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Codice sorgente per script.help</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Help dialog for the Image Deduplicator application.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtWidgets</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">QDialog</span><span class="p">,</span> <span class="n">QVBoxLayout</span><span class="p">,</span> <span class="n">QLabel</span><span class="p">,</span> <span class="n">QPushButton</span><span class="p">,</span> <span class="n">QTextBrowser</span><span class="p">,</span> <span class="n">QTabWidget</span><span class="p">,</span> <span class="n">QWidget</span><span class="p">,</span>
+    <span class="n">QHBoxLayout</span><span class="p">,</span> <span class="n">QFrame</span><span class="p">,</span> <span class="n">QScrollArea</span><span class="p">,</span> <span class="n">QSizePolicy</span><span class="p">,</span> <span class="n">QComboBox</span><span class="p">,</span> <span class="n">QLineEdit</span><span class="p">,</span>
+    <span class="n">QGroupBox</span><span class="p">,</span> <span class="n">QGridLayout</span><span class="p">,</span> <span class="n">QToolButton</span><span class="p">,</span> <span class="n">QStyle</span><span class="p">,</span> <span class="n">QMenu</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtCore</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qt</span><span class="p">,</span> <span class="n">QSize</span><span class="p">,</span> <span class="n">QEvent</span><span class="p">,</span> <span class="n">QUrl</span><span class="p">,</span> <span class="n">QTimer</span><span class="p">,</span> <span class="n">pyqtSignal</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">PyQt6.QtGui</span><span class="w"> </span><span class="kn">import</span> <span class="n">QFont</span><span class="p">,</span> <span class="n">QTextCursor</span><span class="p">,</span> <span class="n">QDesktopServices</span><span class="p">,</span> <span class="n">QAction</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">script.translations</span><span class="w"> </span><span class="kn">import</span> <span class="n">t</span><span class="p">,</span> <span class="n">LANGUAGES</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">script.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_version</span><span class="p">,</span> <span class="n">__version__</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">script.language_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">LanguageManager</span>  <span class="c1"># Import LanguageManager</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">difflib</span><span class="w"> </span><span class="kn">import</span> <span class="n">SequenceMatcher</span>
+
+<div class="viewcode-block" id="HelpDialog">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog">[documenti]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">HelpDialog</span><span class="p">(</span><span class="n">QDialog</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Help dialog showing usage information and language selection.&quot;&quot;&quot;</span>
+    
+    <span class="c1"># Signal for language change</span>
+    <span class="n">language_changed</span> <span class="o">=</span> <span class="n">pyqtSignal</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">language_manager</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        
+        <span class="c1"># Initialize language manager</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span> <span class="o">=</span> <span class="n">language_manager</span> <span class="k">if</span> <span class="n">language_manager</span> <span class="k">else</span> <span class="n">LanguageManager</span><span class="p">(</span><span class="n">default_lang</span><span class="o">=</span><span class="n">lang</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="o">.</span><span class="n">current_language</span>
+        
+        <span class="c1"># Connect language changed signal</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="o">.</span><span class="n">language_changed</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">on_language_changed</span><span class="p">)</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setMinimumSize</span><span class="p">(</span><span class="mi">800</span><span class="p">,</span> <span class="mi">600</span><span class="p">)</span>
+        
+        <span class="c1"># Search state</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;case_sensitive&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;whole_words&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s1">&#39;highlight&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s1">&#39;fuzzy&#39;</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="p">}</span>
+        
+        <span class="c1"># Timer for debouncing search</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_timer</span> <span class="o">=</span> <span class="n">QTimer</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_timer</span><span class="o">.</span><span class="n">setInterval</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>  <span class="c1"># 300ms debounce</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_timer</span><span class="o">.</span><span class="n">setSingleShot</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_timer</span><span class="o">.</span><span class="n">timeout</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">perform_search</span><span class="p">)</span>
+        
+        <span class="c1"># Set application style</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_ui</span><span class="p">()</span>
+        
+<div class="viewcode-block" id="HelpDialog.translate">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.translate">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">translate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper method to get translated text.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;lang_manager&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">t</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.on_language_changed">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.on_language_changed">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_language_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lang_code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle language change.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang</span> <span class="o">=</span> <span class="n">lang_code</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retranslate_ui</span><span class="p">()</span></div>
+
+        
+<div class="viewcode-block" id="HelpDialog.retranslate_ui">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.retranslate_ui">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">retranslate_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Retranslate the UI elements.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setWindowTitle</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;usage&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update buttons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_close&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update search UI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">setPlaceholderText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_help&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_case_sensitive&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_whole_words&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_highlight&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_fuzzy&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_usage_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_features_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_tips_tab</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.setup_ui">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.setup_ui">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_ui</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set up the user interface.&quot;&quot;&quot;</span>
+        <span class="c1"># Main layout</span>
+        <span class="n">main_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+        
+        <span class="c1"># Header with search and language selection</span>
+        <span class="n">header_frame</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">header_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">(</span><span class="n">header_frame</span><span class="p">)</span>
+        <span class="n">header_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        
+        <span class="c1"># Search bar</span>
+        <span class="n">search_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        
+        <span class="n">search_icon</span> <span class="o">=</span> <span class="n">QToolButton</span><span class="p">()</span>
+        <span class="n">search_icon</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;🔍&quot;</span><span class="p">)</span>
+        <span class="n">search_icon</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">30</span><span class="p">)</span>
+        <span class="n">search_icon</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;QToolButton { padding: 0; }&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Search input with history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span> <span class="o">=</span> <span class="n">QLineEdit</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">setPlaceholderText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_help&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">textChanged</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_text_changed</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure search input is visible</span>
+        
+        <span class="c1"># Search history dropdown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span> <span class="o">=</span> <span class="n">QComboBox</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">setEditable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">activated</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history_selected</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure combo box is visible</span>
+        
+        <span class="c1"># Search options button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span> <span class="o">=</span> <span class="n">QToolButton</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">&quot;⚙️&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;searchOptionsButton&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setPopupMode</span><span class="p">(</span><span class="n">QToolButton</span><span class="o">.</span><span class="n">ToolButtonPopupMode</span><span class="o">.</span><span class="n">InstantPopup</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_search_options_menu</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure options button is visible</span>
+        
+        <span class="c1"># Clear search button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;×&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_button</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;clearSearchButton&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_search</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_button</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure clear button is visible</span>
+        
+        <span class="c1"># Match count label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">&quot;matchCount&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure match count is visible</span>
+        
+        <span class="c1"># Add search components to layout</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">search_icon</span><span class="p">)</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="p">)</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="p">)</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="p">)</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span><span class="p">)</span>
+        <span class="n">search_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">clear_search_button</span><span class="p">)</span>
+        
+        <span class="c1"># Language selection</span>
+        <span class="n">lang_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">lang_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang_label</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;language&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Create language buttons</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;English&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lang</span> <span class="o">==</span> <span class="s1">&#39;en&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_language</span><span class="p">(</span><span class="s1">&#39;en&#39;</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="s2">&quot;Italiano&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lang</span> <span class="o">==</span> <span class="s1">&#39;it&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_language</span><span class="p">(</span><span class="s1">&#39;it&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Style the active button</span>
+        <span class="n">button_style</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            QPushButton {</span>
+<span class="s2">                background-color: #2d2d2d;</span>
+<span class="s2">                border: 1px solid #444;</span>
+<span class="s2">                padding: 5px 12px;</span>
+<span class="s2">                border-radius: 4px;</span>
+<span class="s2">                margin: 0 2px;</span>
+<span class="s2">            }</span>
+<span class="s2">            QPushButton:checked {</span>
+<span class="s2">                background-color: #357abd;</span>
+<span class="s2">                border-color: #2c6599;</span>
+<span class="s2">            }</span>
+<span class="s2">            QPushButton:hover {</span>
+<span class="s2">                background-color: #3a3a3a;</span>
+<span class="s2">            }</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">button_style</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="n">button_style</span><span class="p">)</span>
+        
+        <span class="n">lang_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lang_label</span><span class="p">)</span>
+        <span class="n">lang_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="p">)</span>
+        <span class="n">lang_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="p">)</span>
+        <span class="n">lang_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        
+        <span class="c1"># Add search layout to header</span>
+        <span class="n">header_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">search_layout</span><span class="p">)</span>
+        <span class="n">header_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        <span class="n">header_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">lang_layout</span><span class="p">)</span>
+        <span class="n">header_frame</span><span class="o">.</span><span class="n">setVisible</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Ensure header frame is visible</span>
+        
+        <span class="c1"># Add header to main layout</span>
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">header_frame</span><span class="p">)</span>
+        
+        <span class="c1"># Create tab widget</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span> <span class="o">=</span> <span class="n">QTabWidget</span><span class="p">()</span>
+        
+        <span class="c1"># Create tabs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;usage&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">addTab</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Setup tab contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_usage_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_features_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_tips_tab</span><span class="p">()</span>
+        
+        <span class="c1"># Close button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_close&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">clicked</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accept</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">setFixedWidth</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+        
+        <span class="c1"># Add widgets to layout</span>
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        
+        <span class="c1"># Center the close button</span>
+        <span class="n">button_layout</span> <span class="o">=</span> <span class="n">QHBoxLayout</span><span class="p">()</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="p">)</span>
+        <span class="n">button_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        
+        <span class="n">main_layout</span><span class="o">.</span><span class="n">addLayout</span><span class="p">(</span><span class="n">button_layout</span><span class="p">)</span>
+        
+        <span class="c1"># Set tab order</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTabOrder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTabOrder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTabOrder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setTabOrder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.create_search_options_menu">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.create_search_options_menu">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_search_options_menu</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the search options menu.&quot;&quot;&quot;</span>
+        <span class="n">menu</span> <span class="o">=</span> <span class="n">QMenu</span><span class="p">()</span>
+        
+        <span class="c1"># Case sensitivity</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_case_sensitive&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;case_sensitive&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_search_options</span><span class="p">)</span>
+        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="p">)</span>
+        
+        <span class="c1"># Whole words</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_whole_words&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;whole_words&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_search_options</span><span class="p">)</span>
+        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="p">)</span>
+        
+        <span class="c1"># Highlight</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_highlight&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;highlight&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_search_options</span><span class="p">)</span>
+        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="p">)</span>
+        
+        <span class="c1"># Fuzzy matching</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span> <span class="o">=</span> <span class="n">QAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_fuzzy&#39;</span><span class="p">),</span> <span class="bp">self</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="o">.</span><span class="n">setCheckable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;fuzzy&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="o">.</span><span class="n">triggered</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">update_search_options</span><span class="p">)</span>
+        <span class="n">menu</span><span class="o">.</span><span class="n">addAction</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="n">menu</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.update_search_options">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.update_search_options">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_search_options</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update search options when user changes them.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;case_sensitive&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">case_sensitive_action</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;whole_words&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">whole_words_action</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;highlight&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_action</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;fuzzy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fuzzy_action</span><span class="o">.</span><span class="n">isChecked</span><span class="p">()</span>
+        
+        <span class="c1"># Re-perform search with new options</span>
+        <span class="n">search_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">text</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">search_text</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perform_search</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.search_text_changed">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.search_text_changed">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">search_text_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle search text changes.&quot;&quot;&quot;</span>
+        <span class="c1"># Start timer for debounced search</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_timer</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.perform_search">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.perform_search">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">perform_search</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the actual search with current options.&quot;&quot;&quot;</span>
+        <span class="n">search_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">search_text</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="c1"># Add to history</span>
+        <span class="k">if</span> <span class="n">search_text</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_history</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_history</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">search_text</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">addItems</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_history</span><span class="p">[:</span><span class="mi">10</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">setCurrentText</span><span class="p">(</span><span class="n">search_text</span><span class="p">)</span>
+        
+        <span class="c1"># Update match count</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_matches</span><span class="p">(</span><span class="n">search_text</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">matches</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;matches&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Perform actual search</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_content</span><span class="p">(</span><span class="n">search_text</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.find_matches">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.find_matches">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">find_matches</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search_text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find matches in current tab content based on search options.&quot;&quot;&quot;</span>
+        <span class="c1"># Split search terms</span>
+        <span class="n">terms</span> <span class="o">=</span> <span class="p">[</span><span class="n">term</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">search_text</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span> <span class="k">if</span> <span class="n">term</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        
+        <span class="c1"># Get current tab content</span>
+        <span class="n">current_tab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_original_content</span><span class="p">(</span><span class="n">current_tab</span><span class="p">)</span>
+        
+        <span class="c1"># Initialize matches list</span>
+        <span class="n">matches</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Process each search term</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;case_sensitive&#39;</span><span class="p">]:</span>
+                <span class="n">search_term</span> <span class="o">=</span> <span class="n">term</span>
+                <span class="n">content_text</span> <span class="o">=</span> <span class="n">content</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">search_term</span> <span class="o">=</span> <span class="n">term</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">content_text</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            
+            <span class="c1"># Find matches based on options</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;whole_words&#39;</span><span class="p">]:</span>
+                <span class="c1"># Match whole words only</span>
+                <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;\b&#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">search_term</span><span class="p">)</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\b&#39;</span>
+                <span class="n">matches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">content_text</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Regular search</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;fuzzy&#39;</span><span class="p">]:</span>
+                    <span class="c1"># Fuzzy matching</span>
+                    <span class="n">words</span> <span class="o">=</span> <span class="n">content_text</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+                        <span class="n">ratio</span> <span class="o">=</span> <span class="n">SequenceMatcher</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">word</span><span class="p">,</span> <span class="n">search_term</span><span class="p">)</span><span class="o">.</span><span class="n">ratio</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">0.7</span><span class="p">:</span>  <span class="c1"># 70% similarity threshold</span>
+                            <span class="n">matches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">word</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Exact match</span>
+                    <span class="n">matches</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">content_text</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">search_term</span><span class="p">))</span>
+        
+        <span class="k">return</span> <span class="n">matches</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.history_selected">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.history_selected">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">history_selected</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle selection from search history.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">itemText</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perform_search</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.clear_search">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.clear_search">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_search</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear the search.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_history_combo</span><span class="o">.</span><span class="n">setCurrentIndex</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">match_count_label</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_highlights</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.filter_content">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.filter_content">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">filter_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">search_text</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter content based on search text.&quot;&quot;&quot;</span>
+        <span class="n">search_text</span> <span class="o">=</span> <span class="n">search_text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+        
+        <span class="c1"># Get current tab index</span>
+        <span class="n">current_tab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        
+        <span class="c1"># Clear previous search highlights</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clear_search_highlights</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">search_text</span><span class="p">:</span>
+            <span class="k">return</span>
+            
+        <span class="c1"># Get the current tab&#39;s content</span>
+        <span class="k">if</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Usage tab</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">toPlainText</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Features tab</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">toPlainText</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Tips tab</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">toPlainText</span><span class="p">()</span>
+        
+        <span class="c1"># Split content into sections (by headings)</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="n">content</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">matching_sections</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c1"># Search through each section</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">search_text</span> <span class="ow">in</span> <span class="n">section</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
+                <span class="n">matching_sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
+        
+        <span class="c1"># If no matches found, show a message</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">matching_sections</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">show_no_results_message</span><span class="p">()</span>
+            <span class="k">return</span>
+            
+        <span class="c1"># Create a new QTextBrowser with search results</span>
+        <span class="n">results_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">results_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">results_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Format search results with highlighting</span>
+        <span class="n">html_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            &lt;style&gt;</span>
+<span class="s2">                .highlight { background-color: #333333; }</span>
+<span class="s2">                .section-title { font-weight: bold; margin-bottom: 10px; }</span>
+<span class="s2">                .section-content { margin-bottom: 20px; }</span>
+<span class="s2">            &lt;/style&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="c1"># Add matching sections with highlighted text</span>
+        <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="n">matching_sections</span><span class="p">:</span>
+            <span class="c1"># Split section into title and content</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+            
+            <span class="c1"># Highlight search terms</span>
+            <span class="n">highlighted_content</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">highlight_search_terms</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">search_text</span><span class="p">)</span>
+            
+            <span class="n">html_content</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                &lt;div class=&quot;section-title&quot;&gt;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                &lt;div class=&quot;section-content&quot;&gt;</span><span class="si">{</span><span class="n">highlighted_content</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        
+        <span class="n">results_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+        
+        <span class="c1"># Replace current content with search results</span>
+        <span class="k">if</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">html_content</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.highlight_search_terms">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.highlight_search_terms">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">highlight_search_terms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">search_term</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Highlight all occurrences of search term in text.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">search_options</span><span class="p">[</span><span class="s1">&#39;highlight&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">text</span>
+            
+        <span class="n">highlighted</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+        
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">search_term</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="k">break</span>
+                
+            <span class="c1"># Get the text before the match</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">index</span><span class="p">]</span>
+            <span class="c1"># Get the matching text</span>
+            <span class="n">match</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">index</span><span class="p">:</span><span class="n">index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_term</span><span class="p">)]</span>
+            <span class="c1"># Get the text after the match</span>
+            <span class="n">after</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_term</span><span class="p">):]</span>
+            
+            <span class="c1"># Add to highlighted text</span>
+            <span class="n">highlighted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">before</span><span class="p">)</span>
+            <span class="n">highlighted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;span class=&quot;highlight&quot;&gt;</span><span class="si">{</span><span class="n">match</span><span class="si">}</span><span class="s1">&lt;/span&gt;&#39;</span><span class="p">)</span>
+            
+            <span class="c1"># Update start position</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">search_term</span><span class="p">)</span>
+        
+        <span class="c1"># Add remaining text</span>
+        <span class="n">highlighted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:])</span>
+        
+        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">highlighted</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.clear_search_highlights">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.clear_search_highlights">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_search_highlights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear any existing search highlights.&quot;&quot;&quot;</span>
+        <span class="n">current_tab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        
+        <span class="k">if</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_original_content</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_original_content</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_original_content</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.get_original_content">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.get_original_content">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_original_content</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tab_index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the original content for a tab.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tab_index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># Usage tab</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_usage_content</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">tab_index</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># Features tab</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_features_content</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">tab_index</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>  <span class="c1"># Tips tab</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tips_content</span><span class="p">()</span>
+        <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.show_no_results_message">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.show_no_results_message">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_no_results_message</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Show a message when no results are found.&quot;&quot;&quot;</span>
+        <span class="n">current_tab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        <span class="n">text_edit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_current_text_edit</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">text_edit</span><span class="p">:</span>
+            <span class="n">text_edit</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                &lt;style&gt;</span>
+<span class="s2">                    .no-results </span><span class="si">{</span><span class="w"> </span>
+<span class="w">                        </span><span class="n">font</span><span class="o">-</span><span class="n">size</span><span class="si">:</span><span class="s2"> 14pt; </span>
+<span class="s2">                        color: #666; </span>
+<span class="s2">                        text-align: center; </span>
+<span class="s2">                        padding: 20px;</span>
+<span class="s2">                    </span><span class="si">}</span>
+<span class="s2">                &lt;/style&gt;</span>
+<span class="s2">                &lt;div class=&quot;no-results&quot;&gt;</span>
+<span class="s2">                    </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_no_results&#39;</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">                &lt;/div&gt;</span>
+<span class="s2">            &quot;&quot;&quot;</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.get_current_text_edit">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.get_current_text_edit">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_current_text_edit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current text edit widget based on active tab.&quot;&quot;&quot;</span>
+        <span class="n">current_tab</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">currentIndex</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">current_tab</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="o">.</span><span class="n">findChild</span><span class="p">(</span><span class="n">QTextBrowser</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.setup_usage_tab">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.setup_usage_tab">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_usage_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the usage tab content.&quot;&quot;&quot;</span>
+        <span class="c1"># Create scroll area for better content management</span>
+        <span class="n">scroll</span> <span class="o">=</span> <span class="n">QScrollArea</span><span class="p">()</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidgetResizable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QFrame</span><span class="o">.</span><span class="n">Shape</span><span class="o">.</span><span class="n">NoFrame</span><span class="p">)</span>
+        
+        <span class="c1"># Create a widget to hold the scroll area&#39;s contents</span>
+        <span class="n">content_widget</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        
+        <span class="c1"># Create the main layout for the content widget</span>
+        <span class="n">content_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>  <span class="c1"># Set parent widget here</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+        
+        <span class="c1"># Title and introduction</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_title&#39;</span><span class="p">,</span> <span class="n">version</span><span class="o">=</span><span class="n">get_version</span><span class="p">()))</span>
+        <span class="n">title</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-size: 20px;</span>
+<span class="s2">            font-weight: bold;</span>
+<span class="s2">            margin-bottom: 20px;</span>
+<span class="s2">            color: #286CBD;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">intro</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_intro&#39;</span><span class="p">))</span>
+        <span class="n">intro</span><span class="o">.</span><span class="n">setWordWrap</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">intro</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-size: 14px;</span>
+<span class="s2">            margin-bottom: 20px;</span>
+<span class="s2">            color: #e0e0e0;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Add title and intro to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">intro</span><span class="p">)</span>
+        
+        <span class="c1"># Features section</span>
+        <span class="n">features_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_title&#39;</span><span class="p">))</span>
+        <span class="n">features_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">features_group</span><span class="p">)</span>  <span class="c1"># Set parent widget here</span>
+        
+        <span class="n">features_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">features_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">features_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">features_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_1&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_2&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_3&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_4&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">features_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">features_content</span><span class="p">)</span>
+        <span class="n">features_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">features_text</span><span class="p">)</span>
+        
+        <span class="c1"># Add features group to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">features_group</span><span class="p">)</span>
+        
+        <span class="c1"># Usage steps section</span>
+        <span class="n">steps_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_title_2&#39;</span><span class="p">))</span>
+        <span class="n">steps_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">steps_group</span><span class="p">)</span>  <span class="c1"># Set parent widget here</span>
+        
+        <span class="n">steps_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">steps_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">steps_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">steps_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ol style=&quot;list-style-type: decimal; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;ul style=&quot;list-style-type: square; margin-left: 30px;&quot;&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">                &lt;li&gt;&lt;b&gt;</span><span class="si">{}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;/ul&gt;&lt;/li&gt;</span>
+<span class="s2">        &lt;/ol&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_1&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_2&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_3&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_4&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_5&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_select_all&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_delete_selected&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_delete_all&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">steps_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">steps_content</span><span class="p">)</span>
+        <span class="n">steps_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">steps_text</span><span class="p">)</span>
+        
+        <span class="c1"># Add steps group to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">steps_group</span><span class="p">)</span>
+        
+        <span class="c1"># Supported formats section</span>
+        <span class="n">formats_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_supported_formats&#39;</span><span class="p">))</span>
+        <span class="n">formats_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">formats_group</span><span class="p">)</span>  <span class="c1"># Set parent widget here</span>
+        
+        <span class="n">formats_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">formats_content</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_formats_1&#39;</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_formats_2&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">formats_content</span><span class="p">)</span>
+        <span class="n">formats_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">formats_text</span><span class="p">)</span>
+        
+        <span class="c1"># Add formats group to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">formats_group</span><span class="p">)</span>
+        
+        <span class="c1"># Add stretch to push content to the top</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        
+        <span class="c1"># Set the content widget as the scroll area&#39;s widget</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>
+        
+        <span class="c1"># Create a layout for the tab and add the scroll area</span>
+        <span class="n">tab_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">tab_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">scroll</span><span class="p">)</span>
+        <span class="n">tab_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        
+        <span class="c1"># Set the layout on the tab widget</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">usage_tab</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">tab_layout</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.setup_features_tab">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.setup_features_tab">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_features_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the features tab content.&quot;&quot;&quot;</span>
+        <span class="c1"># Create scroll area for better content management</span>
+        <span class="n">scroll</span> <span class="o">=</span> <span class="n">QScrollArea</span><span class="p">()</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidgetResizable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QFrame</span><span class="o">.</span><span class="n">Shape</span><span class="o">.</span><span class="n">NoFrame</span><span class="p">)</span>
+        
+        <span class="n">content_widget</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">content_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+        
+        <span class="c1"># Title</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_title_full&#39;</span><span class="p">))</span>
+        <span class="n">title</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-size: 20px;</span>
+<span class="s2">            font-weight: bold;</span>
+<span class="s2">            margin-bottom: 20px;</span>
+<span class="s2">            color: #286CBD;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Image Comparison section</span>
+        <span class="n">image_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_title&#39;</span><span class="p">))</span>
+        <span class="n">image_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">image_group</span><span class="p">)</span>
+        
+        <span class="n">image_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">image_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">image_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">image_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">image_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">image_content</span><span class="p">)</span>
+        <span class="n">image_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">image_text</span><span class="p">)</span>
+        
+        <span class="c1"># Batch Operations section</span>
+        <span class="n">batch_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_title&#39;</span><span class="p">))</span>
+        <span class="n">batch_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">batch_group</span><span class="p">)</span>
+        
+        <span class="n">batch_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">batch_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">batch_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">batch_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">batch_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">batch_content</span><span class="p">)</span>
+        <span class="n">batch_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">batch_text</span><span class="p">)</span>
+        
+        <span class="c1"># Quality Control section</span>
+        <span class="n">quality_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_title&#39;</span><span class="p">))</span>
+        <span class="n">quality_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">quality_group</span><span class="p">)</span>
+        
+        <span class="n">quality_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">quality_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">quality_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">quality_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">quality_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">quality_content</span><span class="p">)</span>
+        <span class="n">quality_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">quality_text</span><span class="p">)</span>
+        
+        <span class="c1"># Add all groups to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">image_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">batch_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">quality_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        
+        <span class="c1"># Set content widget and scroll area</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>
+        
+        <span class="c1"># Create layout for features tab and set it</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">scroll</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">features_tab</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.setup_tips_tab">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.setup_tips_tab">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup_tips_tab</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup the tips tab content.&quot;&quot;&quot;</span>
+        <span class="c1"># Create scroll area for better content management</span>
+        <span class="n">scroll</span> <span class="o">=</span> <span class="n">QScrollArea</span><span class="p">()</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidgetResizable</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setFrameShape</span><span class="p">(</span><span class="n">QFrame</span><span class="o">.</span><span class="n">Shape</span><span class="o">.</span><span class="n">NoFrame</span><span class="p">)</span>
+        
+        <span class="n">content_widget</span> <span class="o">=</span> <span class="n">QWidget</span><span class="p">()</span>
+        <span class="n">content_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">setSpacing</span><span class="p">(</span><span class="mi">15</span><span class="p">)</span>
+        
+        <span class="c1"># Title</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="n">QLabel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_title&#39;</span><span class="p">))</span>
+        <span class="n">title</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-size: 20px;</span>
+<span class="s2">            font-weight: bold;</span>
+<span class="s2">            margin-bottom: 20px;</span>
+<span class="s2">            color: #286CBD;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Large Collections section</span>
+        <span class="n">large_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_title&#39;</span><span class="p">))</span>
+        <span class="n">large_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">large_group</span><span class="p">)</span>
+        
+        <span class="n">large_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">large_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">large_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">large_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">large_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">large_content</span><span class="p">)</span>
+        <span class="n">large_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">large_text</span><span class="p">)</span>
+        
+        <span class="c1"># Image Formats section</span>
+        <span class="n">formats_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_title&#39;</span><span class="p">))</span>
+        <span class="n">formats_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">formats_group</span><span class="p">)</span>
+        
+        <span class="n">formats_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">formats_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">formats_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">formats_content</span><span class="p">)</span>
+        <span class="n">formats_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">formats_text</span><span class="p">)</span>
+        
+        <span class="c1"># Performance section</span>
+        <span class="n">perf_group</span> <span class="o">=</span> <span class="n">QGroupBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_title&#39;</span><span class="p">))</span>
+        <span class="n">perf_layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">(</span><span class="n">perf_group</span><span class="p">)</span>
+        
+        <span class="n">perf_text</span> <span class="o">=</span> <span class="n">QTextBrowser</span><span class="p">()</span>
+        <span class="n">perf_text</span><span class="o">.</span><span class="n">setReadOnly</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">perf_text</span><span class="o">.</span><span class="n">setStyleSheet</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            font-family: Arial;</span>
+<span class="s2">            font-size: 12pt;</span>
+<span class="s2">            background: #1a1a1a;</span>
+<span class="s2">            border: 1px solid #333333;</span>
+<span class="s2">            border-radius: 8px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">        &quot;&quot;&quot;</span><span class="p">)</span>
+        
+        <span class="n">perf_content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;ul style=&quot;list-style-type: disc; margin-left: 20px;&quot;&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li style=&quot;margin-bottom: 10px;&quot;&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        
+        <span class="n">perf_text</span><span class="o">.</span><span class="n">setHtml</span><span class="p">(</span><span class="n">perf_content</span><span class="p">)</span>
+        <span class="n">perf_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">perf_text</span><span class="p">)</span>
+        
+        <span class="c1"># Add all groups to content layout</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">large_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">formats_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">perf_group</span><span class="p">)</span>
+        <span class="n">content_layout</span><span class="o">.</span><span class="n">addStretch</span><span class="p">()</span>
+        
+        <span class="c1"># Set content widget and scroll area</span>
+        <span class="n">scroll</span><span class="o">.</span><span class="n">setWidget</span><span class="p">(</span><span class="n">content_widget</span><span class="p">)</span>
+        
+        <span class="c1"># Create layout for tips tab and set it</span>
+        <span class="n">layout</span> <span class="o">=</span> <span class="n">QVBoxLayout</span><span class="p">()</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">addWidget</span><span class="p">(</span><span class="n">scroll</span><span class="p">)</span>
+        <span class="n">layout</span><span class="o">.</span><span class="n">setContentsMargins</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tips_tab</span><span class="o">.</span><span class="n">setLayout</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.change_language">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.change_language">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">change_language</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lang_code</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Change the UI language.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">lang_code</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">lang</span><span class="p">:</span>
+            <span class="k">return</span>  <span class="c1"># No change needed</span>
+            
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang_manager</span><span class="o">.</span><span class="n">set_language</span><span class="p">(</span><span class="n">lang_code</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang</span> <span class="o">=</span> <span class="n">lang_code</span>
+        
+        <span class="c1"># Update button states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">english_button</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="n">lang_code</span> <span class="o">==</span> <span class="s1">&#39;en&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">italian_button</span><span class="o">.</span><span class="n">setChecked</span><span class="p">(</span><span class="n">lang_code</span> <span class="o">==</span> <span class="s1">&#39;it&#39;</span><span class="p">)</span>
+        
+        <span class="c1"># Update UI</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">retranslate_ui</span><span class="p">()</span>
+        
+        <span class="c1"># Update search options menu</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_options_button</span><span class="o">.</span><span class="n">setMenu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_search_options_menu</span><span class="p">())</span>
+        
+        <span class="c1"># Update search input placeholder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">search_input</span><span class="o">.</span><span class="n">setPlaceholderText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;search_help&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update close button text</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close_button</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_close&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update tab names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;usage&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tabs</span><span class="o">.</span><span class="n">setTabText</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips&#39;</span><span class="p">))</span>
+        
+        <span class="c1"># Update language label</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lang_label</span><span class="o">.</span><span class="n">setText</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;language&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Update tab contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_usage_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_features_tab</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_tips_tab</span><span class="p">()</span>
+        
+        <span class="c1"># Re-apply search if there was one</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;last_search&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_search</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">perform_search</span><span class="p">()</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.get_usage_content">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.get_usage_content">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_usage_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the original content for the usage tab.&quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;h1&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_title&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">version</span><span class="o">=</span><span class="n">get_version</span><span class="p">())</span><span class="si">}</span><span class="s2">&lt;/h1&gt;</span>
+<span class="s2">        &lt;p&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_intro&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/p&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_feature_4&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_title_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ol&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_4&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_step_5&#39;</span><span class="p">)</span><span class="si">}</span>
+<span class="s2">                &lt;ul&gt;</span>
+<span class="s2">                    &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_select_all&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">                    &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_delete_selected&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">                    &lt;li&gt;&lt;b&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_usage_delete_all&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/b&gt;&lt;/li&gt;</span>
+<span class="s2">                &lt;/ul&gt;</span>
+<span class="s2">            &lt;/li&gt;</span>
+<span class="s2">        &lt;/ol&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_supported_formats&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_formats_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_formats_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_visit_website&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;p&gt;</span>
+<span class="s2">            &lt;a href=&quot;https://github.com/Nsfr750/Images-Deduplicator&quot; </span>
+<span class="s2">               style=&quot;color: #4a90e2; text-decoration: none;&quot;</span>
+<span class="s2">               onclick=&quot;window.open(this.href); return false;&quot;&gt;</span>
+<span class="s2">                https://github.com/Nsfr750/Images-Deduplicator</span>
+<span class="s2">            &lt;/a&gt;</span>
+<span class="s2">        &lt;/p&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.get_features_content">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.get_features_content">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_features_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the original content for the features tab.&quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;h1&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_title_full&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h1&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_image_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_batch_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_features_quality_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+
+    
+<div class="viewcode-block" id="HelpDialog.get_tips_content">
+<a class="viewcode-back" href="../../api.html#script.help.HelpDialog.get_tips_content">[documenti]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_tips_content</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the original content for the tips tab.&quot;&quot;&quot;</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;h1&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h1&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_large_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_formats_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        </span>
+<span class="s2">        &lt;h2&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_title&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h2&gt;</span>
+<span class="s2">        &lt;ul&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_1&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_2&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">            &lt;li&gt;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="s1">&#39;help_tips_perf_3&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/li&gt;</span>
+<span class="s2">        &lt;/ul&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+</div>
+
+
+<span class="c1"># For backward compatibility with Tkinter version</span>
+<div class="viewcode-block" id="Help">
+<a class="viewcode-back" href="../../api.html#script.help.Help">[documenti]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Help</span><span class="p">:</span>
+<div class="viewcode-block" id="Help.show_help">
+<a class="viewcode-back" href="../../api.html#script.help.Help.show_help">[documenti]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">show_help</span><span class="p">(</span><span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">dialog</span> <span class="o">=</span> <span class="n">HelpDialog</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+        <span class="n">dialog</span><span class="o">.</span><span class="n">exec</span><span class="p">()</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Nsfr750.</p>
+  </div>
+
+  Realizzato con <a href="https://www.sphinx-doc.org/">Sphinx</a> usando un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">tema</a>
+    fornito da <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

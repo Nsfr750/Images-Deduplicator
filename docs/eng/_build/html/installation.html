@@ -47,13 +47,21 @@
 <li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-imagemagick">Installing ImageMagick</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#windows">Windows</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#macos">macOS</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#linux-debian-ubuntu">Linux (Debian/Ubuntu)</a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#installation-via-pip">Installation via pip</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#installation-from-source">Installation from source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#installation-from-source">Installation from Source</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verifying-the-installation">Verifying the Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
 <li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
 </ul>
 
@@ -87,50 +95,134 @@
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
 <p>Before installing Images Deduplicator, ensure you have:</p>
 <ol class="arabic simple">
-<li><p>Python 3.8 or higher installed on your system</p></li>
-<li><p>Git (optional, for cloning the repository)</p></li>
+<li><p>Python 3.8 or higher (3.10+ recommended)</p></li>
+<li><p>ImageMagick installed (required for Wand)</p></li>
+<li><p>Git (optional, for development installation)</p></li>
 </ol>
+</section>
+<section id="installing-imagemagick">
+<h2>Installing ImageMagick<a class="headerlink" href="#installing-imagemagick" title="Link to this heading"></a></h2>
+<section id="windows">
+<h3>Windows<a class="headerlink" href="#windows" title="Link to this heading"></a></h3>
+<ol class="arabic">
+<li><p>Download the latest ImageMagick installer from the <a class="reference external" href="https://imagemagick.org/script/download.php#windows">official website</a></p></li>
+<li><p>Run the installer with these options:
+- Check “Install development headers and libraries for C and C++”
+- Check “Add application directory to your system path”</p></li>
+<li><p>Verify installation by opening a new command prompt and running:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>magick<span class="w"> </span>--version
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="macos">
+<h3>macOS<a class="headerlink" href="#macos" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install Homebrew if not already installed</span>
+/bin/bash<span class="w"> </span>-c<span class="w"> </span><span class="s2">&quot;</span><span class="k">$(</span>curl<span class="w"> </span>-fsSL<span class="w"> </span>https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh<span class="k">)</span><span class="s2">&quot;</span>
+
+<span class="c1"># Install ImageMagick</span>
+brew<span class="w"> </span>install<span class="w"> </span>imagemagick
+</pre></div>
+</div>
+</section>
+<section id="linux-debian-ubuntu">
+<h3>Linux (Debian/Ubuntu)<a class="headerlink" href="#linux-debian-ubuntu" title="Link to this heading"></a></h3>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>apt-get<span class="w"> </span>update
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>-y<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>imagemagick<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libmagickwand-dev<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>libmagickcore-dev
+</pre></div>
+</div>
+</section>
 </section>
 <section id="installation-via-pip">
 <h2>Installation via pip<a class="headerlink" href="#installation-via-pip" title="Link to this heading"></a></h2>
-<ol class="arabic simple">
-<li><p>Open a terminal/command prompt</p></li>
-<li><p>Install the required dependencies:</p></li>
-</ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</pre></div>
-</div>
-<ol class="arabic simple" start="3">
-<li><p>Run the application:</p></li>
-</ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>main.py
+<p>The recommended way to install Images Deduplicator is using pip:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Install the package</span>
+pip<span class="w"> </span>install<span class="w"> </span>images-deduplicator
+
+<span class="c1"># Run the application</span>
+images-dedup
 </pre></div>
 </div>
 </section>
 <section id="installation-from-source">
-<h2>Installation from source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
+<h2>Installation from Source<a class="headerlink" href="#installation-from-source" title="Link to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Clone the repository:</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>https://github.com/Nsfr750/Images-Deduplicator.git
+<span class="nb">cd</span><span class="w"> </span>Images-Deduplicator
 </pre></div>
 </div>
 <ol class="arabic simple" start="2">
-<li><p>Navigate to the project directory:</p></li>
+<li><p>Install in development mode with all dependencies:</p></li>
 </ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>Images-Deduplicator
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create and activate a virtual environment (recommended)</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+
+<span class="c1"># Install package in development mode with all extras</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s1">&#39;.[dev,docs,packaging]&#39;</span>
 </pre></div>
 </div>
 <ol class="arabic simple" start="3">
-<li><p>Install the dependencies:</p></li>
-</ol>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
-</pre></div>
-</div>
-<ol class="arabic simple" start="4">
 <li><p>Run the application:</p></li>
 </ol>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python<span class="w"> </span>main.py
+</pre></div>
+</div>
+</section>
+<section id="verifying-the-installation">
+<h2>Verifying the Installation<a class="headerlink" href="#verifying-the-installation" title="Link to this heading"></a></h2>
+<p>To verify that Wand can find and use ImageMagick:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">wand.image</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wand.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">QUANTUM_DEPTH</span><span class="p">,</span> <span class="n">MAGICK_VERSION</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;ImageMagick version: </span><span class="si">{</span><span class="n">MAGICK_VERSION</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Quantum depth: </span><span class="si">{</span><span class="n">QUANTUM_DEPTH</span><span class="si">}</span><span class="s2"> bits&quot;</span><span class="p">)</span>
+
+<span class="c1"># Test basic image operations</span>
+<span class="k">with</span> <span class="n">Image</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;wizard:&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">img</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Image size: </span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p><strong>Wand can’t find ImageMagick</strong></p>
+<p>If you encounter errors about missing libraries:</p>
+<ol class="arabic simple">
+<li><p>Ensure ImageMagick is properly installed and in your system PATH</p></li>
+<li><p>On Windows, you may need to restart your terminal/IDE after installation</p></li>
+<li><p>Verify the installation by running <code class="docutils literal notranslate"><span class="pre">magick</span> <span class="pre">--version</span></code> in your terminal</p></li>
+</ol>
+<p><strong>Permission Errors</strong></p>
+<p>If you encounter permission errors, try:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="c1"># On Linux/macOS</span>
+pip<span class="w"> </span>install<span class="w"> </span>--user<span class="w"> </span>images-deduplicator
+
+<span class="c1"># Or use a virtual environment</span>
+python<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>venv
+<span class="nb">source</span><span class="w"> </span>venv/bin/activate<span class="w">  </span><span class="c1"># On Windows: venv\Scripts\activate</span>
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+</pre></div>
+</div>
+<p><strong>Memory Issues</strong></p>
+<p>For large image collections, you might need to increase ImageMagick’s resource limits. Create or edit the <code class="docutils literal notranslate"><span class="pre">policy.xml</span></code> file:</p>
+<ul class="simple">
+<li><p>Linux/macOS: <code class="docutils literal notranslate"><span class="pre">/etc/ImageMagick-7/policy.xml</span></code></p></li>
+<li><p>Windows: <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\ImageMagick-7.1.1-Q16-HDRI\policy.xml</span></code></p></li>
+</ul>
+<p>And adjust these values:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;width&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;16KP&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;height&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;16KP&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;area&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;128MB&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;memory&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;4GiB&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;map&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;8GiB&quot;</span><span class="nt">/&gt;</span>
+<span class="nt">&lt;policy</span><span class="w"> </span><span class="na">domain=</span><span class="s">&quot;resource&quot;</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;disk&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;16GiB&quot;</span><span class="nt">/&gt;</span>
 </pre></div>
 </div>
 </section>

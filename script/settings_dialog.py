@@ -4,6 +4,7 @@ Handles all application settings including UI, comparison, and quality settings.
 """
 import os
 import json
+import logging
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton,
@@ -27,6 +28,13 @@ class SettingsDialog(QDialog):
         self.lang_manager = language_manager if language_manager else LanguageManager()
         self.lang = self.lang_manager.current_language
         self.config = config or {}
+        
+        # Set up config directory and file path
+        self.config_dir = Path.home() / '.config' / 'image-deduplicator'
+        self.config_file = self.config_dir / 'config.json'
+        
+        # Ensure config directory exists
+        self.config_dir.mkdir(parents=True, exist_ok=True)
         
         # Connect language changed signal
         if self.lang_manager:
@@ -206,35 +214,68 @@ class SettingsDialog(QDialog):
                 self.lang_manager.set_language(lang_code)
     
     def load_settings(self):
-        """Load settings from config."""
+        """Load settings from config file or use defaults."""
         try:
-            # Load language
+            # Try to load settings from config file
+            if self.config_file.exists():
+                with open(self.config_file, 'r', encoding='utf-8') as f:
+                    self.config = json.load(f)
+                    logger.info(f"Loaded settings from {self.config_file}")
+            
+            # Apply loaded settings or use defaults
             if 'language' in self.config:
                 lang_code = self.config['language']
                 index = self.language_combo.findData(lang_code)
                 if index >= 0:
                     self.language_combo.setCurrentIndex(index)
             
-            # Load other settings
-            if 'similarity_threshold' in self.config:
-                self.threshold_slider.setValue(int(self.config['similarity_threshold']))
+            # Load other settings with defaults if not present
+            self.threshold_slider.setValue(int(self.config.get('similarity_threshold', 90)))
+            self.recursive_check.setChecked(self.config.get('recursive_search', True))
+            self.quality_check.setChecked(self.config.get('keep_better_quality', True))
+            self.preserve_metadata_check.setChecked(self.config.get('preserve_metadata', True))
             
-            if 'recursive_search' in self.config:
-                self.recursive_check.setChecked(self.config['recursive_search'])
-            
-            if 'keep_better_quality' in self.config:
-                self.quality_check.setChecked(self.config['keep_better_quality'])
-            
-            if 'preserve_metadata' in self.config:
-                self.preserve_metadata_check.setChecked(self.config['preserve_metadata'])
-            
-            if 'theme' in self.config:
-                index = self.theme_combo.findData(self.config['theme'])
-                if index >= 0:
-                    self.theme_combo.setCurrentIndex(index)
+            # Set theme with default 'dark' if not specified
+            theme = self.config.get('theme', 'dark')
+            index = self.theme_combo.findData(theme)
+            if index >= 0:
+                self.theme_combo.setCurrentIndex(index)
                     
+        except json.JSONDecodeError as e:
+            logger.error(f"Error parsing config file: {e}")
+            # Initialize with default settings if config is corrupted
+            self.initialize_default_settings()
         except Exception as e:
             logger.error(f"Error loading settings: {e}")
+            self.initialize_default_settings()
+    
+    def save_settings(self):
+        """Save current settings to config file."""
+        try:
+            # Get current settings
+            settings = self.get_settings()
+            
+            # Save to config file
+            with open(self.config_file, 'w', encoding='utf-8') as f:
+                json.dump(settings, f, indent=4, ensure_ascii=False)
+                
+            logger.info(f"Settings saved to {self.config_file}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving settings: {e}")
+            return False
+    
+    def initialize_default_settings(self):
+        """Initialize settings with default values."""
+        self.config = {
+            'language': 'en',
+            'similarity_threshold': 90,
+            'recursive_search': True,
+            'keep_better_quality': True,
+            'preserve_metadata': True,
+            'theme': 'dark'
+        }
     
     def get_settings(self):
         """Get the current settings from the dialog."""
@@ -251,5 +292,12 @@ class SettingsDialog(QDialog):
     def accept(self):
         """Handle dialog accept (OK button)."""
         settings = self.get_settings()
-        self.settings_updated.emit(settings)
-        super().accept()
+        if self.save_settings():
+            self.settings_updated.emit(settings)
+            super().accept()
+        else:
+            QMessageBox.critical(
+                self,
+                self.translate('error'),
+                self.translate('settings.save_error')
+            )

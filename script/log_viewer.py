@@ -141,9 +141,15 @@ class LogViewer(QDialog):
     
     def get_log_dir(self) -> Path:
         """Get the directory containing log files."""
-        log_dir = Path.home() / ".images-deduplicator" / "logs"
-        log_dir.mkdir(parents=True, exist_ok=True)
-        return log_dir
+        # First try the application's logs directory
+        app_log_dir = Path(__file__).parent.parent / "logs"
+        if app_log_dir.exists():
+            return app_log_dir
+            
+        # Fall back to user's home directory if app directory not found
+        home_log_dir = Path.home() / ".config" / "image-deduplicator" / "logs"
+        home_log_dir.mkdir(parents=True, exist_ok=True)
+        return home_log_dir
     
     def refresh_log_list(self):
         """Refresh the list of available log files."""
