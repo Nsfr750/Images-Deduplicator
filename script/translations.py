@@ -58,16 +58,18 @@ TRANSLATIONS = {
         'operation_failed': 'Operation failed: {error}',
         
         # About dialog
-        'about_title': 'About Image Deduplicator',
-        'version': 'Version',
+        'app_name':'Image Deduplicator',
+        'about_title': 'Info about Image Deduplicator',
+        'version': 'Version: {version}',
         'copyright': '© 2025 Nsfr750',
         'license': 'License: GPLv3',
-        'description': 'A powerful tool to find and manage duplicate images in your collection.',
-        'features': 'Features',
-        'feature_1': 'Find duplicate images with advanced comparison algorithms',
-        'feature_2': 'Preview images before deletion',
-        'feature_3': 'Support for multiple image formats',
-        'feature_4': 'User-friendly interface with multilingual support',
+        'about_description': 'A powerful tool to find and manage duplicate images in your collection.',
+        'system_info': 'System Info:',
+        'operating_system': 'Operating System:',
+        'python_version': 'Python Version:',
+        'qt_version': 'PyQt Version:',
+        'cpu_info': 'CPU:',
+        'memory_info': 'RAM:',
         
         # Help dialog
         'help_title': 'Image Deduplicator Help',
@@ -221,17 +223,19 @@ TRANSLATIONS = {
         'operation_failed': 'Operazione fallita: {error}',
         
         # About dialog
+        'app_name':'Image Deduplicator',
         'about_title': 'Informazioni su Image Deduplicator',
-        'version': 'Versione',
+        'version': 'Versione: {version}',
         'copyright': '© 2025 Nsfr750',
         'license': 'Licenza: GPLv3',
-        'description': 'Un potente strumento per trovare e gestire immagini duplicate nella tua collezione.',
-        'features': 'Caratteristiche',
-        'feature_1': 'Trova immagini duplicate con algoritmi avanzati di confronto',
-        'feature_2': 'Anteprima delle immagini prima dell\'eliminazione',
-        'feature_3': 'Supporto per più formati di immagine',
-        'feature_4': 'Interfaccia intuitiva con supporto multilingua',
-        
+        'about_description': 'Un potente strumento per trovare e gestire immagini duplicate nella tua collezione.',
+        'system_info': 'Informazioni Sistema:',
+        'operating_system': 'Sistema Operativo:',
+        'python_version': 'Versione Python:',
+        'qt_version': 'Versione PyQt:',
+        'cpu_info': 'CPU:',
+        'memory_info': 'RAM:',
+
         # Help dialog
         'help_title': 'Guida di Image Deduplicator',
         'usage': 'Utilizzo',

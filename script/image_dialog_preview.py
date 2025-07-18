@@ -6,13 +6,14 @@ import os
 from pathlib import Path
 from typing import Union, List, Optional
 
-from PyQt6.QtCore import Qt, QSize, QPoint, QRectF, QTimerEvent, QThread, QMetaObject
+from PyQt6.QtCore import Qt, QSize, QPoint, QRectF, QTimerEvent, QThread, QMetaObject, QBuffer, QIODevice
 from PyQt6.QtGui import QPixmap, QImage, QPainter, QWheelEvent, QMouseEvent, QPaintEvent
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout,
     QGraphicsView, QGraphicsScene, QGraphicsPixmapItem, QSizePolicy, QApplication, QFrame, QMessageBox
 )
-from PIL import Image, ImageQt
+from wand.image import Image as WandImage
+from wand.exceptions import WandException
 
 # Import the enhanced logger
 from script.logger import logger
@@ -26,6 +27,9 @@ class ImagePreviewWidget(QGraphicsView):
         super().__init__(parent)
         self._scene = QGraphicsScene(self)
         self.setScene(self._scene)
+        
+        # Initialize logger
+        self.logger = logging.getLogger(__name__)
         
         self._pixmap_item = QGraphicsPixmapItem()
         self._scene.addItem(self._pixmap_item)
@@ -48,153 +52,109 @@ class ImagePreviewWidget(QGraphicsView):
     
     def clear(self):
         """Clear the current image and free resources."""
-        try:
-            if self._current_pixmap and not self._current_pixmap.isNull():
-                self._current_pixmap = None
-                self._pixmap_item.setPixmap(QPixmap())
-                QApplication.processEvents()  # Allow GUI to update
-        except Exception as e:
-            logger.error(f"Error clearing preview widget: {e}", exc_info=True)
+        self._scene.clear()
+        self._pixmap_item = QGraphicsPixmapItem()
+        self._scene.addItem(self._pixmap_item)
+        self._current_pixmap = None
+        self._scale_factor = 1.0
+        self.resetTransform()
     
-    def _resize_image_if_needed(self, img: Image.Image) -> Image.Image:
-        """Resize the image if it's too large to prevent memory issues."""
-        try:
-            width, height = img.size
-            
-            # Check if resizing is needed
-            if width <= self.MAX_IMAGE_DIMENSION and height <= self.MAX_IMAGE_DIMENSION:
-                return img
-                
-            # Calculate new dimensions while maintaining aspect ratio
-            ratio = min(
-                self.MAX_IMAGE_DIMENSION / width,
-                self.MAX_IMAGE_DIMENSION / height
-            )
-            new_width = int(width * ratio)
-            new_height = int(height * ratio)
-            
-            logger.info(f"Resizing large image from {width}x{height} to {new_width}x{new_height}")
-            return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-            
-        except Exception as e:
-            logger.error(f"Error resizing image: {e}", exc_info=True)
-            return img
-    
-    def set_image(self, image_path: Union[str, Path]) -> bool:
+    def load_image(self, image_data: Union[QImage, QPixmap, str, Path, WandImage]):
         """
-        Load and display the image from the given path.
+        Load an image from various sources.
         
         Args:
-            image_path: Path to the image file
-            
-        Returns:
-            bool: True if image was loaded successfully, False otherwise
+            image_data: Can be a QImage, QPixmap, file path (str/Path), or Wand Image
         """
         try:
-            # Clear any existing image first
-            self.clear()
+            self.logger.debug(f"Loading image from source: {type(image_data).__name__}")
             
-            if not image_path:
-                logger.error("No image path provided")
-                return False
+            if isinstance(image_data, (str, Path)):
+                # Load from file using Wand
+                file_path = str(image_data)
+                self.logger.debug(f"Loading image from file: {file_path}")
                 
-            path_str = str(image_path)
-            if not os.path.exists(path_str):
-                logger.error(f"Image path does not exist: {path_str}")
-                return False
+                with WandImage(filename=file_path) as img:
+                    # Convert Wand image to QPixmap
+                    self._current_pixmap = self._wand_to_qpixmap(img)
             
-            # Get file size for logging
-            file_size = os.path.getsize(path_str) / (1024 * 1024)  # in MB
-            logger.debug(f"Loading image: {os.path.basename(path_str)} (Size: {file_size:.2f} MB)")
+            elif isinstance(image_data, WandImage):
+                # Already a Wand image
+                self._current_pixmap = self._wand_to_qpixmap(image_data)
             
-            # Load with Pillow for better format support and memory management
-            try:
-                with Image.open(path_str) as img:
-                    logger.debug(f"Pillow loaded image: {img.size}, mode: {img.mode}")
-                    
-                    # Resize if the image is too large
-                    if max(img.size) > self.MAX_IMAGE_DIMENSION:
-                        img = self._resize_image_if_needed(img)
-                    
-                    # Convert to RGB if needed (for formats like PNG with alpha channel)
-                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                        logger.debug("Converting image with alpha channel to RGB")
-                        background = Image.new('RGB', img.size, (60, 63, 65))  # Match background color
-                        background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
-                        img = background
-                    
-                    # Convert to QPixmap with error handling
-                    try:
-                        # Convert in smaller chunks to reduce memory spikes
-                        qimg = ImageQt.ImageQt(img)
-                        if qimg.isNull():
-                            raise ValueError("Failed to create QImage from Pillow image")
-                            
-                        # Create pixmap with explicit format to avoid format detection issues
-                        pixmap = QPixmap.fromImage(qimg)
-                        if pixmap.isNull():
-                            raise ValueError("Failed to create QPixmap from QImage")
-                        
-                        # Store reference to prevent garbage collection
-                        self._current_pixmap = pixmap
-                        
-                        # Update the pixmap item
-                        self._pixmap_item.setPixmap(pixmap)
-                        
-                        # Reset the view
-                        self.setSceneRect(QRectF(pixmap.rect()))
-                        
-                        # Fit the image to view while maintaining aspect ratio
-                        self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
-                        self._scale_factor = 1.0
-                        
-                        logger.debug(f"Successfully displayed image: {os.path.basename(path_str)}")
-                        return True
-                        
-                    except Exception as img_error:
-                        logger.error(f"Error converting image to QPixmap: {img_error}", exc_info=True)
-                        return False
+            elif isinstance(image_data, QImage):
+                # Convert QImage to QPixmap
+                self._current_pixmap = QPixmap.fromImage(image_data)
             
-            except Exception as load_error:
-                logger.error(f"Error loading image with Pillow: {load_error}", exc_info=True)
-                return False
-                
-        except MemoryError:
-            logger.error("Insufficient memory to load image")
-            QMessageBox.critical(
-                self.parent(),
-                "Memory Error",
-                "Insufficient memory to load this image. Try using a smaller image."
-            )
+            elif isinstance(image_data, QPixmap):
+                # Already a QPixmap
+                self._current_pixmap = image_data
+            
+            else:
+                raise ValueError(f"Unsupported image type: {type(image_data)}")
+            
+            # Set the pixmap and fit to view
+            if self._current_pixmap and not self._current_pixmap.isNull():
+                self._pixmap_item.setPixmap(self._current_pixmap)
+                self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+                self._scale_factor = 1.0
+                return True
+            
             return False
             
         except Exception as e:
-            logger.error(f"Unexpected error in set_image: {e}", exc_info=True)
+            self.logger.error(f"Error loading image: {e}", exc_info=True)
             return False
-        
-        finally:
-            # Ensure we're not holding onto unnecessary resources
-            QApplication.processEvents()
+    
+    def _wand_to_qpixmap(self, wand_img: WandImage) -> QPixmap:
+        """Convert a Wand Image to QPixmap."""
+        try:
+            # Convert to RGB if not already
+            if wand_img.alpha_channel:
+                wand_img.background_color = 'white'
+                wand_img.alpha_channel = 'remove'
+            
+            # Convert to 8-bit RGB
+            wand_img.depth = 8
+            
+            # Get image data as bytes
+            blob = wand_img.make_blob('RGB')
+            
+            # Create QImage from raw data
+            qimage = QImage(
+                blob, 
+                wand_img.width, 
+                wand_img.height, 
+                wand_img.width * 3,  # 3 bytes per pixel for RGB
+                QImage.Format.Format_RGB888
+            )
+            
+            # Convert to QPixmap and return
+            return QPixmap.fromImage(qimage)
+            
+        except Exception as e:
+            self.logger.error(f"Error converting Wand image to QPixmap: {e}", exc_info=True)
+            return QPixmap()
     
     def wheelEvent(self, event: QWheelEvent):
         """Handle mouse wheel events for zooming."""
-        # Zoom Factor
-        zoom_factor = 1.1
-        
-        # Zoom In
-        if event.angleDelta().y() > 0:
-            self.scale(zoom_factor, zoom_factor)
-            self._scale_factor *= zoom_factor
-        # Zoom Out
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            # Zoom with Ctrl + Wheel
+            zoom_in = event.angleDelta().y() > 0
+            if zoom_in:
+                self.zoom_in()
+            else:
+                self.zoom_out()
+            event.accept()
         else:
-            self.scale(1.0 / zoom_factor, 1.0 / zoom_factor)
-            self._scale_factor /= zoom_factor
+            # Default behavior for scrolling
+            super().wheelEvent(event)
     
     def mousePressEvent(self, event: QMouseEvent):
         """Handle mouse press events for panning."""
         if event.button() == Qt.MouseButton.LeftButton:
-            self._pan_start = event.pos()
             self._panning = True
+            self._pan_start = event.pos()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         super().mousePressEvent(event)
     
@@ -207,19 +167,77 @@ class ImagePreviewWidget(QGraphicsView):
     
     def mouseMoveEvent(self, event: QMouseEvent):
         """Handle mouse move events for panning."""
-        if self._panning:
+        if self._panning and not self._pixmap_item.pixmap().isNull():
+            # Calculate the difference in mouse position
             delta = event.pos() - self._pan_start
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - delta.x())
-            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - delta.y())
             self._pan_start = event.pos()
-        super().mouseMoveEvent(event)
+            
+            # Scroll the scrollbars by the difference
+            h_scroll = self.horizontalScrollBar()
+            v_scroll = self.verticalScrollBar()
+            h_scroll.setValue(h_scroll.value() - delta.x())
+            v_scroll.setValue(v_scroll.value() - delta.y())
+            
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
+    
+    def zoom_in(self, factor: float = 1.25):
+        """
+        Zoom in on the image.
+        
+        Args:
+            factor: The zoom factor (must be greater than 1.0)
+        """
+        if factor <= 1.0:
+            factor = 1.25  # Default to 1.25 if invalid factor is provided
+        self._scale_image(factor)
+    
+    def zoom_out(self, factor: float = 1.25):
+        """
+        Zoom out from the image.
+        
+        Args:
+            factor: The zoom factor (must be greater than 1.0)
+        """
+        if factor <= 1.0:
+            factor = 1.25  # Default to 1.25 if invalid factor is provided
+        self._scale_image(1.0 / factor)
+    
+    def _scale_image(self, factor: float):
+        """Scale the image by the given factor."""
+        if self._pixmap_item.pixmap().isNull():
+            return
+        
+        # Calculate new scale factor
+        old_scale = self._scale_factor
+        self._scale_factor *= factor
+        
+        # Limit zoom levels
+        min_scale = 0.1
+        max_scale = 10.0
+        
+        if self._scale_factor < min_scale:
+            self._scale_factor = min_scale
+            factor = min_scale / old_scale
+        elif self._scale_factor > max_scale:
+            self._scale_factor = max_scale
+            factor = max_scale / old_scale
+        
+        # Apply the scale
+        self.scale(factor, factor)
+    
+    def fit_to_view(self):
+        """Fit the image to the current view."""
+        if not self._pixmap_item.pixmap().isNull():
+            self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+            self._scale_factor = self.transform().m11()  # Update scale factor
     
     def resizeEvent(self, event):
-        """Handle resize events to maintain view."""
-        if self.scene() and hasattr(self, '_pixmap_item') and self._pixmap_item and not self._pixmap_item.pixmap().isNull():
-            if self._scale_factor <= 1.0:
-                self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+        """Handle resize events to maintain aspect ratio."""
         super().resizeEvent(event)
+        if self._pixmap_item and not self._pixmap_item.pixmap().isNull():
+            self.fit_to_view()
 
 
 class ImagePreviewDialog(QDialog):
@@ -228,7 +246,7 @@ class ImagePreviewDialog(QDialog):
     def __init__(self, image_paths: List[Union[str, Path]] = None, parent=None):
         try:
             super().__init__(parent)
-            self.logger = logger
+            self.logger = logging.getLogger(__name__)
             self.logger.debug("Initializing ImagePreviewDialog")
             
             # Initialize instance variables
@@ -267,254 +285,256 @@ class ImagePreviewDialog(QDialog):
             self.logger.error(f"Error initializing ImagePreviewDialog: {e}", exc_info=True)
             raise
     
-    def set_image_paths(self, image_paths: List[Union[str, Path]]) -> None:
+    def set_image_paths(self, image_paths: List[Union[str, Path]]):
         """Set the list of image paths to display."""
         try:
-            self.image_paths = [str(p) for p in image_paths if os.path.exists(str(p))]
+            self.logger.debug(f"Setting image paths: {image_paths}")
+            
+            # Convert all paths to strings and filter out non-existent files
+            valid_paths = []
+            for path in image_paths:
+                path_str = str(path)
+                if os.path.exists(path_str):
+                    valid_paths.append(path_str)
+                else:
+                    self.logger.warning(f"Image file not found: {path_str}")
+            
+            self.image_paths = valid_paths
             self.current_index = 0 if self.image_paths else -1
             
-            if self.image_paths:
+            # Update UI based on new paths
+            self.update_navigation_buttons()
+            self.update_window_title()
+            
+            # Load the first image if available
+            if self.current_index >= 0:
                 self.load_image(self.current_index)
-                self.update_navigation_buttons()
             else:
-                self.logger.warning("No valid image paths provided")
                 self.clear_preview()
                 
         except Exception as e:
             self.logger.error(f"Error setting image paths: {e}", exc_info=True)
-            self.clear_preview()
     
     def init_ui(self):
         """Initialize the user interface components."""
         try:
             # Main layout
-            layout = QVBoxLayout(self)
-            layout.setContentsMargins(10, 10, 10, 10)
-            layout.setSpacing(5)
+            main_layout = QVBoxLayout(self)
+            main_layout.setContentsMargins(10, 10, 10, 10)
+            main_layout.setSpacing(5)
             
-            # Title and path labels
-            title_frame = QFrame()
-            title_layout = QVBoxLayout(title_frame)
-            title_layout.setContentsMargins(0, 0, 0, 5)
-            
-            self._title_label = QLabel("Image Preview")
+            # Title label
+            self._title_label = QLabel()
             self._title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+            self._title_label.setStyleSheet("font-weight: bold; font-size: 12px;")
+            main_layout.addWidget(self._title_label)
             
+            # Path label
             self._path_label = QLabel()
             self._path_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self._path_label.setStyleSheet("color: #888; font-size: 11px;")
-            self._path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            self._path_label.setStyleSheet("color: gray; font-size: 10px;")
+            self._path_label.setWordWrap(True)
+            main_layout.addWidget(self._path_label)
             
-            title_layout.addWidget(self._title_label)
-            title_layout.addWidget(self._path_label)
-            
-            # Preview area
+            # Image preview area
             self._preview_widget = ImagePreviewWidget(self)
+            main_layout.addWidget(self._preview_widget, 1)  # Stretch factor of 1
             
-            # Navigation buttons
-            nav_frame = QFrame()
-            nav_layout = QHBoxLayout(nav_frame)
-            nav_layout.setContentsMargins(0, 5, 0, 0)
+            # Navigation controls
+            nav_layout = QHBoxLayout()
+            nav_layout.setContentsMargins(0, 10, 0, 0)
+            nav_layout.setSpacing(5)
             
-            self._nav_buttons = {
-                'prev': QPushButton("Previous"),
-                'next': QPushButton("Next"),
-                'zoom_in': QPushButton("Zoom In (+)"),
-                'zoom_out': QPushButton("Zoom Out (-)"),
-                'fit': QPushButton("Fit to Window"),
-                'close': QPushButton("Close")
-            }
+            # Previous button
+            prev_btn = QPushButton("Previous")
+            prev_btn.clicked.connect(self.show_previous)
+            self._nav_buttons['prev'] = prev_btn
+            nav_layout.addWidget(prev_btn)
             
-            # Connect buttons
-            self._nav_buttons['prev'].clicked.connect(self.show_previous)
-            self._nav_buttons['next'].clicked.connect(self.show_next)
-            self._nav_buttons['zoom_in'].clicked.connect(self.zoom_in)
-            self._nav_buttons['zoom_out'].clicked.connect(self.zoom_out)
-            self._nav_buttons['fit'].clicked.connect(self.fit_to_window)
-            self._nav_buttons['close'].clicked.connect(self.accept)
+            # Zoom out button
+            zoom_out_btn = QPushButton("Zoom Out")
+            zoom_out_btn.clicked.connect(self._preview_widget.zoom_out)
+            nav_layout.addWidget(zoom_out_btn)
             
-            # Add buttons to layout
-            nav_layout.addWidget(self._nav_buttons['prev'])
-            nav_layout.addWidget(self._nav_buttons['next'])
-            nav_layout.addStretch()
-            nav_layout.addWidget(self._nav_buttons['zoom_in'])
-            nav_layout.addWidget(self._nav_buttons['zoom_out'])
-            nav_layout.addWidget(self._nav_buttons['fit'])
-            nav_layout.addStretch()
-            nav_layout.addWidget(self._nav_buttons['close'])
+            # Fit to window button
+            fit_btn = QPushButton("Fit to Window")
+            fit_btn.clicked.connect(self.fit_to_window)
+            nav_layout.addWidget(fit_btn)
             
-            # Add all widgets to main layout
-            layout.addWidget(title_frame)
-            layout.addWidget(self._preview_widget, 1)  # Make preview area expandable
-            layout.addWidget(nav_frame)
+            # Zoom in button
+            zoom_in_btn = QPushButton("Zoom In")
+            zoom_in_btn.clicked.connect(self._preview_widget.zoom_in)
+            nav_layout.addWidget(zoom_in_btn)
             
-            # Update button states
+            # Next button
+            next_btn = QPushButton("Next")
+            next_btn.clicked.connect(self.show_next)
+            self._nav_buttons['next'] = next_btn
+            nav_layout.addWidget(next_btn)
+            
+            main_layout.addLayout(nav_layout)
+            
+            # Close button
+            close_btn = QPushButton("Close")
+            close_btn.clicked.connect(self.accept)
+            close_btn.setDefault(True)
+            
+            btn_layout = QHBoxLayout()
+            btn_layout.addStretch()
+            btn_layout.addWidget(close_btn)
+            btn_layout.addStretch()
+            
+            main_layout.addLayout(btn_layout)
+            
+            # Update UI state
             self.update_navigation_buttons()
             
         except Exception as e:
             self.logger.error(f"Error initializing UI: {e}", exc_info=True)
             raise
     
-    def load_image(self, index: int) -> bool:
+    def load_image(self, index: int):
         """Load and display the image at the specified index."""
         try:
-            if not self.image_paths or index < 0 or index >= len(self.image_paths):
+            if not (0 <= index < len(self.image_paths)):
                 self.logger.warning(f"Invalid image index: {index}")
-                self.clear_preview()
+                return False
+            
+            self.current_index = index
+            image_path = self.image_paths[index]
+            
+            self.logger.debug(f"Loading image {index + 1}/{len(self.image_paths)}: {image_path}")
+            
+            # Update UI
+            self.setCursor(Qt.CursorShape.WaitCursor)
+            QApplication.processEvents()  # Update UI before loading
+            
+            # Load the image using Wand
+            try:
+                with WandImage(filename=image_path) as img:
+                    # Update the preview widget
+                    success = self._preview_widget.load_image(img)
+                    
+                    if success:
+                        self.update_window_title()
+                        self.update_path_label()
+                        self.update_navigation_buttons()
+                    else:
+                        self.logger.error(f"Failed to load image: {image_path}")
+                        QMessageBox.critical(self, "Error", f"Failed to load image: {os.path.basename(image_path)}")
+                        return False
+                    
+                    return True
+                    
+            except WandException as e:
+                self.logger.error(f"Wand error loading image {image_path}: {e}", exc_info=True)
+                QMessageBox.critical(self, "Error", f"Error loading image: {os.path.basename(image_path)}\n{e}")
                 return False
                 
-            image_path = self.image_paths[index]
-            self.logger.debug(f"Loading image {index + 1}/{len(self.image_paths)}: {os.path.basename(image_path)}")
-            
-            # Update UI to show loading state
-            self.setCursor(Qt.CursorShape.WaitCursor)
-            QApplication.processEvents()
-            
-            # Load the image
-            success = self._preview_widget.set_image(image_path)
-            
-            if success:
-                self.current_index = index
-                self.update_window_title()
-                self.update_path_label()
-                self.logger.debug(f"Successfully loaded image: {os.path.basename(image_path)}")
-            else:
-                self.logger.error(f"Failed to load image: {image_path}")
-                self.clear_preview()
-                
-            return success
-            
         except Exception as e:
-            self.logger.error(f"Error loading image: {e}", exc_info=True)
-            self.clear_preview()
+            self.logger.error(f"Error loading image at index {index}: {e}", exc_info=True)
+            QMessageBox.critical(self, "Error", f"Unexpected error loading image: {e}")
             return False
             
         finally:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.unsetCursor()
     
     def clear_preview(self):
         """Clear the current preview and update UI accordingly."""
-        try:
-            if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.clear()
-            
-            if hasattr(self, '_title_label') and self._title_label:
-                self._title_label.setText("No Image")
-                
-            if hasattr(self, '_path_label') and self._path_label:
-                self._path_label.clear()
-                
-        except Exception as e:
-            self.logger.error(f"Error clearing preview: {e}", exc_info=True)
+        self._preview_widget.clear()
+        self._title_label.clear()
+        self._path_label.clear()
+        self.update_navigation_buttons()
     
     def update_window_title(self):
         """Update the window title with current image info."""
-        if not self.image_paths or self.current_index < 0:
-            self.setWindowTitle("Image Preview")
-            return
+        if 0 <= self.current_index < len(self.image_paths):
+            file_name = os.path.basename(self.image_paths[self.current_index])
+            self.setWindowTitle(f"Image Preview - {file_name} ({self.current_index + 1}/{len(self.image_paths)})")
             
-        try:
-            filename = os.path.basename(self.image_paths[self.current_index])
-            self.setWindowTitle(f"Image Preview - {filename} ({self.current_index + 1}/{len(self.image_paths)})")
-        except Exception as e:
-            self.logger.error(f"Error updating window title: {e}", exc_info=True)
+            # Update title label with image info
+            try:
+                with WandImage(filename=self.image_paths[self.current_index]) as img:
+                    width, height = img.width, img.height
+                    size_mb = os.path.getsize(self.image_paths[self.current_index]) / (1024 * 1024)
+                    self._title_label.setText(
+                        f"{file_name} • {width}×{height} • {size_mb:.2f} MB • {img.format if hasattr(img, 'format') else 'Unknown'}"
+                    )
+            except Exception as e:
+                self.logger.warning(f"Could not get image info: {e}")
+                self._title_label.setText(file_name)
     
     def update_path_label(self):
         """Update the path label with the current image path."""
-        if not hasattr(self, '_path_label') or not self._path_label:
-            return
-            
-        try:
-            if self.image_paths and 0 <= self.current_index < len(self.image_paths):
-                self._path_label.setText(self.image_paths[self.current_index])
-            else:
-                self._path_label.clear()
-        except Exception as e:
-            self.logger.error(f"Error updating path label: {e}", exc_info=True)
+        if 0 <= self.current_index < len(self.image_paths):
+            self._path_label.setText(self.image_paths[self.current_index])
     
     def update_navigation_buttons(self):
         """Update the enabled state of navigation buttons."""
-        if not hasattr(self, '_nav_buttons') or not self._nav_buttons:
-            return
-            
-        try:
-            has_images = bool(self.image_paths)
-            has_prev = has_images and self.current_index > 0
-            has_next = has_images and self.current_index < len(self.image_paths) - 1
-            
-            self._nav_buttons['prev'].setEnabled(has_prev)
-            self._nav_buttons['next'].setEnabled(has_next)
-            
-            # Enable zoom/fit buttons only if we have an image
-            has_current_image = has_images and 0 <= self.current_index < len(self.image_paths)
-            self._nav_buttons['zoom_in'].setEnabled(has_current_image)
-            self._nav_buttons['zoom_out'].setEnabled(has_current_image)
-            self._nav_buttons['fit'].setEnabled(has_current_image)
-            
-        except Exception as e:
-            self.logger.error(f"Error updating navigation buttons: {e}", exc_info=True)
+        has_images = len(self.image_paths) > 0
+        self._nav_buttons['prev'].setEnabled(has_images and self.current_index > 0)
+        self._nav_buttons['next'].setEnabled(has_images and self.current_index < len(self.image_paths) - 1)
     
     def show_previous(self):
         """Show the previous image in the list."""
         if self.current_index > 0:
             self.load_image(self.current_index - 1)
-            self.update_navigation_buttons()
     
     def show_next(self):
         """Show the next image in the list."""
         if self.current_index < len(self.image_paths) - 1:
             self.load_image(self.current_index + 1)
-            self.update_navigation_buttons()
     
     def zoom_in(self):
         """Zoom in on the current image."""
-        try:
-            if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.scale(1.1, 1.1)
-        except Exception as e:
-            self.logger.error(f"Error zooming in: {e}", exc_info=True)
+        self._preview_widget.zoom_in()
     
     def zoom_out(self):
         """Zoom out from the current image."""
-        try:
-            if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.scale(1.0 / 1.1, 1.0 / 1.1)
-        except Exception as e:
-            self.logger.error(f"Error zooming out: {e}", exc_info=True)
+        self._preview_widget.zoom_out()
     
     def fit_to_window(self):
         """Fit the current image to the window."""
-        try:
-            if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.fitInView(self._preview_widget._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
-        except Exception as e:
-            self.logger.error(f"Error fitting to window: {e}", exc_info=True)
+        if hasattr(self, '_preview_widget') and self._preview_widget:
+            self._preview_widget.fitInView(self._preview_widget._pixmap_item, 
+                                        Qt.AspectRatioMode.KeepAspectRatio)
+            self._preview_widget._scale_factor = 1.0
     
     def closeEvent(self, event):
         """Handle the close event to ensure proper cleanup."""
         try:
-            self.logger.debug("Closing preview dialog")
-            
-            # Stop any active timers
             if hasattr(self, '_visibility_timer') and self._visibility_timer:
                 self.killTimer(self._visibility_timer)
-                
-            # Clear resources
-            self.clear_preview()
             
-            # Clean up references
-            if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.deleteLater()
-                
+            # Clear the preview to free resources
+            self._preview_widget.clear()
+            
+            # Clear references to help with garbage collection
+            self.image_paths = []
+            
             event.accept()
             
         except Exception as e:
-            self.logger.error(f"Error during dialog close: {e}", exc_info=True)
-            event.accept()  # Always accept the close event
+            self.logger.error(f"Error during close event: {e}", exc_info=True)
+            event.accept()  # Still allow the window to close
+    
+    def timerEvent(self, event: QTimerEvent):
+        """Handle timer events for periodic checks."""
+        if event.timerId() == self._visibility_timer:
+            # Check if the dialog is still visible and properly initialized
+            if not self.isVisible() or not self.isActiveWindow():
+                return
+            
+            # Check if the preview widget is visible and has a valid size
+            if not self._preview_widget.isVisible() or self._preview_widget.width() < 10 or self._preview_widget.height() < 10:
+                self.logger.warning("Preview widget has invalid size, attempting to fix...")
+                QMetaObject.invokeMethod(self, 'adjustSize', Qt.ConnectionType.QueuedConnection)
+                QMetaObject.invokeMethod(self._preview_widget, 'fit_to_view', Qt.ConnectionType.QueuedConnection)
+        
+        super().timerEvent(event)
 
 
-def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None) -> Optional[ImagePreviewDialog]:
+def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None):
     """
     Show an image preview dialog in a way that's guaranteed to make it visible.
     
@@ -525,126 +545,27 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
     Returns:
         Optional[ImagePreviewDialog]: The created dialog instance, or None if creation failed
     """
-    logger = logging.getLogger(__name__)
-    
     try:
-        logger.debug("show_image_preview called")
+        logger.debug(f"show_image_preview called with paths: {image_paths}")
         
         # Convert single path to list if needed
         if not isinstance(image_paths, (list, tuple)):
             image_paths = [image_paths]
             
-        # Convert all paths to strings and filter out any invalid ones
-        valid_paths = []
-        for path in image_paths:
-            try:
-                path_str = str(path)
-                if os.path.exists(path_str):
-                    valid_paths.append(path_str)
-                    logger.debug(f"Added valid image path: {path_str}")
-                else:
-                    logger.warning(f"Image path does not exist: {path_str}")
-            except Exception as e:
-                logger.error(f"Error processing image path {path}: {e}", exc_info=True)
+        # Create the dialog
+        dialog = ImagePreviewDialog(image_paths, parent)
         
-        if not valid_paths:
-            error_msg = "No valid image paths provided to show_image_preview"
-            logger.error(error_msg)
-            if parent and hasattr(parent, 'isVisible') and parent.isVisible():
-                QMessageBox.warning(
-                    parent,
-                    "Preview Error",
-                    "No valid images to display. The files may have been moved or deleted."
-                )
-            return None
-            
-        logger.info(f"Preparing to show preview for {len(valid_paths)} images")
+        # Show the dialog and wait for it to be shown
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
         
-        # Create the dialog on the main thread
-        dialog = None
+        # Use a direct method call instead of invokeMethod
+        QApplication.processEvents()
+        dialog.fit_to_window()
         
-        def create_dialog():
-            nonlocal dialog
-            try:
-                logger.debug("Creating ImagePreviewDialog instance")
-                dialog = ImagePreviewDialog(valid_paths, parent)
-                
-                # Ensure the dialog is properly cleaned up when closed
-                dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-                
-                # Connect to the finished signal to ensure proper cleanup
-                dialog.finished.connect(lambda: logger.debug("Preview dialog closed"))
-                
-                # Show the dialog
-                dialog.show()
-                
-                # Bring to front and activate
-                dialog.raise_()
-                dialog.activateWindow()
-                
-                # Ensure the dialog is properly shown
-                QApplication.processEvents()
-                
-                logger.info("Preview dialog displayed successfully")
-                
-            except MemoryError as me:
-                error_msg = f"Insufficient memory to create preview dialog: {str(me)}"
-                logger.error(error_msg, exc_info=True)
-                if parent and hasattr(parent, 'isVisible') and parent.isVisible():
-                    QMessageBox.critical(
-                        parent,
-                        "Memory Error",
-                        "The system is low on memory. Please close other applications and try again."
-                    )
-            except Exception as e:
-                error_msg = f"Error creating preview dialog: {str(e)}"
-                logger.error(error_msg, exc_info=True)
-                if parent and hasattr(parent, 'isVisible') and parent.isVisible():
-                    QMessageBox.critical(
-                        parent,
-                        "Preview Error",
-                        f"Failed to create preview: {str(e)}"
-                    )
-        
-        # Get the application instance safely
-        app = QApplication.instance()
-        if not app:
-            logger.error("No QApplication instance found")
-            return None
-            
-        # Check if we're on the main thread
-        if QThread.currentThread() != app.thread():
-            logger.debug("Scheduling dialog creation on main thread")
-            try:
-                # Use a single-shot timer to ensure this runs on the main thread
-                QTimer.singleShot(0, create_dialog)
-                logger.debug("Dialog creation scheduled on main thread")
-            except Exception as e:
-                logger.error(f"Failed to schedule dialog creation: {e}", exc_info=True)
-                return None
-        else:
-            logger.debug("Creating dialog directly on main thread")
-            create_dialog()
-            
         return dialog
         
-    except MemoryError as me:
-        error_msg = f"Insufficient memory to show preview: {str(me)}"
-        logger.error(error_msg, exc_info=True)
-        if parent and hasattr(parent, 'isVisible') and parent.isVisible():
-            QMessageBox.critical(
-                parent,
-                "Memory Error",
-                "The system is low on memory. Please close other applications and try again."
-            )
-        return None
     except Exception as e:
-        error_msg = f"Unexpected error in show_image_preview: {str(e)}"
-        logger.error(error_msg, exc_info=True)
-        if parent and hasattr(parent, 'isVisible') and parent.isVisible():
-            QMessageBox.critical(
-                parent,
-                "Preview Error",
-                f"An unexpected error occurred: {str(e)}"
-            )
+        logger.error(f"Error showing image preview: {e}", exc_info=True)
         return None

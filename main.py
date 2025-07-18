@@ -25,7 +25,7 @@ from PyQt6.QtGui import (
     QPixmap, QImage, QIcon, QPainter, QColor, QFont, QDesktopServices, QAction
 )
 
-from PIL import Image, ImageQt
+from wand.image import Image as WandImage
 import imagehash
 from script.about import AboutDialog
 from script.help import HelpDialog as HelpDialogScript
@@ -110,13 +110,17 @@ class ImageComparisonWorker(QRunnable):
                     return
                     
                 try:
-                    with Image.open(image_path) as img:
-                        # Convert to RGB if image has an alpha channel
-                        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                            img = img.convert('RGB')
+                    with WandImage(filename=image_path) as img:
+                        # Convert to RGB if needed
+                        if img.colorspace != 'srgb':
+                            img.transform_colorspace('srgb')
+                        
+                        # Convert to PNG format in memory for hashing
+                        img.format = 'png'
+                        img_data = img.make_blob()
                         
                         # Calculate perceptual hash
-                        phash = str(imagehash.phash(img))
+                        phash = str(imagehash.phash(img_data))
                         
                         if phash in hashes:
                             hashes[phash].append(image_path)
@@ -129,6 +133,7 @@ class ImageComparisonWorker(QRunnable):
                     
                 except Exception as e:
                     logger.error(f"Error processing {image_path}: {str(e)}")
+                    logger.error(traceback.format_exc())
                     continue
             
             # Find duplicates (hashes with more than one image)

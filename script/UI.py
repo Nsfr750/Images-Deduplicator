@@ -7,15 +7,16 @@ from typing import Dict, List, Optional, Tuple, Any
 import os
 import json
 from datetime import datetime
-from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl, QThread
+from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl, QThread, QMetaObject, Q_ARG
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
     QProgressBar, QFrame, QSplitter, QSizePolicy, QGroupBox, QStatusBar,
-    QProgressDialog
+    QProgressDialog, QCheckBox, QSlider
 )
-from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor
-from PIL import Image, ImageQt
+from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor, QImage
+from wand.image import Image as WandImage
+import io
 from script.translations import t, LANGUAGES
 from script.styles import apply_style, apply_theme
 from script.about import AboutDialog
@@ -131,6 +132,45 @@ class UI(QMainWindow):
         folder_layout.addWidget(self.folder_entry, 1)
         folder_layout.addWidget(self.browse_button)
         
+        # --- Scan Options ---
+        options_frame = QFrame()
+        options_layout = QHBoxLayout(options_frame)
+        options_layout.setContentsMargins(0, 5, 0, 5)
+        
+        # Recursive search option
+        self.recursive_checkbox = QCheckBox(self.lang_manager.translate('search_subfolders'))
+        self.recursive_checkbox.setChecked(True)  # Default to True
+        options_layout.addWidget(self.recursive_checkbox)
+        
+        # Keep better quality option
+        self.keep_better_quality_checkbox = QCheckBox(self.lang_manager.translate('keep_better_quality'))
+        self.keep_better_quality_checkbox.setChecked(True)  # Default to True
+        options_layout.addWidget(self.keep_better_quality_checkbox)
+        
+        # Preserve metadata option
+        self.preserve_metadata_checkbox = QCheckBox(self.lang_manager.translate('preserve_metadata'))
+        self.preserve_metadata_checkbox.setChecked(True)  # Default to True
+        options_layout.addWidget(self.preserve_metadata_checkbox)
+        
+        options_layout.addStretch()
+        
+        # --- Similarity Threshold ---
+        threshold_frame = QFrame()
+        threshold_layout = QHBoxLayout(threshold_frame)
+        threshold_layout.setContentsMargins(0, 0, 0, 0)
+        
+        self.similarity_label = QLabel(self.lang_manager.translate('similarity_threshold'))
+        self.similarity_slider = QSlider(Qt.Orientation.Horizontal)
+        self.similarity_slider.setRange(70, 100)  # 70% to 100% similarity
+        self.similarity_slider.setValue(85)  # Default value
+        self.similarity_value = QLabel("85%")
+        self.similarity_slider.valueChanged.connect(
+            lambda v: self.similarity_value.setText(f"{v}%"))
+        
+        threshold_layout.addWidget(self.similarity_label)
+        threshold_layout.addWidget(self.similarity_slider)
+        threshold_layout.addWidget(self.similarity_value)
+        
         # --- Compare Button ---
         self.compare_button = QPushButton(self.lang_manager.translate('compare'))
         self.compare_button.setObjectName("compareButton")
@@ -208,10 +248,12 @@ class UI(QMainWindow):
         
         # Add all widgets to main layout
         self.main_layout.addWidget(folder_frame)
+        self.main_layout.addWidget(options_frame)
+        self.main_layout.addWidget(threshold_frame)
         self.main_layout.addWidget(self.compare_button)
-        self.main_layout.addWidget(self.progress_frame)
+        self.main_layout.addWidget(self.progress_frame)  # Add progress frame to main layout
         self.main_layout.addWidget(duplicates_group, 1)
-        self.main_layout.addWidget(preview_frame, 1)
+        self.main_layout.addWidget(preview_frame, 2)
         self.main_layout.addWidget(buttons_frame)
         
         # Set minimum sizes
@@ -320,52 +362,73 @@ class UI(QMainWindow):
     
     def compare_images(self):
         """Start the image comparison process."""
-        folder = self.folder_entry.text()
-        if not folder or not Path(folder).is_dir():
-            QMessageBox.warning(self, 
-                             self.lang_manager.translate('error'), 
-                             self.lang_manager.translate('invalid_folder'))
+        folder = self.folder_entry.text().strip()
+        if not folder or not os.path.isdir(folder):
+            QMessageBox.warning(self, self.lang_manager.translate('error'), 
+                              self.lang_manager.translate('invalid_folder'))
             return
-        
-        # Reset state
+            
+        # Get scan options from UI
+        recursive = self.recursive_checkbox.isChecked()
+        similarity = self.similarity_slider.value()
+        keep_better_quality = self.keep_better_quality_checkbox.isChecked()
+        preserve_metadata = self.preserve_metadata_checkbox.isChecked()
+
+        # Clear previous results
         self.duplicates = {}
         self.duplicates_list.clear()
-        self.original_preview.clear()
-        self.duplicate_preview.clear()
-        self.original_path.clear()
-        self.duplicate_path.clear()
+        self.clear_previews()
         
-        # Show progress
-        self.progress_frame.show()
+        # Disable UI during processing
+        self.set_ui_enabled(False)
         self.progress_bar.setValue(0)
-        self.progress_label.setText(self.lang_manager.translate('scanning_folder'))
-        self.status_bar.showMessage(self.lang_manager.translate('scanning_folder'))
-        
-        # Get settings from config
-        recursive = self.config.get('recursive', True)
-        similarity_threshold = self.config.get('similarity_threshold', 85)
-        keep_better_quality = self.config.get('keep_better_quality', True)
-        preserve_metadata = self.config.get('preserve_metadata', True)
         
         # Create and configure worker
         self.worker = ImageComparisonWorker(
             folder=folder,
             recursive=recursive,
-            similarity_threshold=similarity_threshold,
+            similarity_threshold=similarity,
             keep_better_quality=keep_better_quality,
             preserve_metadata=preserve_metadata
         )
         
         # Connect signals
-        self.worker.signals.progress.connect(self.progress_bar.setValue)
+        self.worker.signals.progress.connect(self._update_progress)
         self.worker.signals.finished.connect(self.on_comparison_finished)
         self.worker.signals.error.connect(self._handle_worker_error)
         
         # Start the worker in the thread pool
         self.thread_pool.start(self.worker)
-        self.comparison_in_progress = True
-        self.set_ui_enabled(False)
-
+        
+        # Update status
+        self.statusBar().showMessage(t('scanning', self.lang))
+    
+    def _update_progress(self, value: int):
+        """Update the progress bar with the given value."""
+        # Ensure we're in the main thread for UI updates
+        if QThread.currentThread() != self.thread():
+            QMetaObject.invokeMethod(self, "_update_progress", 
+                                   Qt.ConnectionType.QueuedConnection,
+                                   Q_ARG(int, value))
+            return
+            
+        # Update progress bar with smooth animation
+        self.progress_bar.setValue(value)
+        
+        # Update status message based on progress
+        if value < 95:
+            self.statusBar().showMessage(
+                self.lang_manager.translate('scanning_images_progress').format(progress=value)
+            )
+        elif value < 100:
+            self.statusBar().showMessage(
+                self.lang_manager.translate('processing_duplicates')
+            )
+        else:
+            self.statusBar().showMessage(
+                self.lang_manager.translate('scan_complete')
+            )
+    
     def _handle_worker_error(self, msg):
         """Handle errors from the worker thread."""
         QMessageBox.critical(self, self.lang_manager.translate('error'), msg)
@@ -1123,21 +1186,22 @@ class UI(QMainWindow):
             file_size = image_path.stat().st_size / (1024 * 1024)  # Size in MB
             self.logger.debug(f"Previewing image: {image_path.name} ({file_size:.2f} MB)")
             
-            # Load the image with PIL for better format support and error handling
+            # Load the image with Wand
             try:
-                with Image.open(image_path) as img:
+                with WandImage(filename=str(image_path)) as img:
                     # Convert to RGB if necessary (for PNG with alpha channel)
-                    if img.mode in ('RGBA', 'LA'):
-                        background = Image.new('RGB', img.size, (255, 255, 255))
-                        background.paste(img, mask=img.split()[-1])
-                        img = background
-                    elif img.mode != 'RGB':
-                        img = img.convert('RGB')
+                    if img.alpha_channel:
+                        img.background_color = 'white'
+                        img.alpha_channel = 'remove'
                     
-                    # Convert to QPixmap
-                    img_byte_arr = io.BytesIO()
-                    img.save(img_byte_arr, format='JPEG', quality=85)
-                    qimg = QImage.fromData(img_byte_arr.getvalue())
+                    # Convert to JPEG bytes
+                    img.format = 'jpeg'
+                    img.compression_quality = 85
+                    
+                    # Get image data as bytes and create QImage
+                    img_buffer = io.BytesIO()
+                    img.save(file=img_buffer)
+                    qimg = QImage.fromData(img_buffer.getvalue())
                     pixmap = QPixmap.fromImage(qimg)
                     
                     # Scale the pixmap to fit the preview widget while maintaining aspect ratio
@@ -1183,3 +1247,38 @@ class UI(QMainWindow):
                     preview_widget.clear()
             except Exception as cleanup_error:
                 self.logger.error(f"Error during preview cleanup: {cleanup_error}", exc_info=True)
+
+def get_theme_stylesheet():
+    """Return the stylesheet for the current theme."""
+    return """
+    /* Progress bar */
+    QProgressBar {
+        border: 1px solid #3a3a3a;
+        border-radius: 4px;
+        background-color: #2d2d2d;
+        text-align: center;
+        height: 12px;
+    }
+    
+    QProgressBar::chunk {
+        background-color: #4CAF50;
+        border-radius: 2px;
+        width: 10px;
+        margin: 0.5px;
+    }
+    
+    QProgressBar:disabled {
+        background-color: #2a2a2a;
+    }
+    
+    QProgressBar::chunk:disabled {
+        background-color: #2e7d32;
+    }
+    
+    /* Progress label */
+    QLabel#progressLabel {
+        color: #aaaaaa;
+        font-size: 11px;
+        padding: 2px 0;
+    }
+    """

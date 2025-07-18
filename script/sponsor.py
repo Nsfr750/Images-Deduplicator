@@ -15,7 +15,7 @@ import webbrowser
 import os
 import io
 import qrcode
-from PIL import Image, ImageQt
+from wand.image import Image as WandImage
 
 class SponsorDialog(QDialog):
     def __init__(self, parent=None, language_manager: Optional[LanguageManager] = None):
@@ -131,26 +131,37 @@ class SponsorDialog(QDialog):
             qr.add_data(f'monero:{monero_address}')
             qr.make(fit=True)
             
-            # Convert QR code to a PIL Image
-            img = qr.make_image(fill_color="#4a9cff", back_color="transparent")
+            # Generate QR code image using qrcode library
+            qr_img = qr.make_image(fill_color="#4a9cff", back_color="transparent")
             
-            # Convert PIL Image to bytes
+            # Convert QR code to bytes
             buffer = io.BytesIO()
-            img.save(buffer, format="PNG")
+            qr_img.save(buffer, format='PNG')
+            buffer.seek(0)
             
-            # Load image data into QPixmap
-            pixmap = QPixmap()
-            pixmap.loadFromData(buffer.getvalue())
-            
-            # Scale the pixmap
-            pixmap = pixmap.scaled(200, 200, 
-                                 Qt.AspectRatioMode.KeepAspectRatio, 
-                                 Qt.TransformationMode.SmoothTransformation)
-            
-            qr_label = QLabel()
-            qr_label.setPixmap(pixmap)
-            qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            qr_label.setToolTip(self.translate("scan_to_donate_xmr"))
+            # Load image data into Wand
+            with WandImage(blob=buffer.getvalue()) as img:
+                # Convert to QPixmap
+                img.format = 'png'
+                img_data = img.make_blob('RGBA')
+                qimage = QImage(
+                    img_data, 
+                    img.width, 
+                    img.height,
+                    img.width * 4,  # 4 bytes per pixel for RGBA
+                    QImage.Format.Format_RGBA8888
+                )
+                pixmap = QPixmap.fromImage(qimage)
+                
+                # Scale the pixmap
+                pixmap = pixmap.scaled(200, 200, 
+                                     Qt.AspectRatioMode.KeepAspectRatio, 
+                                     Qt.TransformationMode.SmoothTransformation)
+                
+                qr_label = QLabel()
+                qr_label.setPixmap(pixmap)
+                qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                qr_label.setToolTip(self.translate("scan_to_donate_xmr"))
             
         except Exception as e:
             print(f"Error generating QR code: {e}")

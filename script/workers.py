@@ -10,24 +10,21 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Set, Any
 from datetime import datetime, timedelta
 import tempfile
+import io
 
-from PIL import Image, ImageFile, ImageOps
-from PIL.ExifTags import TAGS
+from wand.image import Image as WandImage
 import imagehash
 from PyQt6.QtCore import QRunnable, QObject, pyqtSignal, pyqtSlot
 
 # Import logger from our centralized module
 from script.logger import logger
 
-# Configure PIL to be more tolerant of image files
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-
 # Constants
 CACHE_FILE = Path("cache/image_hashes.json")
 CACHE_EXPIRY_DAYS = 7  # Number of days to keep cache entries
 MAX_WORKERS = os.cpu_count() or 4  # Number of worker threads
 CHUNK_SIZE = 50  # Number of images to process in each chunk
-SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp'}
+SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp', '.psd', '.gif', '.bmp'}
 
 class WorkerSignals(QObject):
     """Defines the signals available from a running worker thread."""
@@ -142,28 +139,30 @@ class ImageMetadata:
             Dictionary containing the image metadata
         """
         try:
-            with Image.open(image_path) as img:
+            with WandImage(filename=image_path) as img:
                 metadata = {}
                 
                 # Get basic info
-                info = img.info
+                metadata['format'] = img.format
+                metadata['width'] = img.width
+                metadata['height'] = img.height
+                metadata['resolution'] = (img.resolution[0], img.resolution[1])
                 
                 # Get EXIF data if available
-                if hasattr(img, '_getexif') and img._getexif():
-                    exif = {TAGS.get(tag, tag): value 
-                           for tag, value in img._getexif().items() 
-                           if tag in TAGS}
-                    metadata['exif'] = exif
+                if hasattr(img, 'metadata') and 'exif:' in img.metadata:
+                    metadata['exif'] = {}
+                    for key, value in img.metadata.items():
+                        if key.startswith('exif:'):
+                            metadata['exif'][key[5:]] = value
                 
                 # Get other metadata
-                for key in ['dpi', 'quality', 'progressive', 'icc_profile', 'photoshop']:
-                    if key in info:
-                        metadata[key] = info[key]
+                for key in ['dpi', 'quality', 'progressive', 'icc-profile']:
+                    if key in img.metadata:
+                        metadata[key] = img.metadata[key]
                 
-                # Preserve format-specific metadata
-                if img.format == 'JPEG':
-                    metadata['jfif'] = info.get('jfif')
-                    metadata['adobe'] = info.get('adobe')
+                # Format-specific metadata
+                if img.format in ['JPEG', 'JPG']:
+                    metadata['jfif'] = img.metadata.get('jfif', {})
                 
                 return metadata
                 
@@ -182,42 +181,44 @@ class ImageMetadata:
         Returns:
             bool: True if successful, False otherwise
         """
+        if not metadata:
+            return True
+            
         try:
-            if not metadata:
-                return True
-                
-            with Image.open(image_path) as img:
-                # Skip unsupported image formats
-                if img.format not in ['JPEG', 'PNG', 'TIFF', 'WEBP']:
-                    logger.debug(f"Skipping metadata application for unsupported format: {img.format}")
-                    return False
+            # Create a temporary file for the output
+            with tempfile.NamedTemporaryFile(delete=False, suffix=Path(image_path).suffix) as temp_file:
+                temp_path = temp_file.name
+            
+            try:
+                with WandImage(filename=image_path) as img:
+                    # Apply basic metadata
+                    if 'resolution' in metadata:
+                        img.resolution = metadata['resolution']
                     
-                # Create a copy to avoid modifying the original
-                img_copy = img.copy()
-                
-                # Prepare the info dictionary for saving
-                save_kwargs = {}
-                
-                # Handle EXIF data
-                if 'exif' in metadata and hasattr(img, '_getexif'):
-                    # This is a simplified example - in a real app, you'd need to convert
-                    # the EXIF dictionary back to binary format
-                    pass
-                
-                # Handle other metadata
-                for key in ['dpi', 'quality', 'progressive', 'icc_profile', 'jfif', 'adobe']:
-                    if key in metadata and metadata[key] is not None:
-                        save_kwargs[key] = metadata[key]
-                
-                # Save with metadata
-                try:
-                    img_copy.save(image_path, **save_kwargs)
+                    # Apply EXIF data if available
+                    if 'exif' in metadata and hasattr(img, 'metadata'):
+                        for key, value in metadata['exif'].items():
+                            img.metadata[f'exif:{key}'] = value
+                    
+                    # Apply other metadata
+                    for key in ['dpi', 'quality', 'progressive', 'icc-profile']:
+                        if key in metadata and metadata[key] is not None:
+                            img.metadata[key] = str(metadata[key])
+                    
+                    # Save with metadata
+                    img.save(filename=temp_path)
+                    
+                    # Replace original with the new file
+                    shutil.move(temp_path, image_path)
                     logger.debug(f"Successfully applied metadata to {image_path}")
                     return True
-                except Exception as save_error:
-                    logger.error(f"Error saving image with metadata {image_path}: {save_error}")
-                    return False
                     
+            except Exception as save_error:
+                logger.error(f"Error saving image with metadata {image_path}: {save_error}")
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                return False
+                
         except Exception as e:
             logger.error(f"Error processing {image_path} in apply_metadata: {e}", exc_info=True)
             return False
@@ -301,14 +302,24 @@ class ImageComparisonWorker(QRunnable):
             return cache_entry['phash'], cache_entry['ahash']
         
         try:
-            with Image.open(img_path) as img:
+            with WandImage(filename=img_path) as img:
                 # Convert to RGB if needed (for consistent hashing)
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
+                if img.colorspace != 'srgb':
+                    img.transform_colorspace('srgb')
+                
+                # Convert Wand image to PIL Image in memory
+                img_buffer = io.BytesIO()
+                img.format = 'PNG'
+                img.save(file=img_buffer)
+                img_buffer.seek(0)
+                
+                # Create PIL Image from buffer
+                from PIL import Image
+                pil_img = Image.open(img_buffer)
                 
                 # Generate hashes
-                phash = str(imagehash.phash(img))
-                ahash = str(imagehash.average_hash(img))
+                phash = str(imagehash.phash(pil_img))
+                ahash = str(imagehash.average_hash(pil_img))
                 
                 # Cache the results
                 self.hash_cache.set(img_path, phash, ahash)
@@ -330,7 +341,7 @@ class ImageComparisonWorker(QRunnable):
             Tuple of (resolution_score, file_size)
         """
         try:
-            with Image.open(img_path) as img:
+            with WandImage(filename=img_path) as img:
                 # Resolution score (width * height)
                 resolution = img.width * img.height
                 # File size in bytes
@@ -364,7 +375,7 @@ class ImageComparisonWorker(QRunnable):
                 
                 # Add to results
                 if combined_hash in chunk_hashes:
-                    chunk_hashes[combined_hash].append(img_path)
+                    chunk_hashes[combined_hash].append(img_path) 
                 else:
                     chunk_hashes[combined_hash] = [img_path]
                     
@@ -409,189 +420,93 @@ class ImageComparisonWorker(QRunnable):
         Returns:
             bool: True if successful, False otherwise
         """
-        if not self.preserve_metadata:
-            return True
-            
         try:
-            # Skip if either file doesn't exist
-            if not os.path.exists(original_path) or not os.path.exists(best_path):
-                logger.warning(f"One or both files do not exist. Original: {original_path}, Best: {best_path}")
-                return False
-                
-            # Skip if files are the same
-            if os.path.samefile(original_path, best_path):
-                logger.debug("Original and best paths are the same, skipping metadata transfer")
-                return True
-                
-            logger.debug(f"Attempting to preserve metadata from {original_path} to {best_path}")
-            
-            # Get metadata from original
+            # Get metadata from original image
             metadata = ImageMetadata.get_metadata(original_path)
             if not metadata:
-                logger.debug(f"No metadata found in {original_path}, nothing to preserve")
-                return True  # No metadata to preserve
-                
-            # Get the file extension from the best path
-            file_ext = os.path.splitext(best_path)[1].lower()
-            
-            # Create a temporary file with the same extension in the same directory as the target
-            temp_dir = os.path.dirname(best_path) or '.'
-            temp_fd, temp_path = tempfile.mkstemp(
-                suffix=file_ext,  # Use the same file extension
-                prefix=f"{os.path.splitext(os.path.basename(best_path))[0]}_",
-                dir=temp_dir
-            )
-            os.close(temp_fd)  # Close the file descriptor as we'll use shutil
-            
-            try:
-                logger.debug(f"Created temporary file for metadata transfer: {temp_path}")
-                
-                # Copy the best image to the temporary file
-                shutil.copy2(best_path, temp_path) 
-                
-                # Apply metadata to the temporary file
-                logger.debug(f"Applying metadata to temporary file: {temp_path}")
-                success = ImageMetadata.apply_metadata(temp_path, metadata)
-                
-                if not success:
-                    logger.warning(f"Failed to apply metadata to {temp_path}")
-                    return False
-                
-                # Create a backup of the original file
-                backup_path = f"{best_path}.bak"
-                backup_created = False
-                
-                try:
-                    shutil.copy2(best_path, backup_path)
-                    backup_created = True
-                    logger.debug(f"Created backup of original file: {backup_path}")
-                    
-                    # Replace the original best image with the one that has metadata
-                    os.replace(temp_path, best_path)
-                    logger.info(f"Successfully preserved metadata from {original_path} to {best_path}")
-                    
-                    # Clean up the backup file
-                    try:
-                        os.remove(backup_path)
-                        logger.debug(f"Cleaned up backup file: {backup_path}")
-                    except Exception as backup_cleanup_error:
-                        logger.warning(f"Failed to clean up backup file {backup_path}: {backup_cleanup_error}")
-                        
-                    return True
-                    
-                except Exception as replace_error:
-                    error_msg = f"Error during file replacement: {str(replace_error)}"
-                    logger.error(error_msg, exc_info=True)
-                    
-                    # Restore from backup if available
-                    if backup_created and os.path.exists(backup_path):
-                        try:
-                            os.replace(backup_path, best_path)
-                            logger.info("Restored original file from backup after error")
-                        except Exception as restore_error:
-                            logger.error(f"Failed to restore from backup: {restore_error}")
-                            # At this point, we have both the original and backup, which is better than data loss
-                    
-                    return False
-                
-            except Exception as e:
-                logger.error(f"Error during metadata preservation: {str(e)}", exc_info=True)
                 return False
                 
-            finally:
-                # Always clean up the temporary file if it still exists
-                if os.path.exists(temp_path):
-                    try:
-                        os.remove(temp_path)
-                        logger.debug(f"Cleaned up temporary file: {temp_path}")
-                    except Exception as cleanup_error:
-                        logger.error(f"Failed to clean up temporary file {temp_path}: {cleanup_error}")
-                
+            # Apply metadata to best image
+            return ImageMetadata.apply_metadata(best_path, metadata)
+            
         except Exception as e:
-            logger.error(f"Error in metadata preservation for {original_path} -> {best_path}: {str(e)}", exc_info=True)
+            logger.warning(f"Error preserving metadata from {original_path} to {best_path}: {e}")
             return False
     
-    @pyqtSlot()
     def run(self) -> None:
         """Main processing function that runs in a separate thread."""
         try:
+            if not os.path.isdir(self.folder):
+                self.signals.error.emit(f"Directory not found: {self.folder}")
+                return
+            
             # Get all image files
-            logger.info(f"Scanning for images in: {self.folder}")
             image_files = self._get_image_files(self.folder)
-            
             if not image_files:
-                self.signals.error.emit("No images found in the specified folder.")
+                self.signals.finished.emit("No image files found in the specified directory.", {})
                 return
+                
+            total_files = len(image_files)
+            self.signals.progress.emit(5)  # Initial progress
             
-            total_images = len(image_files)
-            logger.info(f"Found {total_images} images to process")
+            logger.info(f"Found {total_files} image files to process")
             
-            if total_images == 0:
-                self.signals.finished.emit("No images found to process.", {})
-                return
-            
-            # Process images in chunks for better memory management
-            hashes = {}
+            # Process images in chunks
+            all_hashes = {}
             processed = 0
             
-            # Split image files into chunks for parallel processing
-            chunks = [image_files[i:i + CHUNK_SIZE] 
-                     for i in range(0, len(image_files), CHUNK_SIZE)]
-            
             with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                # Submit all chunks for processing
+                # Split into chunks for better progress reporting
+                chunks = [image_files[i:i + CHUNK_SIZE] 
+                         for i in range(0, len(image_files), CHUNK_SIZE)]
+                
                 future_to_chunk = {
-                    executor.submit(self._process_image_chunk, chunk): i
-                    for i, chunk in enumerate(chunks)
+                    executor.submit(self._process_image_chunk, chunk): chunk 
+                    for chunk in chunks
                 }
                 
-                # Process results as they complete
                 for future in concurrent.futures.as_completed(future_to_chunk):
                     if self._stop_requested:
-                        break
+                        logger.info("Processing stopped by user")
+                        return
                         
-                    chunk_result = future.result()
-                    
-                    # Merge chunk results
-                    for h, paths in chunk_result.items():
-                        if h in hashes:
-                            hashes[h].extend(paths)
-                        else:
-                            hashes[h] = paths
-                    
-                    # Update progress
-                    processed += 1
-                    progress = min(int((processed / len(chunks)) * 100), 100)
-                    self.signals.progress.emit(progress)
-            
-            if self._stop_requested:
-                self.signals.error.emit("Operation cancelled by user.")
-                return
+                    chunk = future_to_chunk[future]
+                    try:
+                        chunk_result = future.result()
+                        # Merge results
+                        for key, value in chunk_result.items():
+                            if key in all_hashes:
+                                all_hashes[key].extend(value)
+                            else:
+                                all_hashes[key] = value
+                                
+                        processed += len(chunk)
+                        progress = min(95, 5 + int((processed / total_files) * 90))
+                        self.signals.progress.emit(progress)
+                        
+                    except Exception as e:
+                        logger.error(f"Error processing chunk: {e}")
+                        continue
             
             # Process duplicates
             logger.info("Processing duplicate groups...")
-            duplicates = self._process_duplicates(hashes)
+            duplicates = self._process_duplicates(all_hashes)
             
-            # Save cache to disk
-            try:
-                self.hash_cache.save()
-            except Exception as e:
-                logger.warning(f"Failed to save hash cache: {e}")
+            # Save cache
+            self.hash_cache.save()
             
-            # Emit results
-            if not duplicates:
-                self.signals.finished.emit("No duplicates found.", {})
-            else:
-                total_duplicates = sum(len(dups) for dups in duplicates.values())
-                self.signals.finished.emit(
-                    f"Found {len(duplicates)} groups of duplicates ({total_duplicates} total).",
-                    duplicates
-                )
-                
-        except Exception as e:
-            error_msg = f"Error in image comparison: {str(e)}"
-            logger.error(error_msg, exc_info=True)
-            self.signals.error.emit(error_msg)
-        finally:
-            # Ensure we always signal completion
+            # Emit finished signal
             self.signals.progress.emit(100)
+            
+            if duplicates:
+                msg = f"Found {len(duplicates)} groups of duplicate images."
+            else:
+                msg = "No duplicate images found."
+                
+            self.signals.finished.emit(msg, duplicates)
+            
+        except Exception as e:
+            logger.error(f"Error in image comparison: {e}", exc_info=True)
+            self.signals.error.emit(f"An error occurred: {str(e)}")
+        finally:
+            self.is_running = False
