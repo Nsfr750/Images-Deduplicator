@@ -91,7 +91,7 @@
 - [ ] Implement automated UI testing
 
 ## Future Enhancements
-- [ ] Create installers for different platforms
+- [x] Create installers for different platforms
 - [ ] Add machine learning for better duplicate detection
 - [ ] Implement machine learning for better duplicate detection
 - [ ] Add support for more image formats
