@@ -1,40 +1,47 @@
 """
 Theme and style management for the application.
 """
-import logging
 from PyQt6.QtWidgets import QApplication, QStyleFactory
-from PyQt6.QtGui import QPalette, QColor
+from PyQt6.QtGui import QPalette, QColor, QFont
 from PyQt6.QtCore import Qt
 
+# Import the enhanced logger
 from script.logger import logger
 
 def setup_dark_theme(app):
     """Set up the dark theme palette."""
-    dark_palette = QPalette()
-    
-    # Base colors
-    dark_palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
-    dark_palette.setColor(QPalette.ColorRole.Base, QColor(42, 42, 42))
-    dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(66, 66, 66))
-    dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
-    dark_palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
-    dark_palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
-    dark_palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
-    dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
-    dark_palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
-    dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
-    dark_palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.white)
-    
-    # Disabled colors
-    dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, QColor(127, 127, 127))
-    dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, QColor(127, 127, 127))
-    dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, QColor(127, 127, 127))
-    dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Highlight, QColor(80, 80, 80))
-    dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, QColor(127, 127, 127))
-    
-    app.setPalette(dark_palette)
+    try:
+        dark_palette = QPalette()
+        
+        # Base colors
+        dark_palette.setColor(QPalette.ColorRole.Window, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.WindowText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Base, QColor(42, 42, 42))
+        dark_palette.setColor(QPalette.ColorRole.AlternateBase, QColor(66, 66, 66))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipBase, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ToolTipText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Text, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.Button, QColor(53, 53, 53))
+        dark_palette.setColor(QPalette.ColorRole.ButtonText, Qt.GlobalColor.white)
+        dark_palette.setColor(QPalette.ColorRole.BrightText, Qt.GlobalColor.red)
+        dark_palette.setColor(QPalette.ColorRole.Link, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.Highlight, QColor(42, 130, 218))
+        dark_palette.setColor(QPalette.ColorRole.HighlightedText, Qt.GlobalColor.black)
+        
+        # Set disabled colors using the correct method signature
+        disabled_color = QColor(127, 127, 127)
+        dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.WindowText, disabled_color)
+        dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Text, disabled_color)
+        dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.ButtonText, disabled_color)
+        dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Highlight, QColor(80, 80, 80))
+        dark_palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.HighlightedText, disabled_color)
+        
+        app.setPalette(dark_palette)
+        logger.debug("Dark theme palette applied successfully")
+        
+    except Exception as e:
+        logger.error(f"Error applying dark theme: {str(e)}", exc_info=True)
+        raise
 
 def get_theme_stylesheet(theme):
     """
@@ -494,7 +501,7 @@ def apply_style(app, style_name='Fusion'):
     if fusion:
         app.setStyle(fusion)
     else:
-        logger.warning("Failed to create Fusion style. Using default style.")
+        logger.error("Failed to create Fusion style. Using default style.")
 
 def apply_theme(app, theme):
     """
@@ -504,14 +511,24 @@ def apply_theme(app, theme):
         app: QApplication instance
         theme: Theme name (only 'dark' is supported)
     """
-    logger.info(f"Applying theme: {theme}")
-    
-    # Always use dark theme
-    setup_dark_theme(app)
-    
-    # Apply the dark stylesheet
-    stylesheet = get_theme_stylesheet('dark')
-    app.setStyleSheet(stylesheet)
+    try:
+        if theme.lower() == 'dark':
+            setup_dark_theme(app)
+            logger.info("Dark theme applied successfully")
+        else:
+            logger.warning(f"Unsupported theme: {theme}. Only 'dark' theme is currently supported.")
+            
+        # Apply the Fusion style for a more consistent look across platforms
+        apply_style(app, 'Fusion')
+        
+    except Exception as e:
+        logger.error(f"Error applying theme '{theme}': {str(e)}", exc_info=True)
+        # Fall back to default theme if there's an error
+        try:
+            app.setStyle('Fusion')
+            logger.info("Fell back to default Fusion style")
+        except Exception as fallback_error:
+            logger.error(f"Failed to apply fallback style: {str(fallback_error)}", exc_info=True)
 
 def setup_styles(app):
     """
@@ -523,16 +540,40 @@ def setup_styles(app):
     Returns:
         dict: Default configuration for appearance settings
     """
-    # Apply Fusion style
-    apply_style(app, 'Fusion')
-    
-    # Apply dark theme by default
-    apply_theme(app, 'dark')
-    
-    # Return default appearance config
-    return {
-        'appearance': {
-            'theme': 'dark',  # Only dark theme is supported
-            'style': 'Fusion'  # Only Fusion style is supported
+    try:
+        # Default appearance settings
+        default_config = {
+            'theme': 'dark',  # Default theme
+            'style': 'Fusion',  # Default style
+            'font_size': 10,   # Default font size
+            'font_family': 'Segoe UI'  # Default font family (Windows)
         }
-    }
+        
+        # Set the default style
+        apply_style(app, default_config['style'])
+        
+        # Apply the default theme
+        apply_theme(app, default_config['theme'])
+        
+        # Set the default font
+        font = app.font()
+        font.setFamily(default_config['font_family'])
+        font.setPointSize(default_config['font_size'])
+        app.setFont(font)
+        
+        logger.info("Application styles initialized successfully")
+        logger.debug(f"Using style: {default_config['style']}")
+        logger.debug(f"Using theme: {default_config['theme']}")
+        logger.debug(f"Using font: {default_config['font_family']} {default_config['font_size']}pt")
+        
+        return default_config
+        
+    except Exception as e:
+        logger.error(f"Error setting up application styles: {str(e)}", exc_info=True)
+        # Return default config even if there's an error
+        return {
+            'theme': 'dark',
+            'style': 'Fusion',
+            'font_size': 10,
+            'font_family': 'Segoe UI'
+        }

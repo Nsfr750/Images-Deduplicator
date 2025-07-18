@@ -10,7 +10,8 @@ from PyQt6.QtCore import Qt, QTimer, QThreadPool, QSettings, QUrl, QThread
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
-    QProgressBar, QFrame, QSplitter, QSizePolicy, QGroupBox, QStatusBar
+    QProgressBar, QFrame, QSplitter, QSizePolicy, QGroupBox, QStatusBar,
+    QProgressDialog
 )
 from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor
 from PIL import Image, ImageQt
@@ -25,9 +26,12 @@ from script.updates import UpdateChecker
 from script.version import __version__
 from script.workers import ImageComparisonWorker
 from script.settings_dialog import SettingsDialog  
-from script.logger import logger  # Import logger from our centralized module
+from script.logger import logger  # Import the enhanced logger
 from script.undo_manager import UndoManager, FileOperation
 from PyQt6 import sip
+import logging
+import send2trash
+from script.update_preview import update_preview as update_preview_handler
 
 class ImagePreview(QLabel):
     """Custom widget for displaying image previews with aspect ratio preservation."""
@@ -125,18 +129,44 @@ class UI(QMainWindow):
         self.duplicates = {}
         self.worker = None
         self.comparison_in_progress = False
+        
+        # Set up logging with DEBUG level
+        log_dir = Path("logs")
+        log_dir.mkdir(exist_ok=True)
+        
+        # Configure root logger with DEBUG level
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(log_dir / "image_dedup_debug.log"),
+                logging.StreamHandler()
+            ]
+        )
+        
+        # Get logger for this module
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.DEBUG)
+        
+        # Initialize thread pool for background tasks
+        self.thread_pool = QThreadPool()
+        self.logger.debug(f"Thread pool initialized with max thread count: {self.thread_pool.maxThreadCount()}")
+        
         self.update_checker = UpdateChecker(__version__)
-        self.log_file = str(Path("logs") / "image_dedup.log")
+        self.log_file = str(log_dir / "image_dedup.log")
         
         # Set default style and theme from config
         self.current_style = self.config.get('appearance', {}).get('style', 'Fusion')
         self.current_theme = self.config.get('appearance', {}).get('theme', 'dark')
         
-        # Load settings
-        self.settings = QSettings('ImagesDeduplicator', 'ImageDeduplicator')
+        # Log initialization
+        self.logger.info("=" * 50)
+        self.logger.info(f"Starting Image Deduplicator v{__version__}")
+        self.logger.info(f"Log file: {self.log_file}")
+        self.logger.debug(f"Configuration: {self.config}")
         
-        # Set up thread pool
-        self.thread_pool = QThreadPool()
+        # Load settings
+        self.settings = QSettings("ImageDeduplicator", "ImageDeduplicator")
         
         # Initialize undo manager
         self.undo_manager = UndoManager()
@@ -148,11 +178,6 @@ class UI(QMainWindow):
         
         # Apply the style and theme
         self.apply_style(self.current_style, save=False, apply_theme_flag=True)
-        
-        # Log application start
-        logger.info("=" * 50)
-        logger.info(f"Starting Image Deduplicator v{__version__}")
-        logger.info(f"Log file: {self.log_file}")
         
         # Check for updates on startup
         QTimer.singleShot(1000, self.check_for_updates_on_startup)
@@ -495,119 +520,57 @@ class UI(QMainWindow):
         try:
             selected_items = self.duplicates_list.selectedItems()
             if not selected_items:
-                self.original_preview.clear()
-                self.duplicate_preview.clear()
-                self.original_path.clear()
-                self.duplicate_path.clear()
+                self.clear_previews()
                 return
             
-            # Get the first selected item
             item = selected_items[0]
             item_data = item.data(Qt.ItemDataRole.UserRole)
             
-            # Handle different data formats
-            if isinstance(item_data, tuple) and len(item_data) == 2:
-                # Standard format: (original_path, duplicate_path)
-                original_path, duplicate_path = item_data
-            elif isinstance(item_data, str):
-                # Single path provided, use it for both
-                original_path = duplicate_path = item_data
-            else:
-                raise ValueError(f"Unexpected item data format: {type(item_data)}")
-            
-            # Load and display images
-            self.load_image_preview(original_path, self.original_preview, self.original_path)
-            self.load_image_preview(duplicate_path, self.duplicate_preview, self.duplicate_path)
+            if not item_data:
+                self.logger.warning("No item data found for selected item")
+                self.clear_previews()
+                return
                 
+            if not isinstance(item_data, (list, tuple)) or len(item_data) < 2:
+                self.logger.warning(f"Unexpected item data format: {item_data}")
+                self.clear_previews()
+                return
+                
+            original_path = str(item_data[0])
+            duplicate_path = str(item_data[1])
+            
+            # Verify paths exist before showing preview
+            if not os.path.exists(original_path) or not os.path.exists(duplicate_path):
+                self.logger.error(f"One or both image paths do not exist. Original: {original_path}, Duplicate: {duplicate_path}")
+                self.clear_previews()
+                return
+                
+            # Show preview in dialog
+            self.logger.debug(f"Showing preview for images - Original: {original_path}, Duplicate: {duplicate_path}")
+            self.logger.info(f"Previewing images - Original: {os.path.basename(original_path)}, Duplicate: {os.path.basename(duplicate_path)}")
+            
+            # Force the UI to update before showing the dialog
+            QApplication.processEvents()
+            
+            # Import here to avoid circular imports
+            from script.image_dialog_preview import show_image_preview
+            show_image_preview([original_path, duplicate_path], self)
+            
         except Exception as e:
-            logger.error(f"Error in update_preview: {e}", exc_info=True)
-            QMessageBox.critical(
-                self,
-                t('error', self.lang),
-                f"An error occurred while loading the preview: {str(e)}"
-            )
+            self.logger.error(f"Error in update_preview: {str(e)}", exc_info=True)
+            self.clear_previews()
     
-    def load_image_preview(self, image_path, preview_widget, path_label):
-        """Load an image preview into the specified widget.
-        
-        Args:
-            image_path: Path to the image file
-            preview_widget: QLabel or ImagePreview widget to display the image
-            path_label: QLabel to display the image path
-        """
-        # Clear previous content
-        preview_widget.clear()
-        path_label.clear()
-        
-        # Validate input
-        if not image_path or not isinstance(image_path, (str, Path)):
-            logger.warning(f"Invalid image path: {image_path}")
-            path_label.setText(t('invalid_image_path', self.lang))
-            return
-        
+    def clear_previews(self):
+        """Clear all preview widgets."""
         try:
-            # Convert to Path object and validate
-            img_path = Path(image_path)
-            
-            # Check if the path exists and is a file
-            if not img_path.exists():
-                logger.warning(f"Image file not found: {image_path}")
-                path_label.setText(t('image_not_found', self.lang))
-                return
-                
-            if not img_path.is_file():
-                logger.warning(f"Path is not a file: {image_path}")
-                path_label.setText(t('not_a_file', self.lang))
-                return
-            
-            # Update path label with filename and tooltip with full path
-            path_label.setText(img_path.name)
-            path_label.setToolTip(str(img_path.absolute()))
-            
-            # Load and process image using Pillow with additional error handling
-            try:
-                # First try to open the file with a timeout
-                img = None
-                try:
-                    with Image.open(img_path) as img:
-                        # Create a copy of the image data in memory
-                        img.load()
-                        
-                        # Store in a variable to use outside the context manager
-                        img_data = img.copy()
-                except Exception as open_error:
-                    logger.error(f"Error opening image {img_path}: {open_error}", exc_info=True)
-                    path_label.setText(t('error_loading_image', self.lang))
-                    return
-                
-                try:
-                    # Process the image (now using the in-memory copy)
-                    if img_data.mode in ('RGBA', 'LA') or (img_data.mode == 'P' and 'transparency' in img_data.info):
-                        background = Image.new('RGB', img_data.size, (60, 63, 65))  # Match dark theme
-                        background.paste(img_data, mask=img_data.split()[-1])  # Paste with alpha mask
-                        img_data = background
-                    elif img_data.mode != 'RGB':
-                        img_data = img_data.convert('RGB')
-                    
-                    # Convert to QPixmap
-                    qimg = ImageQt.ImageQt(img_data)
-                    pixmap = QPixmap.fromImage(qimg)
-                    
-                    # Set the pixmap if the widget is still valid
-                    if not sip.isdeleted(preview_widget) and hasattr(preview_widget, 'setPixmap'):
-                        preview_widget.setPixmap(pixmap)
-                    
-                except Exception as process_error:
-                    logger.error(f"Error processing image {img_path}: {process_error}", exc_info=True)
-                    path_label.setText(t('error_processing_image', self.lang))
-                
-            except Exception as e:
-                logger.error(f"Unexpected error with image {img_path}: {e}", exc_info=True)
-                path_label.setText(t('error_loading_image', self.lang))
-                
+            # No need to clear previews anymore as they're in a separate dialog
+            # Just update the UI state if needed
+            if hasattr(self, 'original_path') and hasattr(self.original_path, 'clear'):
+                self.original_path.clear()
+            if hasattr(self, 'duplicate_path') and hasattr(self.duplicate_path, 'clear'):
+                self.duplicate_path.clear()
         except Exception as e:
-            logger.error(f"Error in load_image_preview for {image_path}: {e}", exc_info=True)
-            path_label.setText(t('error_loading_image', self.lang))
+            self.logger.error(f"Error clearing previews: {str(e)}", exc_info=True)
     
     def select_all_duplicates(self):
         """Select all items in the duplicates list."""
@@ -618,7 +581,7 @@ class UI(QMainWindow):
         self.duplicates_list.clearSelection()
     
     def delete_selected(self):
-        """Delete the selected duplicate files with undo support."""
+        """Delete the selected duplicate files with undo support using send2trash."""
         selected_items = self.duplicates_list.selectedItems()
         if not selected_items:
             QMessageBox.information(
@@ -654,91 +617,158 @@ class UI(QMainWindow):
         
         for i, file_path in enumerate(selected_paths):
             try:
-                # Move to trash instead of deleting
+                # Move to trash using send2trash
                 trash_path = self.undo_manager.move_to_trash(file_path)
                 
                 # Create an operation for undo
                 operation = FileOperation(
                     operation_type='delete',
-                    source=trash_path,
+                    source=file_path,  # Store original path for undo
                     metadata={'original_path': file_path}
                 )
                 self.undo_manager.add_operation(operation)
                 
-                # Update the UI
-                if i < len(selected_items):
-                    self.duplicates_list.takeItem(self.duplicates_list.row(selected_items[i]))
+                # Update UI
+                self.duplicates_list.takeItem(self.duplicates_list.row(selected_items[i]))
                 
-                # Enable undo action
-                if self.undo_action:
-                    self.undo_action.setEnabled(True)
-                    
             except Exception as e:
-                logger.error(f"Failed to delete {file_path}: {e}")
-                error_msg = f"{file_path}: {str(e)}" if isinstance(file_path, str) else f"{file_path[1]}: {str(e)}"
-                failed_deletions.append(error_msg)
+                self.logger.error(f"Failed to move {file_path} to trash: {e}", exc_info=True)
+                failed_deletions.append(file_path)
         
-        # Show error message if any deletions failed
+        # Show result message
         if failed_deletions:
             QMessageBox.warning(
                 self,
                 t('error', self.lang),
-                t('failed_to_delete_items', self.lang, 
-                  count=len(failed_deletions), 
-                  error='\n'.join(failed_deletions))
+                t('failed_to_delete_files', self.lang, count=len(failed_deletions))
             )
-        
-        # Update the UI
+        elif selected_paths:
+            QMessageBox.information(
+                self,
+                t('success', self.lang),
+                t('moved_to_trash', self.lang, count=len(selected_paths))
+            )
+            
+        # Update UI
         self.update_button_states()
+        self.update_preview()
     
     def delete_all_duplicates(self):
-        """Delete all duplicate files, keeping only the originals."""
-        if self.duplicates_list.count() == 0:
+        """Delete all duplicate files, keeping only the originals using send2trash."""
+        if not self.duplicates:
+            QMessageBox.information(
+                self,
+                t('info', self.lang),
+                t('no_duplicates_found', self.lang)
+            )
             return
-        
-        # Show confirmation dialog
-        reply = QMessageBox.question(
+
+        # Count total duplicates to delete
+        total_duplicates = sum(len(dupes) for dupes in self.duplicates.values())
+        if total_duplicates == 0:
+            QMessageBox.information(
+                self,
+                t('info', self.lang),
+                t('no_duplicates_to_delete', self.lang)
+            )
+            return
+
+        # Ask for confirmation
+        confirm = QMessageBox.question(
             self,
-            t('confirm_deletion', self.lang),
-            t('confirm_delete_all', self.lang).format(count=self.duplicates_list.count()),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            t('confirm_delete_all', self.lang),
+            t('confirm_delete_all_duplicates', self.lang, count=total_duplicates),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
-        if reply == QMessageBox.StandardButton.Yes:
+        if confirm != QMessageBox.StandardButton.Yes:
+            return
+
+        # Process deletions with undo support
+        failed_deletions = []
+        deleted_count = 0
+        
+        try:
+            # Disable UI during operation
             self.set_ui_enabled(False)
-            self.status_bar.showMessage(t('deleting_files', self.lang))
-            QApplication.processEvents()  # Update UI
             
-            deleted = 0
-            errors = []
+            # Create progress dialog
+            progress = QProgressDialog(
+                t('deleting_duplicates', self.lang, count=total_duplicates),
+                t('cancel', self.lang),
+                0, total_duplicates, self
+            )
+            progress.setWindowModality(Qt.WindowModality.WindowModal)
+            progress.setWindowTitle(t('deleting', self.lang))
+            progress.setValue(0)
+            progress.show()
             
-            for i in range(self.duplicates_list.count()):
-                try:
-                    _, duplicate_path = self.duplicates_list.item(i).data(Qt.ItemDataRole.UserRole)
-                    Path(duplicate_path).unlink()
-                    deleted += 1
-                except Exception as e:
-                    error_msg = f"{duplicate_path}: {str(e)}"
-                    logger.error(f"Error deleting file: {error_msg}")
-                    errors.append(error_msg)
-            
-            # Show result
-            if errors:
-                error_details = "\n\n".join(errors[:10])  # Show first 10 errors to avoid huge dialog
-                if len(errors) > 10:
-                    error_details += f"\n\n... and {len(errors) - 10} more errors"
+            # Process each original and its duplicates
+            for original, duplicates in self.duplicates.items():
+                for duplicate in duplicates:
+                    if progress.wasCanceled():
+                        break
+                        
+                    try:
+                        # Move to trash using send2trash
+                        self.undo_manager.move_to_trash(duplicate)
+                        
+                        # Create an operation for undo
+                        operation = FileOperation(
+                            operation_type='delete',
+                            source=duplicate,  # Store original path for undo
+                            metadata={'original_path': duplicate}
+                        )
+                        self.undo_manager.add_operation(operation)
+                        
+                        deleted_count += 1
+                        progress.setValue(deleted_count)
+                        QApplication.processEvents()
+                        
+                    except Exception as e:
+                        self.logger.error(f"Failed to move {duplicate} to trash: {e}", exc_info=True)
+                        failed_deletions.append(duplicate)
                 
-                QMessageBox.warning(
-                    self,
-                    t('error_deleting', self.lang),
-                    f"{t('some_files_not_deleted', self.lang)}\n\n{error_details}"
-                )
+                if progress.wasCanceled():
+                    break
+                    
+        except Exception as e:
+            self.logger.error(f"Error during bulk delete: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                t('error', self.lang),
+                t('error_during_bulk_delete', self.lang, error=str(e))
+            )
+            return
             
-            # Update UI
-            self.status_bar.showMessage(t('files_deleted', self.lang).format(count=deleted))
-            self.update_duplicates_list()
+        finally:
+            progress.close()
             self.set_ui_enabled(True)
+        
+        # Show result message
+        if failed_deletions:
+            QMessageBox.warning(
+                self,
+                t('warning', self.lang),
+                t('some_deletions_failed', self.lang, 
+                  success=deleted_count, 
+                  failed=len(failed_deletions))
+            )
+        elif deleted_count > 0:
+            QMessageBox.information(
+                self,
+                t('success', self.lang),
+                t('moved_to_trash', self.lang, count=deleted_count)
+            )
+            
+        # Update UI
+        self.duplicates = {}
+        self.duplicates_list.clear()
+        self.original_preview.clear()
+        self.duplicate_preview.clear()
+        self.original_path.clear()
+        self.duplicate_path.clear()
+        self.update_button_states()
     
     def update_button_states(self):
         """Update the state of the action buttons based on the current selection."""
@@ -862,28 +892,115 @@ class UI(QMainWindow):
     def _perform_update_check(self):
         """Perform the actual update check."""
         try:
-            update_available, latest_version, changelog = self.update_checker.check_for_updates()
+            # Create a new UpdateChecker instance
+            self.update_checker = UpdateChecker(__version__)
+            
+            # Connect signals
+            self.update_checker.update_available.connect(self._handle_update_available)
+            self.update_checker.no_updates.connect(self._handle_no_updates)
+            self.update_checker.error_occurred.connect(self._handle_update_error)
+            
+            # Connect cleanup signals
+            self.update_checker.update_available.connect(self._cleanup_update_thread)
+            self.update_checker.no_updates.connect(self._cleanup_update_thread)
+            self.update_checker.error_occurred.connect(self._cleanup_update_thread)
+            
+            # Perform the check in a separate thread
+            self.update_thread = QThread()
+            self.update_checker.moveToThread(self.update_thread)
+            
+            # Connect thread signals
+            self.update_thread.started.connect(self.update_checker.check_for_updates)
+            
+            # Start the thread
+            self.update_thread.start()
+            
+        except Exception as e:
+            logger.error(f"Error in _perform_update_check: {e}", exc_info=True)
+            
+    def _cleanup_update_thread(self, *args):
+        """Clean up the update thread and checker."""
+        try:
+            if hasattr(self, 'update_thread') and self.update_thread.isRunning():
+                self.update_thread.quit()
+                self.update_thread.wait()
+                self.update_thread.deleteLater()
+            
+            if hasattr(self, 'update_checker'):
+                self.update_checker.deleteLater()
+                
+        except Exception as e:
+            logger.error(f"Error cleaning up update thread: {e}", exc_info=True)
+
+    def _handle_update_available(self, version_info):
+        """Handle the case when an update is available."""
+        try:
+            logger.info(f"Update available: {version_info.get('version')}")
             
             # Update last check time
             from datetime import datetime
             today = datetime.now().strftime('%Y-%m-%d')
             self.settings.setValue('last_update_check', today)
             
-            if update_available:
-                logger.info(f"Update available: {latest_version}")
-                msg = t('update_available', self.lang).format(
-                    current=__version__,
-                    latest=latest_version
-                )
-                
-                # Show update dialog in a non-blocking way
-                QTimer.singleShot(100, lambda: self._show_update_dialog(msg, latest_version, changelog))
-            else:
-                logger.info("No updates available")
-                
+            msg = t('update_available', self.lang).format(
+                current=__version__,
+                latest=version_info.get('version', 'unknown')
+            )
+            
+            # Show update dialog in a non-blocking way
+            QTimer.singleShot(100, lambda: self._show_update_dialog(
+                msg, 
+                version_info.get('version', ''), 
+                version_info.get('notes', '')
+            ))
+            
         except Exception as e:
-            logger.error(f"Error in _perform_update_check: {e}")
-    
+            logger.error(f"Error handling update available: {e}", exc_info=True)
+
+    def _handle_no_updates(self):
+        """Handle the case when no updates are available."""
+        try:
+            logger.info("No updates available")
+            
+            # Update last check time
+            from datetime import datetime
+            today = datetime.now().strftime('%Y-%m-%d')
+            self.settings.setValue('last_update_check', today)
+            
+        except Exception as e:
+            logger.error(f"Error handling no updates: {e}", exc_info=True)
+
+    def _handle_update_error(self, error_message):
+        """Handle errors during update check."""
+        try:
+            logger.error(f"Update check error: {error_message}")
+            # Optionally show a message to the user
+            # self.status_bar.showMessage(f"Update check failed: {error_message}")
+        except Exception as e:
+            logger.error(f"Error handling update error: {e}", exc_info=True)
+
+    def check_for_updates(self, silent=False):
+        """Check for application updates.
+        
+        Args:
+            silent: If True, don't show a message when no updates are available
+        """
+        try:
+            # Only check once per day
+            last_check = self.settings.value('last_update_check')
+            from datetime import datetime
+            today = datetime.now().strftime('%Y-%m-%d')
+            
+            if last_check != today:
+                logger.info("Checking for updates...")
+                try:
+                    # Use a singleShot timer to ensure the UI is fully initialized
+                    QTimer.singleShot(2000, self._perform_update_check)
+                except Exception as e:
+                    logger.error(f"Error scheduling update check: {e}")
+        except Exception as e:
+            logger.error(f"Error in check_for_updates: {e}", exc_info=True)
+
     def _show_update_dialog(self, message, latest_version, changelog):
         """Show the update dialog with the given message and changelog."""
         try:
@@ -907,76 +1024,7 @@ class UI(QMainWindow):
                 QDesktopServices.openUrl(QUrl(f"https://github.com/Nsfr750/Images-Deduplicator/releases/tag/v{latest_version}"))
                 
         except Exception as e:
-            logger.error(f"Error showing update dialog: {e}")
-    
-    def check_for_updates(self, silent=False):
-        """Check for application updates.
-        
-        Args:
-            silent: If True, don't show a message when no updates are available
-        """
-        try:
-            from script.updates import UpdateChecker
-            
-            self.status_bar.showMessage(t('checking_for_updates', self.lang))
-            
-            def update_check_complete(update_available, version_info):
-                if update_available:
-                    self._show_update_dialog(
-                        t('update_available', self.lang).format(
-                            current=__version__,
-                            latest=version_info.get('version', 'unknown')
-                        ),
-                        version_info.get('version', ''),
-                        version_info.get('notes', '')
-                    )
-                    self.status_bar.showMessage(t('update_available', self.lang))
-                elif not silent:
-                    QMessageBox.information(
-                        self,
-                        t('no_updates_title', self.lang),
-                        t('no_updates_available', self.lang).format(version=__version__)
-                    )
-                    self.status_bar.showMessage(t('ready', self.lang))
-            
-            # Run update check in a separate thread
-            self.update_checker = UpdateChecker(current_version=__version__)
-            self.update_checker.update_available.connect(
-                lambda version_info: update_check_complete(True, version_info)
-            )
-            self.update_checker.no_updates.connect(
-                lambda: update_check_complete(False, {})
-            )
-            self.update_checker.error_occurred.connect(
-                lambda error: (
-                    logger.error(f"Error checking for updates: {error}"),
-                    self.status_bar.showMessage(t('update_check_failed', self.lang)),
-                    QMessageBox.warning(
-                        self,
-                        t('error', self.lang),
-                        t('update_check_failed', self.lang)
-                    ) if not silent else None
-                )
-            )
-            
-            # Create and start a thread for the update check
-            self.update_thread = QThread()
-            self.update_checker.moveToThread(self.update_thread)
-            self.update_thread.started.connect(self.update_checker.check_for_updates)
-            self.update_checker.no_updates.connect(self.update_thread.quit)
-            self.update_checker.update_available.connect(self.update_thread.quit)
-            self.update_checker.error_occurred.connect(lambda _: self.update_thread.quit())
-            self.update_thread.start()
-            
-        except Exception as e:
-            logger.error(f"Error in check_for_updates: {e}", exc_info=True)
-            if not silent:
-                QMessageBox.critical(
-                    self,
-                    t('error', self.lang),
-                    t('update_check_failed', self.lang)
-                )
-            self.status_bar.showMessage(t('update_check_failed', self.lang))
+            logger.error(f"Error showing update dialog: {e}", exc_info=True)
     
     def undo_last_operation(self):
         """Undo the last file operation."""
@@ -1113,3 +1161,102 @@ class UI(QMainWindow):
                 t('error', self.lang),
                 error_msg
             )
+
+    def load_image_preview(self, image_path, preview_widget, path_label):
+        """
+        Load and display an image preview in the specified widget.
+        
+        Args:
+            image_path: Path to the image file
+            preview_widget: QLabel widget to display the image
+            path_label: QLabel widget to display the path
+        """
+        try:
+            self.logger.debug(f"load_image_preview called with path: {image_path}")
+            
+            # Convert to Path object if it's a string
+            if isinstance(image_path, str):
+                image_path = Path(image_path)
+            
+            # Update path label with just the filename
+            if hasattr(path_label, 'setText'):
+                path_label.setText(image_path.name)
+                self.logger.debug(f"Set path label to: {image_path.name}")
+            
+            # Check if file exists
+            if not image_path.exists():
+                error_msg = f"File not found: {image_path}"
+                self.logger.error(error_msg)
+                if hasattr(path_label, 'setText'):
+                    path_label.setText(f"Error: File not found")
+                return
+            
+            self.logger.debug(f"Attempting to load image: {image_path}")
+            
+            # Try loading with Pillow first
+            try:
+                with Image.open(image_path) as img:
+                    self.logger.debug(f"Pillow opened image: {img.format}, size: {img.size}, mode: {img.mode}")
+                    
+                    # Convert to RGB if needed (for formats like PNG with alpha channel)
+                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                        self.logger.debug("Converting image with alpha channel to RGB")
+                        background = Image.new('RGB', img.size, (60, 63, 65))  # Match background color
+                        background.paste(img, mask=img.split()[-1])  # Paste with alpha as mask
+                        img = background
+                    
+                    # Convert to QPixmap
+                    self.logger.debug("Converting to QPixmap")
+                    qimg = ImageQt.ImageQt(img)
+                    if qimg.isNull():
+                        raise ValueError("Failed to create QImage from Pillow image")
+                        
+                    pixmap = QPixmap.fromImage(qimg)
+                    if pixmap.isNull():
+                        raise ValueError("Failed to create QPixmap from QImage")
+                    
+                    self.logger.debug(f"Successfully created QPixmap, size: {pixmap.size().width()}x{pixmap.size().height()}")
+                    
+                    # Set the pixmap on the preview widget
+                    if hasattr(preview_widget, 'setPixmap'):
+                        self.logger.debug("Setting pixmap to preview widget")
+                        preview_widget.setPixmap(pixmap)
+                        self.logger.debug("Successfully set pixmap to preview widget")
+                    else:
+                        self.logger.error("Preview widget has no setPixmap method")
+            
+            except Exception as img_error:
+                error_msg = f"Error loading image with Pillow: {str(img_error)}"
+                self.logger.error(error_msg, exc_info=True)
+                
+                # Try fallback method using QPixmap directly
+                try:
+                    self.logger.debug("Trying fallback QPixmap loading")
+                    pixmap = QPixmap(str(image_path))
+                    if pixmap.isNull():
+                        raise ValueError("QPixmap is null")
+                        
+                    self.logger.debug(f"Fallback QPixmap loaded, size: {pixmap.size().width()}x{pixmap.size().height()}")
+                    
+                    if hasattr(preview_widget, 'setPixmap'):
+                        preview_widget.setPixmap(pixmap)
+                        self.logger.debug("Fallback QPixmap loading succeeded")
+                    else:
+                        self.logger.error("Preview widget has no setPixmap method in fallback")
+                        
+                except Exception as fallback_error:
+                    error_msg = f"Fallback loading failed: {str(fallback_error)}"
+                    self.logger.error(error_msg, exc_info=True)
+                    if hasattr(path_label, 'setText'):
+                        path_label.setText(f"Error: {str(fallback_error)[:50]}...")
+        
+        except Exception as e:
+            error_msg = f"Unexpected error in load_image_preview: {str(e)}"
+            self.logger.error(error_msg, exc_info=True)
+            try:
+                if hasattr(path_label, 'setText'):
+                    path_label.setText("Error: Could not load preview")
+                if hasattr(preview_widget, 'clear'):
+                    preview_widget.clear()
+            except Exception as cleanup_error:
+                self.logger.error(f"Error during cleanup: {cleanup_error}", exc_info=True)
