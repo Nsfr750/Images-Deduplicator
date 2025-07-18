@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 from typing import Union, List, Optional
 
-from PyQt6.QtCore import Qt, QSize, QPoint, QRectF, QTimerEvent
+from PyQt6.QtCore import Qt, QSize, QPoint, QRectF, QTimerEvent, QThread, QMetaObject
 from PyQt6.QtGui import QPixmap, QImage, QPainter, QWheelEvent, QMouseEvent, QPaintEvent
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QLabel, QPushButton, QHBoxLayout,
@@ -161,196 +161,292 @@ class ImagePreviewDialog(QDialog):
     """Dialog for displaying image previews with navigation controls."""
     
     def __init__(self, image_paths: List[Union[str, Path]] = None, parent=None):
-        super().__init__(parent)
-        self.logger = logger
-        self.logger.debug("Initializing ImagePreviewDialog")
-        
-        # Set dialog properties
-        self.setWindowTitle("Image Preview")
-        self.setMinimumSize(800, 600)
-        self.logger.debug(f"Window flags before: {self.windowFlags().to_bytes(4, 'little')}")
-        
-        # Set window flags to ensure it's visible
-        self.setWindowFlags(
-            self.windowFlags() | 
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.WindowSystemMenuHint |
-            Qt.WindowType.WindowMinMaxButtonsHint |
-            Qt.WindowType.WindowCloseButtonHint
-        )
-        self.logger.debug(f"Window flags after: {self.windowFlags().to_bytes(4, 'little')}")
-        
-        # Initialize UI components
-        self.image_paths = [str(p) for p in image_paths] if image_paths else []
-        self.current_index = 0
-        self.logger.debug(f"Initialized with {len(self.image_paths)} images")
-        
-        # Set up the UI
-        self.init_ui()
-        
-        # Load the first image if available
-        if self.image_paths:
-            self.logger.debug("Loading first image")
-            QApplication.processEvents()  # Ensure UI is ready
-            self.load_image(self.current_index)
+        try:
+            super().__init__(parent)
+            self.logger = logger
+            self.logger.debug("Initializing ImagePreviewDialog")
             
-        # Set up timer to check visibility
-        self.visibility_timer = self.startTimer(1000)  # Check every second
-        
-    def timerEvent(self, event: QTimerEvent):
-        """Periodically check if the window is visible."""
-        if not self.isVisible():
-            self.logger.warning("Dialog is not visible! Attempting to show...")
-            self.showNormal()
-            self.raise_()
-            self.activateWindow()
+            # Initialize instance variables
+            self.image_paths = []
+            self.current_index = -1
+            self._preview_widget = None
+            self._nav_buttons = {}
+            self._title_label = None
+            self._path_label = None
+            
+            # Set dialog properties
+            self.setWindowTitle("Image Preview")
+            self.setMinimumSize(800, 600)
+            self.setWindowModality(Qt.WindowModality.ApplicationModal)
+            self.setWindowFlags(
+                Qt.WindowType.Window |
+                Qt.WindowType.WindowTitleHint |
+                Qt.WindowType.WindowSystemMenuHint |
+                Qt.WindowType.WindowMinMaxButtonsHint |
+                Qt.WindowType.WindowCloseButtonHint
+            )
+            
+            # Set up the UI
+            self.init_ui()
+            
+            # Load images if provided
+            if image_paths:
+                self.set_image_paths(image_paths)
+                
+            # Set up a timer to check for visibility issues
+            self._visibility_timer = self.startTimer(1000)  # Check every second
+            
+            self.logger.debug("ImagePreviewDialog initialized successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Error initializing ImagePreviewDialog: {e}", exc_info=True)
+            raise
     
-    def showEvent(self, event):
-        """Handle the show event to ensure proper dialog positioning."""
-        super().showEvent(event)
-        self.logger.debug("Show event received")
-        
-        # Center the dialog on the screen
-        screen = QApplication.primaryScreen().availableGeometry()
-        size = self.size()
-        x = (screen.width() - size.width()) // 2
-        y = (screen.height() - size.height()) // 2
-        self.logger.debug(f"Moving dialog to: x={x}, y={y}")
-        self.move(x, y)
-        
-        # Ensure the dialog is brought to the front
-        self.logger.debug("Raising and activating dialog")
-        self.raise_()
-        self.activateWindow()
-        
-        # Force update
-        self.update()
-        QApplication.processEvents()
-        
-        # Log window state
-        self.logger.debug(f"Dialog geometry: {self.geometry()}")
-        self.logger.debug(f"Is visible: {self.isVisible()}")
-        self.logger.debug(f"Is active window: {self.isActiveWindow()}")
-        self.logger.debug(f"Is enabled: {self.isEnabled()}")
+    def set_image_paths(self, image_paths: List[Union[str, Path]]) -> None:
+        """Set the list of image paths to display."""
+        try:
+            self.image_paths = [str(p) for p in image_paths if os.path.exists(str(p))]
+            self.current_index = 0 if self.image_paths else -1
+            
+            if self.image_paths:
+                self.load_image(self.current_index)
+                self.update_navigation_buttons()
+            else:
+                self.logger.warning("No valid image paths provided")
+                self.clear_preview()
+                
+        except Exception as e:
+            self.logger.error(f"Error setting image paths: {e}", exc_info=True)
+            self.clear_preview()
     
     def init_ui(self):
-        """Initialize the user interface."""
-        layout = QVBoxLayout(self)
-        
-        # Image display area
-        self.image_view = ImagePreviewWidget()
-        layout.addWidget(self.image_view)
-        
-        # Navigation controls
-        nav_layout = QHBoxLayout()
-        
-        self.prev_btn = QPushButton("Previous")
-        self.prev_btn.clicked.connect(self.show_previous)
-        
-        self.next_btn = QPushButton("Next")
-        self.next_btn.clicked.connect(self.show_next)
-        
-        self.close_btn = QPushButton("Close")
-        self.close_btn.clicked.connect(self.accept)
-        
-        nav_layout.addWidget(self.prev_btn)
-        nav_layout.addStretch()
-        nav_layout.addWidget(self.next_btn)
-        nav_layout.addStretch()
-        nav_layout.addWidget(self.close_btn)
-        
-        layout.addLayout(nav_layout)
-        self.update_navigation_buttons()
+        """Initialize the user interface components."""
+        try:
+            # Main layout
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(10, 10, 10, 10)
+            layout.setSpacing(5)
+            
+            # Title and path labels
+            title_frame = QFrame()
+            title_layout = QVBoxLayout(title_frame)
+            title_layout.setContentsMargins(0, 0, 0, 5)
+            
+            self._title_label = QLabel("Image Preview")
+            self._title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._title_label.setStyleSheet("font-weight: bold; font-size: 14px;")
+            
+            self._path_label = QLabel()
+            self._path_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._path_label.setStyleSheet("color: #888; font-size: 11px;")
+            self._path_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+            
+            title_layout.addWidget(self._title_label)
+            title_layout.addWidget(self._path_label)
+            
+            # Preview area
+            self._preview_widget = ImagePreviewWidget(self)
+            
+            # Navigation buttons
+            nav_frame = QFrame()
+            nav_layout = QHBoxLayout(nav_frame)
+            nav_layout.setContentsMargins(0, 5, 0, 0)
+            
+            self._nav_buttons = {
+                'prev': QPushButton("Previous"),
+                'next': QPushButton("Next"),
+                'zoom_in': QPushButton("Zoom In (+)"),
+                'zoom_out': QPushButton("Zoom Out (-)"),
+                'fit': QPushButton("Fit to Window"),
+                'close': QPushButton("Close")
+            }
+            
+            # Connect buttons
+            self._nav_buttons['prev'].clicked.connect(self.show_previous)
+            self._nav_buttons['next'].clicked.connect(self.show_next)
+            self._nav_buttons['zoom_in'].clicked.connect(self.zoom_in)
+            self._nav_buttons['zoom_out'].clicked.connect(self.zoom_out)
+            self._nav_buttons['fit'].clicked.connect(self.fit_to_window)
+            self._nav_buttons['close'].clicked.connect(self.accept)
+            
+            # Add buttons to layout
+            nav_layout.addWidget(self._nav_buttons['prev'])
+            nav_layout.addWidget(self._nav_buttons['next'])
+            nav_layout.addStretch()
+            nav_layout.addWidget(self._nav_buttons['zoom_in'])
+            nav_layout.addWidget(self._nav_buttons['zoom_out'])
+            nav_layout.addWidget(self._nav_buttons['fit'])
+            nav_layout.addStretch()
+            nav_layout.addWidget(self._nav_buttons['close'])
+            
+            # Add all widgets to main layout
+            layout.addWidget(title_frame)
+            layout.addWidget(self._preview_widget, 1)  # Make preview area expandable
+            layout.addWidget(nav_frame)
+            
+            # Update button states
+            self.update_navigation_buttons()
+            
+        except Exception as e:
+            self.logger.error(f"Error initializing UI: {e}", exc_info=True)
+            raise
     
     def load_image(self, index: int) -> bool:
-        """
-        Load and display the image at the given index.
-        
-        Args:
-            index: Index of the image to load
+        """Load and display the image at the specified index."""
+        try:
+            if not self.image_paths or index < 0 or index >= len(self.image_paths):
+                self.logger.warning(f"Invalid image index: {index}")
+                self.clear_preview()
+                return False
+                
+            image_path = self.image_paths[index]
+            self.logger.debug(f"Loading image {index + 1}/{len(self.image_paths)}: {os.path.basename(image_path)}")
             
-        Returns:
-            bool: True if image was loaded successfully, False otherwise
-        """
-        if not self.image_paths or not (0 <= index < len(self.image_paths)):
+            # Update UI to show loading state
+            self.setCursor(Qt.CursorShape.WaitCursor)
+            QApplication.processEvents()
+            
+            # Load the image
+            success = self._preview_widget.set_image(image_path)
+            
+            if success:
+                self.current_index = index
+                self.update_window_title()
+                self.update_path_label()
+                self.logger.debug(f"Successfully loaded image: {os.path.basename(image_path)}")
+            else:
+                self.logger.error(f"Failed to load image: {image_path}")
+                self.clear_preview()
+                
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Error loading image: {e}", exc_info=True)
+            self.clear_preview()
             return False
             
-        self.current_index = index
-        image_path = self.image_paths[index]
-        self.logger.debug(f"Loading image at index {index}: {image_path}")
-        
-        success = self.image_view.set_image(image_path)
-        
-        if success:
-            self.setWindowTitle(f"Image Preview ({index + 1}/{len(self.image_paths)} - {os.path.basename(image_path)})")
-        else:
-            self.logger.error(f"Failed to load image: {image_path}")
-        
-        self.update_navigation_buttons()
-        return success
+        finally:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+    
+    def clear_preview(self):
+        """Clear the current preview and update UI accordingly."""
+        try:
+            if hasattr(self, '_preview_widget') and self._preview_widget:
+                self._preview_widget.clear()
+            
+            if hasattr(self, '_title_label') and self._title_label:
+                self._title_label.setText("No Image")
+                
+            if hasattr(self, '_path_label') and self._path_label:
+                self._path_label.clear()
+                
+        except Exception as e:
+            self.logger.error(f"Error clearing preview: {e}", exc_info=True)
+    
+    def update_window_title(self):
+        """Update the window title with current image info."""
+        if not self.image_paths or self.current_index < 0:
+            self.setWindowTitle("Image Preview")
+            return
+            
+        try:
+            filename = os.path.basename(self.image_paths[self.current_index])
+            self.setWindowTitle(f"Image Preview - {filename} ({self.current_index + 1}/{len(self.image_paths)})")
+        except Exception as e:
+            self.logger.error(f"Error updating window title: {e}", exc_info=True)
+    
+    def update_path_label(self):
+        """Update the path label with the current image path."""
+        if not hasattr(self, '_path_label') or not self._path_label:
+            return
+            
+        try:
+            if self.image_paths and 0 <= self.current_index < len(self.image_paths):
+                self._path_label.setText(self.image_paths[self.current_index])
+            else:
+                self._path_label.clear()
+        except Exception as e:
+            self.logger.error(f"Error updating path label: {e}", exc_info=True)
+    
+    def update_navigation_buttons(self):
+        """Update the enabled state of navigation buttons."""
+        if not hasattr(self, '_nav_buttons') or not self._nav_buttons:
+            return
+            
+        try:
+            has_images = bool(self.image_paths)
+            has_prev = has_images and self.current_index > 0
+            has_next = has_images and self.current_index < len(self.image_paths) - 1
+            
+            self._nav_buttons['prev'].setEnabled(has_prev)
+            self._nav_buttons['next'].setEnabled(has_next)
+            
+            # Enable zoom/fit buttons only if we have an image
+            has_current_image = has_images and 0 <= self.current_index < len(self.image_paths)
+            self._nav_buttons['zoom_in'].setEnabled(has_current_image)
+            self._nav_buttons['zoom_out'].setEnabled(has_current_image)
+            self._nav_buttons['fit'].setEnabled(has_current_image)
+            
+        except Exception as e:
+            self.logger.error(f"Error updating navigation buttons: {e}", exc_info=True)
     
     def show_previous(self):
         """Show the previous image in the list."""
         if self.current_index > 0:
-            self.logger.debug(f"User clicked 'Previous' button. Current index: {self.current_index}")
-            new_index = self.current_index - 1
-            self.logger.info(f"Loading previous image. New index: {new_index}, File: {self.image_paths[new_index]}")
-            self.load_image(new_index)
-        else:
-            self.logger.debug("Previous button clicked, but already at the first image")
+            self.load_image(self.current_index - 1)
+            self.update_navigation_buttons()
     
     def show_next(self):
         """Show the next image in the list."""
         if self.current_index < len(self.image_paths) - 1:
-            self.logger.debug(f"User clicked 'Next' button. Current index: {self.current_index}")
-            new_index = self.current_index + 1
-            self.logger.info(f"Loading next image. New index: {new_index}, File: {self.image_paths[new_index]}")
-            self.load_image(new_index)
-        else:
-            self.logger.debug("Next button clicked, but already at the last image")
+            self.load_image(self.current_index + 1)
+            self.update_navigation_buttons()
     
-    def update_navigation_buttons(self):
-        """Update the state of navigation buttons based on current index."""
+    def zoom_in(self):
+        """Zoom in on the current image."""
         try:
-            has_previous = self.current_index > 0
-            has_next = self.current_index < len(self.image_paths) - 1 if self.image_paths else False
-            
-            self.prev_btn.setEnabled(has_previous)
-            self.next_btn.setEnabled(has_next)
-            
-            self.logger.debug(
-                f"Updated navigation buttons - "
-                f"Previous: {'enabled' if has_previous else 'disabled'}, "
-                f"Next: {'enabled' if has_next else 'disabled'}"
-            )
+            if hasattr(self, '_preview_widget') and self._preview_widget:
+                self._preview_widget.zoom_in()
         except Exception as e:
-            self.logger.error(f"Error updating navigation buttons: {str(e)}", exc_info=True)
+            self.logger.error(f"Error zooming in: {e}", exc_info=True)
     
-    def keyPressEvent(self, event):
-        """Handle key press events for keyboard navigation."""
+    def zoom_out(self):
+        """Zoom out from the current image."""
         try:
-            key = event.key()
-            
-            if key == Qt.Key.Key_Left or key == Qt.Key.Key_Up:
-                self.logger.debug("Left/Up arrow key pressed - showing previous image")
-                self.show_previous()
-            elif key == Qt.Key.Key_Right or key == Qt.Key.Key_Down:
-                self.logger.debug("Right/Down arrow key pressed - showing next image")
-                self.show_next()
-            elif key == Qt.Key.Key_Escape:
-                self.logger.info("Escape key pressed - closing dialog")
-                self.close()
-            else:
-                super().keyPressEvent(event)
+            if hasattr(self, '_preview_widget') and self._preview_widget:
+                self._preview_widget.zoom_out()
         except Exception as e:
-            self.logger.error(f"Error handling key press event: {str(e)}", exc_info=True)
+            self.logger.error(f"Error zooming out: {e}", exc_info=True)
+    
+    def fit_to_window(self):
+        """Fit the current image to the window."""
+        try:
+            if hasattr(self, '_preview_widget') and self._preview_widget:
+                self._preview_widget.fit_to_window()
+        except Exception as e:
+            self.logger.error(f"Error fitting to window: {e}", exc_info=True)
     
     def closeEvent(self, event):
-        """Handle the close event."""
-        self.logger.info("Preview dialog closing")
-        if hasattr(self, 'visibility_timer'):
-            self.killTimer(self.visibility_timer)
-        super().closeEvent(event)
+        """Handle the close event to ensure proper cleanup."""
+        try:
+            self.logger.debug("Closing preview dialog")
+            
+            # Stop any active timers
+            if hasattr(self, '_visibility_timer') and self._visibility_timer:
+                self.killTimer(self._visibility_timer)
+                
+            # Clear resources
+            self.clear_preview()
+            
+            # Clean up references
+            if hasattr(self, '_preview_widget') and self._preview_widget:
+                self._preview_widget.deleteLater()
+                
+            event.accept()
+            
+        except Exception as e:
+            self.logger.error(f"Error during dialog close: {e}", exc_info=True)
+            event.accept()  # Always accept the close event
 
 
 def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None) -> None:
@@ -361,69 +457,77 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
         image_paths: Single path or list of image paths to display
         parent: Parent widget
     """
-    logger = logging.getLogger(__name__)
-    
     try:
+        logger.debug("show_image_preview called")
+        
         # Convert single path to list if needed
-        if isinstance(image_paths, (str, Path)):
-            image_paths = [str(image_paths)]
-        else:
-            image_paths = [str(p) for p in image_paths]
-        
-        logger.info(f"Requested to show preview for {len(image_paths)} images")
-        
-        # Validate image paths
+        if not isinstance(image_paths, (list, tuple)):
+            image_paths = [image_paths]
+            
+        # Convert all paths to strings and filter out any invalid ones
         valid_paths = []
         for path in image_paths:
-            if os.path.exists(path):
-                valid_paths.append(path)
-            else:
-                logger.warning(f"Image not found, skipping: {path}")
+            try:
+                path_str = str(path)
+                if os.path.exists(path_str):
+                    valid_paths.append(path_str)
+                else:
+                    logger.warning(f"Image path does not exist: {path_str}")
+            except Exception as e:
+                logger.error(f"Error processing image path {path}: {e}", exc_info=True)
         
         if not valid_paths:
-            logger.error("No valid image paths provided for preview")
-            QMessageBox.warning(parent, "Error", "No valid images found to preview.")
-            return
+            logger.error("No valid image paths provided to show_image_preview")
+            if parent:
+                QMessageBox.warning(
+                    parent,
+                    "Preview Error",
+                    "No valid images to display. The files may have been moved or deleted."
+                )
+            return None
+            
+        logger.debug(f"Showing preview for {len(valid_paths)} images")
         
-        logger.debug(f"Creating preview dialog for {len(valid_paths)} valid images")
+        # Create the dialog on the main thread
+        dialog = None
         
-        # Create and show the dialog
-        dialog = ImagePreviewDialog(valid_paths, parent)
-        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        def create_dialog():
+            nonlocal dialog
+            try:
+                dialog = ImagePreviewDialog(valid_paths, parent)
+                dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+                dialog.show()
+                dialog.raise_()
+                dialog.activateWindow()
+                logger.debug("Preview dialog shown and activated")
+            except Exception as e:
+                logger.error(f"Error creating preview dialog: {e}", exc_info=True)
+                if parent:
+                    QMessageBox.critical(
+                        parent,
+                        "Preview Error",
+                        f"Failed to create preview dialog: {str(e)}"
+                    )
         
-        # Ensure the dialog is shown as a modal dialog
-        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-        
-        # Show the dialog and ensure it's raised
-        logger.debug("About to show preview dialog")
-        dialog.show()
-        dialog.raise_()
-        dialog.activateWindow()
-        
-        # Force the window to stay on top
-        dialog.setWindowFlags(
-            dialog.windowFlags() | 
-            Qt.WindowType.WindowStaysOnTopHint |
-            Qt.WindowType.WindowSystemMenuHint |
-            Qt.WindowType.WindowMinMaxButtonsHint |
-            Qt.WindowType.WindowCloseButtonHint
-        )
-        
-        # Make sure the dialog is visible and focused
-        dialog.showNormal()
-        dialog.raise_()
-        dialog.activateWindow()
-        
-        # Log dialog state
-        logger.debug(f"Dialog shown. Visible: {dialog.isVisible()}, Active: {dialog.isActiveWindow()}")
-        
+        # Ensure we're on the main thread
+        if QThread.currentThread() != QApplication.instance().thread():
+            logger.debug("Scheduling dialog creation on main thread")
+            QMetaObject.invokeMethod(
+                QApplication.instance(),
+                create_dialog,
+                Qt.ConnectionType.QueuedConnection
+            )
+        else:
+            create_dialog()
+            
         return dialog
         
     except Exception as e:
-        logger.error(f"Error showing image preview: {str(e)}", exc_info=True)
-        QMessageBox.critical(
-            parent, 
-            "Error", 
-            f"Failed to show image preview: {str(e)}"
-        )
+        logger.error(f"Unexpected error in show_image_preview: {e}", exc_info=True)
+        if parent:
+            QMessageBox.critical(
+                parent,
+                "Preview Error",
+                f"An unexpected error occurred: {str(e)}"
+            )
         return None

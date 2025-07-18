@@ -32,6 +32,7 @@ from PyQt6 import sip
 import logging
 import send2trash
 from script.update_preview import update_preview as update_preview_handler
+import io
 
 class ImagePreview(QLabel):
     """Custom widget for displaying image previews with aspect ratio preservation."""
@@ -1164,7 +1165,7 @@ class UI(QMainWindow):
 
     def load_image_preview(self, image_path, preview_widget, path_label):
         """
-        Load and display an image preview in the specified widget.
+        Load and display an image preview in the specified widget with enhanced error handling.
         
         Args:
             image_path: Path to the image file
@@ -1172,91 +1173,83 @@ class UI(QMainWindow):
             path_label: QLabel widget to display the path
         """
         try:
-            self.logger.debug(f"load_image_preview called with path: {image_path}")
+            self.logger.debug(f"Loading image preview for: {image_path}")
             
+            # Validate input parameters
+            if not all([image_path, preview_widget, path_label]):
+                raise ValueError("Missing required parameters for image preview")
+                
             # Convert to Path object if it's a string
             if isinstance(image_path, str):
                 image_path = Path(image_path)
             
-            # Update path label with just the filename
-            if hasattr(path_label, 'setText'):
-                path_label.setText(image_path.name)
-                self.logger.debug(f"Set path label to: {image_path.name}")
-            
-            # Check if file exists
+            # Check if file exists and is accessible
             if not image_path.exists():
-                error_msg = f"File not found: {image_path}"
-                self.logger.error(error_msg)
-                if hasattr(path_label, 'setText'):
-                    path_label.setText(f"Error: File not found")
-                return
+                raise FileNotFoundError(f"Image file not found: {image_path}")
+            if not os.access(image_path, os.R_OK):
+                raise PermissionError(f"No read permission for file: {image_path}")
+                
+            # Log basic file info
+            file_size = image_path.stat().st_size / (1024 * 1024)  # Size in MB
+            self.logger.debug(f"Previewing image: {image_path.name} ({file_size:.2f} MB)")
             
-            self.logger.debug(f"Attempting to load image: {image_path}")
-            
-            # Try loading with Pillow first
+            # Load the image with PIL for better format support and error handling
             try:
                 with Image.open(image_path) as img:
-                    self.logger.debug(f"Pillow opened image: {img.format}, size: {img.size}, mode: {img.mode}")
-                    
-                    # Convert to RGB if needed (for formats like PNG with alpha channel)
-                    if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                        self.logger.debug("Converting image with alpha channel to RGB")
-                        background = Image.new('RGB', img.size, (60, 63, 65))  # Match background color
-                        background.paste(img, mask=img.split()[-1])  # Paste with alpha as mask
+                    # Convert to RGB if necessary (for PNG with alpha channel)
+                    if img.mode in ('RGBA', 'LA'):
+                        background = Image.new('RGB', img.size, (255, 255, 255))
+                        background.paste(img, mask=img.split()[-1])
                         img = background
+                    elif img.mode != 'RGB':
+                        img = img.convert('RGB')
                     
                     # Convert to QPixmap
-                    self.logger.debug("Converting to QPixmap")
-                    qimg = ImageQt.ImageQt(img)
-                    if qimg.isNull():
-                        raise ValueError("Failed to create QImage from Pillow image")
-                        
+                    img_byte_arr = io.BytesIO()
+                    img.save(img_byte_arr, format='JPEG', quality=85)
+                    qimg = QImage.fromData(img_byte_arr.getvalue())
                     pixmap = QPixmap.fromImage(qimg)
-                    if pixmap.isNull():
-                        raise ValueError("Failed to create QPixmap from QImage")
                     
-                    self.logger.debug(f"Successfully created QPixmap, size: {pixmap.size().width()}x{pixmap.size().height()}")
-                    
-                    # Set the pixmap on the preview widget
-                    if hasattr(preview_widget, 'setPixmap'):
-                        self.logger.debug("Setting pixmap to preview widget")
-                        preview_widget.setPixmap(pixmap)
-                        self.logger.debug("Successfully set pixmap to preview widget")
+                    # Scale the pixmap to fit the preview widget while maintaining aspect ratio
+                    if not pixmap.isNull():
+                        scaled_pixmap = pixmap.scaled(
+                            preview_widget.size(),
+                            Qt.AspectRatioMode.KeepAspectRatio,
+                            Qt.TransformationMode.SmoothTransformation
+                        )
+                        preview_widget.setPixmap(scaled_pixmap)
+                        path_label.setText(str(image_path))
+                        self.logger.debug(f"Successfully loaded preview for {image_path.name}")
                     else:
-                        self.logger.error("Preview widget has no setPixmap method")
-            
-            except Exception as img_error:
-                error_msg = f"Error loading image with Pillow: {str(img_error)}"
-                self.logger.error(error_msg, exc_info=True)
+                        raise ValueError("Failed to create valid QPixmap from image")
+                        
+            except (IOError, ValueError) as img_error:
+                self.logger.error(f"Error loading image {image_path}: {img_error}", exc_info=True)
+                raise RuntimeError(f"Unsupported or corrupted image: {image_path.name}") from img_error
                 
-                # Try fallback method using QPixmap directly
-                try:
-                    self.logger.debug("Trying fallback QPixmap loading")
-                    pixmap = QPixmap(str(image_path))
-                    if pixmap.isNull():
-                        raise ValueError("QPixmap is null")
-                        
-                    self.logger.debug(f"Fallback QPixmap loaded, size: {pixmap.size().width()}x{pixmap.size().height()}")
-                    
-                    if hasattr(preview_widget, 'setPixmap'):
-                        preview_widget.setPixmap(pixmap)
-                        self.logger.debug("Fallback QPixmap loading succeeded")
-                    else:
-                        self.logger.error("Preview widget has no setPixmap method in fallback")
-                        
-                except Exception as fallback_error:
-                    error_msg = f"Fallback loading failed: {str(fallback_error)}"
-                    self.logger.error(error_msg, exc_info=True)
-                    if hasattr(path_label, 'setText'):
-                        path_label.setText(f"Error: {str(fallback_error)[:50]}...")
-        
+        except FileNotFoundError as e:
+            error_msg = f"File not found: {e}"
+            self.logger.error(error_msg)
+            if hasattr(path_label, 'setText'):
+                path_label.setText(error_msg)
+            if hasattr(preview_widget, 'clear'):
+                preview_widget.clear()
+            
+        except PermissionError as e:
+            error_msg = f"Permission denied: {e}"
+            self.logger.error(error_msg)
+            if hasattr(path_label, 'setText'):
+                path_label.setText(error_msg)
+            
         except Exception as e:
-            error_msg = f"Unexpected error in load_image_preview: {str(e)}"
+            error_msg = f"Error loading preview: {str(e)}"
             self.logger.error(error_msg, exc_info=True)
+            if hasattr(path_label, 'setText'):
+                path_label.setText("Error: Could not load preview")
+                
+            # Try to show a placeholder or clear the preview
             try:
-                if hasattr(path_label, 'setText'):
-                    path_label.setText("Error: Could not load preview")
                 if hasattr(preview_widget, 'clear'):
                     preview_widget.clear()
             except Exception as cleanup_error:
-                self.logger.error(f"Error during cleanup: {cleanup_error}", exc_info=True)
+                self.logger.error(f"Error during preview cleanup: {cleanup_error}", exc_info=True)
