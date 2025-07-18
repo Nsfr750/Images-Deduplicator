@@ -7,8 +7,8 @@ for the Images Deduplicator project.
 
 # Version components
 MAJOR_VERSION = 1
-MINOR_VERSION = 5  # Bumped for PyQt6 migration
-PATCH_VERSION = 2
+MINOR_VERSION = 6  # Bumped for Wand migration
+PATCH_VERSION = 0
 
 # Additional version qualifiers
 VERSION_QUALIFIER = ''  # Could be 'alpha', 'beta', 'rc', or ''

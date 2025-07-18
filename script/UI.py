@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
     QProgressBar, QFrame, QSplitter, QSizePolicy, QGroupBox, QStatusBar,
-    QProgressDialog, QCheckBox, QSlider, QDialog, QDialogButtonBox
+    QProgressDialog, QCheckBox, QSlider, QDialog, QDialogButtonBox, QTextEdit
 )
 from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor, QImage
 from wand.image import Image as WandImage
@@ -961,17 +961,15 @@ class UI(QMainWindow):
             today = datetime.now().strftime('%Y-%m-%d')
             self.settings.setValue('last_update_check', today)
             
-            msg = self.lang_manager.translate('update_available').format(
-                current=__version__,
-                latest=version_info.get('version', 'unknown')
+            # Show the update dialog
+            self._show_update_dialog(
+                self.lang_manager.translate('update_available').format(
+                    current=__version__,
+                    latest=version_info.get('version', 'unknown')
+                ),
+                version_info.get('version', ''),
+                version_info.get('notes', self.lang_manager.translate('no_release_notes'))
             )
-            
-            # Show update dialog in a non-blocking way
-            QTimer.singleShot(100, lambda: self._show_update_dialog(
-                msg, 
-                version_info.get('version', ''), 
-                version_info.get('notes', '')
-            ))
             
         except Exception as e:
             logger.error(f"Error handling update available: {e}", exc_info=True)
@@ -1044,6 +1042,103 @@ class UI(QMainWindow):
                     f"An error occurred while checking for updates: {str(e)}",
                     QMessageBox.StandardButton.Ok
                 )
+    
+    def _show_update_dialog(self, message, new_version, release_notes):
+        """Show the update dialog with detailed information.
+        
+        Args:
+            message: The update message to display
+            new_version: The new version available
+            release_notes: The release notes for the new version
+        """
+        try:
+            # Create the dialog
+            dialog = QDialog(self)
+            dialog.setWindowTitle(self.lang_manager.translate('update_available_title'))
+            dialog.setMinimumWidth(600)
+            
+            # Main layout
+            layout = QVBoxLayout(dialog)
+            
+            # Title
+            title_label = QLabel(self.lang_manager.translate('update_available_title'))
+            title_font = title_label.font()
+            title_font.setPointSize(14)
+            title_font.setBold(True)
+            title_label.setFont(title_font)
+            
+            # Version info
+            current_version = f"<b>{self.lang_manager.translate('current_version')}:</b> {__version__}"
+            new_version_text = f"<b>{self.lang_manager.translate('new_version')}:</b> {new_version}"
+            
+            version_layout = QHBoxLayout()
+            version_layout.addWidget(QLabel(current_version))
+            version_layout.addStretch()
+            version_layout.addWidget(QLabel(new_version_text))
+            
+            # Release notes
+            notes_label = QLabel(self.lang_manager.translate('release_notes') + ":")
+            notes_text = QTextEdit()
+            notes_text.setReadOnly(True)
+            notes_text.setHtml(f"<pre>{release_notes}</pre>")
+            notes_text.setMinimumHeight(200)
+            
+            # Buttons
+            button_box = QDialogButtonBox()
+            download_btn = button_box.addButton(
+                self.lang_manager.translate('download_update'), 
+                QDialogButtonBox.ButtonRole.AcceptRole
+            )
+            later_btn = button_box.addButton(
+                self.lang_manager.translate('remind_me_later'),
+                QDialogButtonBox.ButtonRole.RejectRole
+            )
+            
+            # Connect buttons
+            download_btn.clicked.connect(lambda: self._download_update(new_version))
+            later_btn.clicked.connect(dialog.reject)
+            
+            # Add widgets to layout
+            layout.addWidget(title_label)
+            layout.addLayout(version_layout)
+            layout.addSpacing(10)
+            layout.addWidget(notes_label)
+            layout.addWidget(notes_text)
+            layout.addWidget(button_box)
+            
+            # Show the dialog
+            dialog.setModal(True)
+            dialog.exec()
+            
+        except Exception as e:
+            logger.error(f"Error showing update dialog: {e}", exc_info=True)
+            # Fallback to simple message box
+            QMessageBox.information(
+                self,
+                self.lang_manager.translate('update_available_title'),
+                message,
+                QMessageBox.StandardButton.Ok
+            )
+    
+    def _download_update(self, version):
+        """Handle the download update action."""
+        try:
+            # Open the releases page in the default web browser
+            import webbrowser
+            webbrowser.open(f"https://github.com/Nsfr750/Images-Deduplicator/releases/tag/v{version}")
+            
+            # Update last check time
+            from datetime import datetime
+            today = datetime.now().strftime('%Y-%m-%d')
+            self.settings.setValue('last_update_check', today)
+            
+        except Exception as e:
+            logger.error(f"Error opening download page: {e}", exc_info=True)
+            QMessageBox.critical(
+                self,
+                self.lang_manager.translate('error'),
+                f"Failed to open download page: {str(e)}"
+            )
     
     def undo_last_operation(self):
         """Undo the last file operation."""

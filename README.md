@@ -5,28 +5,39 @@
 [![GitHub stars](https://img.shields.io/github/stars/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/stargazers)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![PyQt6](https://img.shields.io/badge/PyQt6-6.4.0+-blue)](https://www.riverbankcomputing.com/software/pyqt/)
+[![Wand](https://img.shields.io/badge/Wand-0.6.11%2B-blue)](https://docs.wand-py.org/)
 [![ImageMagick](https://img.shields.io/badge/ImageMagick-7.0.0+-blue)](https://imagemagick.org/)
 
-A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Now with a modern PyQt6 interface, available in multiple languages with automatic update checking.
+A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Built with PyQt6 and Wand (ImageMagick) for robust image processing across multiple formats.
 
 ## Latest Improvements (v1.6.0)
 
-- **Pillow to Wand Migration**
-  - Replaced Pillow with Wand (ImageMagick) for better image processing
-  - Added support for additional image formats (PSD, GIF, BMP)
-  - Improved image metadata handling
-  - Better memory management for large image processing
+### 🚀 New Features
+- **Complete Migration to Wand**
+  - Replaced Pillow with Wand (ImageMagick) for enhanced image processing
+  - Added native support for additional formats: PSD, GIF, BMP, and more
+  - Improved metadata extraction and preservation
+  - Better handling of large and complex image files
 
-- **Stability Improvements**
-  - Enhanced thread safety in the update checker
-  - Fixed potential memory leaks in image comparison
-  - Improved error handling for corrupted image files
-  - Optimized resource cleanup on application exit
+### 🛠️ Stability & Performance
+- **Thread Safety**
+  - Fixed QThread destruction warnings
+  - Improved update checker reliability
+  - Better resource cleanup on application exit
+  - Optimized memory management for large image collections
 
-- **Documentation**
-  - Added comprehensive API documentation
-  - Improved installation and setup instructions
-  - Added troubleshooting section for common issues
+### 📚 Documentation
+- **Comprehensive Guides**
+  - Complete API documentation
+  - Step-by-step installation for all platforms
+  - Troubleshooting common issues
+  - Migration guide from Pillow to Wand
+
+### 🌍 Localization
+- **Improved Language Support**
+  - Fixed syntax errors in translations
+  - Better handling of special characters
+  - More consistent UI text across languages
 
 ## Features
 

@@ -185,6 +185,7 @@ TRANSLATIONS = {
         'check_for_updates': 'Check for Updates',
         'view_logs': 'View Logs',
         'edit_menu.undo': 'Undo',
+        'some_delection_failed': 'Some delection Failed',
     },
     'it': {
         # Application
@@ -364,6 +365,7 @@ TRANSLATIONS = {
         'check_for_updates': 'Controllo Aggiornamenti',
         'view_logs': 'Guarda Logs',
         'edit_menu.undo': 'Annulla',
+        'some_delection_failed': 'Alcune cancellazioni non sono riuscite',
     },
 }
 

@@ -5,9 +5,11 @@
 - [ ] Implement batch processing for large image collections
 - [ ] Add progress saving and resuming for long operations
 - [ ] Improve error handling for network drives and special folders
-- [ ] Add support for image metadata comparison
-- [ ] Implement automated tests for the update checker
+- [x] Add support for image metadata comparison (Basic support added with Wand)
+- [x] Implement automated tests for the update checker
 - [ ] Add performance metrics for image comparison
+- [ ] Add comprehensive tests for Wand image processing
+- [ ] Document Wand-specific features and limitations
 
 ## User Interface
 - [x] Complete PyQt6 migration with modern UI components
@@ -28,26 +30,36 @@
 - [ ] Add theme customization options
 - [ ] Implement a welcome screen with recent projects
 - [ ] Add support for custom keyboard shortcuts
+- [ ] Add Wand/ImageMagick version info in About dialog
 
 ## Features
 - [ ] Add image organization by similarity groups
 - [ ] Implement image quality comparison
-- [x] Add support for more image formats
+- [x] Add support for more image formats (PSD, GIF, BMP via Wand)
 - [x] Improve error handling and user feedback
 - [x] Add logging system with log viewer
 - [x] Implement undo/redo functionality for file operations
 - [ ] Add session persistence for user preferences
+- [x] Migrate from Pillow to Wand for image processing
+- [ ] Add support for additional metadata fields in image comparison
 
 ## Performance
 - [x] Optimize PyQt6 UI responsiveness
 - [ ] Optimize image comparison algorithm
 - [x] Implement caching for faster duplicate detection
 - [x] Implement background processing for large folders
-- [ ] Add image metadata preservation options
+- [x] Add image metadata preservation options (Basic support with Wand)
 - [x] Optimize memory usage for large image sets
 - [ ] Optimize memory usage for large image collections
 - [ ] Add caching for faster subsequent scans
 - [ ] Implement parallel processing for image comparison
+- [ ] Optimize Wand image loading and processing
+
+## Documentation
+- [x] Update installation instructions for Wand/ImageMagick
+- [ ] Add Wand-specific examples to documentation
+- [ ] Document migration guide from Pillow to Wand
+- [ ] Update API documentation for new Wand-based functions
 - [x] Improve handling of large image files
 - [ ] Add support for GPU acceleration
 - [ ] Optimize database queries for large datasets

@@ -1,5 +1,57 @@
 # Changelog
 
+## Version 1.6.0 (2025-07-18)
+
+### 🚀 Added
+
+- **Wand Integration**
+  - Replaced Pillow with Wand (ImageMagick) for enhanced image processing
+  - Added native support for additional formats: PSD, GIF, BMP, and more
+  - Improved metadata extraction and preservation
+  - Better handling of large and complex image files
+
+- **Stability & Performance**
+  - Enhanced thread safety in update checker
+  - Optimized memory management for large image collections
+  - Improved resource cleanup on application exit
+  - Better error handling for corrupted image files
+
+- **Documentation**
+  - Comprehensive API documentation
+  - Step-by-step installation guides
+  - Troubleshooting section for common issues
+  - Migration guide from Pillow to Wand
+
+### 🐛 Fixed
+
+- **Thread Safety**
+  - Fixed QThread destruction warnings in main.py
+  - Resolved race conditions in thread management
+  - Improved cleanup of worker threads
+
+- **Internationalization**
+  - Fixed syntax errors in translations.py
+  - Improved handling of special characters
+  - More consistent UI text across languages
+
+- **Build System**
+  - Resolved Sphinx build issues
+  - Fixed documentation generation
+  - Improved dependency management
+
+### 🔄 Changed
+
+- **User Interface**
+  - Improved status messages and tooltips
+  - Enhanced accessibility features
+  - Better handling of high DPI displays
+  - More responsive UI during long operations
+
+- **Dependencies**
+  - Updated all dependencies to latest stable versions
+  - Removed Pillow dependency
+  - Added Wand and ImageMagick requirements
+
 ## Version 1.5.2 (2025-07-18)
 ### Added
 - Enhanced thread safety in the update checker
