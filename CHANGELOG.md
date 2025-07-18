@@ -1,5 +1,24 @@
 # Changelog
 
+## Version 1.5.2 (2025-07-18)
+### Added
+- Enhanced thread safety in the update checker
+- Comprehensive API documentation
+- Improved installation and setup instructions
+- Added troubleshooting section for common issues
+
+### Fixed
+- Potential memory leaks in image comparison
+- Optimized resource cleanup on application exit
+- Improved error handling for corrupted image files
+- Fixed race conditions in thread management
+
+### Changed
+- Improved status messages and tooltips
+- Enhanced accessibility features
+- Better handling of high DPI displays
+- Updated dependencies to their latest stable versions
+
 ## Version 1.5.1 (2025-07-17)
 ### Added
 - Added robust error handling for image preview loading

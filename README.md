@@ -8,19 +8,23 @@
 
 A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Now with a modern PyQt6 interface, available in multiple languages with automatic update checking.
 
-## Latest Improvements (v1.5.1)
+## Latest Improvements (v1.5.2)
 
-- **Crash Fixes**
-  - Fixed application crashes when selecting images with invalid formats
-  - Improved handling of temporary files during metadata operations
-  - Added robust error handling for image preview loading
-  - Fixed import issues with PyQt6's sip module
+- **Stability Improvements**
+  - Enhanced thread safety in the update checker
+  - Fixed potential memory leaks in image comparison
+  - Improved error handling for corrupted image files
+  - Optimized resource cleanup on application exit
 
-- **Enhanced Stability**
-  - Added widget safety checks to prevent crashes
-  - Improved memory management for image processing
-  - Better error messages and user feedback
-  - Detailed logging for troubleshooting
+- **Documentation**
+  - Added comprehensive API documentation
+  - Improved installation and setup instructions
+  - Added troubleshooting section for common issues
+
+- **UI/UX**
+  - Improved status messages and tooltips
+  - Enhanced accessibility features
+  - Better handling of high DPI displays
 
 ## Features
 
