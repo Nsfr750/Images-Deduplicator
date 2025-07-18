@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from PyQt6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QPushButton,
-    QGroupBox, QFormLayout, QMessageBox, QCheckBox, QSlider, QDialogButtonBox
+    QGroupBox, QFormLayout, QMessageBox, QCheckBox, QSlider, QDialogButtonBox, QSpinBox
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QEvent
 
@@ -79,12 +79,12 @@ class SettingsDialog(QDialog):
         
         # Comparison Group
         self.comparison_group.setTitle(self.translate("comparison_settings"))
-        self.threshold_label.setText(self.translate("similarity_threshold") + ":")
         self.recursive_check.setText(self.translate("search_subdirectories"))
         self.quality_check.setText(self.translate("keep_better_quality"))
         self.quality_check.setToolTip(self.translate(
             "keep_better_quality_tooltip"
         ))
+        self.threshold_spin.setSuffix("%")  # Ensure suffix is set
         
         # File Handling Group
         self.file_handling_group.setTitle(self.translate("file_handling"))
@@ -97,12 +97,7 @@ class SettingsDialog(QDialog):
         self.button_box.button(QDialogButtonBox.StandardButton.Save).setText(self.translate("save"))
         self.button_box.button(QDialogButtonBox.StandardButton.Cancel).setText(self.translate("cancel"))
         
-        # Update threshold value display
-        self.update_threshold_display()
-    
-    def update_threshold_display(self):
-        """Update the threshold percentage display."""
-        self.threshold_value.setText(f"{self.threshold_slider.value()}%")
+    # Removed threshold display update method as it's no longer needed
     
     def setup_ui(self):
         """Setup the user interface."""
@@ -153,26 +148,17 @@ class SettingsDialog(QDialog):
         self.comparison_group = QGroupBox()
         comparison_layout = QFormLayout()
         
-        # Similarity threshold slider
-        threshold_layout = QHBoxLayout()
-        self.threshold_slider = QSlider(Qt.Orientation.Horizontal)
-        self.threshold_slider.setRange(70, 100)  # 70% to 100%
-        self.threshold_slider.setValue(90)  # Default value
-        self.threshold_slider.valueChanged.connect(self.update_threshold_display)
-        
-        self.threshold_value = QLabel("90%")
-        self.threshold_value.setMinimumWidth(40)
-        
-        threshold_layout.addWidget(self.threshold_slider)
-        threshold_layout.addWidget(self.threshold_value)
-        
-        self.threshold_label = QLabel()
-        comparison_layout.addRow(self.threshold_label, threshold_layout)
+        # Similarity threshold
+        self.threshold_spin = QSpinBox()
+        self.threshold_spin.setRange(70, 100)  # 70% to 100%
+        self.threshold_spin.setSuffix("%")
+        self.threshold_spin.setValue(100) # Default value
+        comparison_layout.addRow(QLabel(self.translate("similarity_threshold") + ":"), self.threshold_spin)
         
         # Recursive search option
         self.recursive_check = QCheckBox()
         self.recursive_check.setChecked(True)
-        comparison_layout.addRow(QLabel(), self.recursive_check)
+        comparison_layout.addRow(QLabel(self.translate("search_subdirectories")), self.recursive_check)
         
         # Keep better quality option
         self.quality_check = QCheckBox()
@@ -230,7 +216,7 @@ class SettingsDialog(QDialog):
                     self.language_combo.setCurrentIndex(index)
             
             # Load other settings with defaults if not present
-            self.threshold_slider.setValue(int(self.config.get('similarity_threshold', 90)))
+            self.threshold_spin.setValue(int(self.config.get('similarity_threshold', 90)))
             self.recursive_check.setChecked(self.config.get('recursive_search', True))
             self.quality_check.setChecked(self.config.get('keep_better_quality', True))
             self.preserve_metadata_check.setChecked(self.config.get('preserve_metadata', True))
@@ -270,7 +256,7 @@ class SettingsDialog(QDialog):
         """Initialize settings with default values."""
         self.config = {
             'language': 'en',
-            'similarity_threshold': 90,
+            'similarity_threshold': 100,
             'recursive_search': True,
             'keep_better_quality': True,
             'preserve_metadata': True,
@@ -279,15 +265,14 @@ class SettingsDialog(QDialog):
     
     def get_settings(self):
         """Get the current settings from the dialog."""
-        settings = {
+        return {
             'language': self.language_combo.currentData(),
-            'similarity_threshold': self.threshold_slider.value(),
-            'recursive_search': self.recursive_check.isChecked(),
+            'theme': self.theme_combo.currentData(),
+            'similarity_threshold': self.threshold_spin.value(),
+            'search_subfolders': self.recursive_check.isChecked(),
             'keep_better_quality': self.quality_check.isChecked(),
-            'preserve_metadata': self.preserve_metadata_check.isChecked(),
-            'theme': self.theme_combo.currentData()
+            'preserve_metadata': self.preserve_metadata_check.isChecked()
         }
-        return settings
     
     def accept(self):
         """Handle dialog accept (OK button)."""

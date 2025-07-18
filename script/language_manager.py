@@ -68,22 +68,31 @@ class LanguageManager(QObject):
         Get a translated string for the given key.
         
         Args:
-            key: Translation key
+            key: Translation key (can contain dots for nested keys, e.g., 'edit_menu.empty_trash')
             **kwargs: Format arguments for the translation string
             
         Returns:
             str: Translated string or the key if not found
         """
         try:
+            def get_nested(d, keys):
+                """Helper to get nested dictionary values using dot notation."""
+                for k in keys.split('.'):
+                    if not isinstance(d, dict):
+                        return None
+                    d = d.get(k)
+                return d
+            
             # Try to get translation for current language
             lang_dict = self._translations.get(self._current_lang, {})
-            translation = lang_dict.get(key, '')
+            translation = get_nested(lang_dict, key) or lang_dict.get(key, '')
             
             # If not found, fall back to English
             if not translation and self._current_lang != 'en':
-                translation = self._translations.get('en', {}).get(key, key)
+                en_dict = self._translations.get('en', {})
+                translation = get_nested(en_dict, key) or en_dict.get(key, key)
             
-            # Format the string if there are any kwargs
+            # Format the string if there are any kwargs and it's a string
             if translation and isinstance(translation, str) and kwargs:
                 try:
                     return translation.format(**kwargs)

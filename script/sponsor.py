@@ -15,6 +15,7 @@ import webbrowser
 import os
 import io
 import qrcode
+from PIL import ImageQt
 from wand.image import Image as WandImage
 
 class SponsorDialog(QDialog):
@@ -57,11 +58,9 @@ class SponsorDialog(QDialog):
         if hasattr(self, 'message_label'):
             self.message_label.setText(self.translate("support_message"))
         
-        if hasattr(self, 'github_label'):
-            self.github_label.setText(f'<a href="https://github.com/sponsors/Nsfr750">{self.translate("github_sponsors")}</a>')
-        
-        if hasattr(self, 'paypal_label'):
-            self.paypal_label.setText(f'<a href="https://paypal.me/3dmega">{self.translate("paypal_donation")}</a>')
+        if hasattr(self, 'github_btn'):
+            self.github_btn.setText(self.translate("github_sponsors"))
+            self.github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/sponsors/Nsfr750")))
         
         if hasattr(self, 'monero_label'):
             self.monero_label.setText(f"{self.translate('monero')}:")
@@ -91,13 +90,26 @@ class SponsorDialog(QDialog):
         self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.message_label)
         
-        # Create a grid layout for donation methods
-        grid = QGridLayout()
+        # Create a container widget for the grid layout
+        grid_container = QWidget()
+        grid = QGridLayout(grid_container)
         
-        # GitHub Sponsors
-        self.github_label = QLabel()
-        self.github_label.setOpenExternalLinks(True)
-        self.github_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # GitHub button
+        self.github_btn = QPushButton()
+        self.github_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.github_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1a73e8;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                padding: 8px 16px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #1557b0;
+            }
+        """)
         
         # PayPal
         self.paypal_label = QLabel()
@@ -122,6 +134,7 @@ class SponsorDialog(QDialog):
         
         # Generate QR Code
         try:
+            # Create QR code
             qr = qrcode.QRCode(
                 version=1,
                 error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -131,60 +144,67 @@ class SponsorDialog(QDialog):
             qr.add_data(f'monero:{monero_address}')
             qr.make(fit=True)
             
-            # Generate QR code image using qrcode library
-            qr_img = qr.make_image(fill_color="#4a9cff", back_color="transparent")
+            # Generate QR code image
+            qr_img = qr.make_image(fill_color="#4a9cff", back_color="#2a2a2a")  # Changed to solid background
             
-            # Convert QR code to bytes
-            buffer = io.BytesIO()
-            qr_img.save(buffer, format='PNG')
-            buffer.seek(0)
+            # Convert to QPixmap directly using PIL
+            qr_img = qr_img.convert('RGBA')
+            data = qr_img.tobytes('raw', 'RGBA')
+            qimage = QImage(data, qr_img.size[0], qr_img.size[1], QImage.Format.Format_RGBA8888)
+            pixmap = QPixmap.fromImage(qimage)
             
-            # Load image data into Wand
-            with WandImage(blob=buffer.getvalue()) as img:
-                # Convert to QPixmap
-                img.format = 'png'
-                img_data = img.make_blob('RGBA')
-                qimage = QImage(
-                    img_data, 
-                    img.width, 
-                    img.height,
-                    img.width * 4,  # 4 bytes per pixel for RGBA
-                    QImage.Format.Format_RGBA8888
-                )
-                pixmap = QPixmap.fromImage(qimage)
-                
-                # Scale the pixmap
-                pixmap = pixmap.scaled(200, 200, 
-                                     Qt.AspectRatioMode.KeepAspectRatio, 
-                                     Qt.TransformationMode.SmoothTransformation)
-                
-                qr_label = QLabel()
-                qr_label.setPixmap(pixmap)
-                qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                qr_label.setToolTip(self.translate("scan_to_donate_xmr"))
+            # Scale the pixmap
+            pixmap = pixmap.scaled(200, 200, 
+                                 Qt.AspectRatioMode.KeepAspectRatio, 
+                                 Qt.TransformationMode.SmoothTransformation)
+            
+            # Create and configure the QR code label
+            self.qr_label = QLabel()
+            self.qr_label.setPixmap(pixmap)
+            self.qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.qr_label.setToolTip(self.translate("scan_to_donate_xmr"))
+            
+            # Add some styling to make it more visible
+            self.qr_label.setStyleSheet("""
+                QLabel {
+                    background-color: #2a2a2a;
+                    border: 1px solid #444;
+                    border-radius: 5px;
+                    padding: 10px;
+                }
+            """)
             
         except Exception as e:
             print(f"Error generating QR code: {e}")
-            qr_label = QLabel(self.translate("qr_generation_failed"))
-            qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.qr_label = QLabel(self.translate("qr_generation_failed"))
+            self.qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.qr_label.setStyleSheet("color: #ff4444; font-weight: bold;")
         
         # Add widgets to grid
         grid.addWidget(QLabel(f"<h3>{self.translate('ways_to_support')}</h3>"), 0, 0, 1, 2)
-        grid.addWidget(self.github_label, 1, 0, 1, 2)
+        grid.addWidget(self.github_btn, 1, 0, 1, 2)
         grid.addWidget(self.paypal_label, 2, 0, 1, 2)
         grid.addWidget(self.monero_label, 3, 0, 1, 2)
         grid.addWidget(monero_address_label, 4, 0, 1, 2)
         
-        if hasattr(self, 'qr_label'):
-            grid.addWidget(qr_label, 1, 2, 4, 1)  # Span 4 rows
+        # Add QR code to the grid if it was created
+        if hasattr(self, 'qr_label') and self.qr_label is not None:
+            # Create a container widget for the QR code with proper alignment
+            qr_container = QWidget()
+            qr_layout = QVBoxLayout(qr_container)
+            qr_layout.addWidget(self.qr_label, 0, Qt.AlignmentFlag.AlignCenter)
+            qr_layout.setContentsMargins(10, 10, 10, 10)
+            
+            # Add the container to the grid, spanning 5 rows (from 0 to 4)
+            grid.addWidget(qr_container, 0, 2, 5, 1)
         
         # Add some spacing
         grid.setSpacing(10)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
         
-        # Add grid to layout
-        layout.addLayout(grid)
+        # Add grid container to layout
+        layout.addWidget(grid_container)
         
         # Other ways to help
         other_help = QTextBrowser()

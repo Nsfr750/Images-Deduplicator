@@ -158,23 +158,6 @@ class UI(QMainWindow):
         
         options_layout.addStretch()
         
-        # --- Similarity Threshold ---
-        threshold_frame = QFrame()
-        threshold_layout = QHBoxLayout(threshold_frame)
-        threshold_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.similarity_label = QLabel(self.lang_manager.translate('similarity_threshold'))
-        self.similarity_slider = QSlider(Qt.Orientation.Horizontal)
-        self.similarity_slider.setRange(70, 100)  # 70% to 100% similarity
-        self.similarity_slider.setValue(self.similarity_threshold)
-        self.similarity_value = QLabel(f"{self.similarity_threshold}%")
-        self.similarity_slider.valueChanged.connect(
-            lambda v: self.similarity_value.setText(f"{v}%"))
-        
-        threshold_layout.addWidget(self.similarity_label)
-        threshold_layout.addWidget(self.similarity_slider)
-        threshold_layout.addWidget(self.similarity_value)
-        
         # --- Compare Button ---
         self.compare_button = QPushButton(self.lang_manager.translate('compare'))
         self.compare_button.setObjectName("compareButton")
@@ -228,7 +211,6 @@ class UI(QMainWindow):
         # Add all widgets to main layout
         self.main_layout.addWidget(folder_frame)
         self.main_layout.addWidget(options_frame)
-        self.main_layout.addWidget(threshold_frame)
         self.main_layout.addWidget(self.compare_button)
         self.main_layout.addWidget(self.progress_frame)  # Add progress frame to main layout
         self.main_layout.addWidget(duplicates_group, 2)  # Give more space to duplicates list
@@ -344,30 +326,32 @@ class UI(QMainWindow):
                               self.lang_manager.translate('invalid_folder'))
             return
             
-        # Get scan options from UI
-        recursive = self.recursive_checkbox.isChecked()
-        similarity = self.similarity_slider.value()
-        keep_better_quality = self.keep_better_quality_checkbox.isChecked()
-        preserve_metadata = self.preserve_metadata_checkbox.isChecked()
-
-        # Clear previous results
-        self.duplicates = {}
-        self.duplicates_list.clear()
-        self.clear_previews()
+        # Use the default similarity threshold from config
+        similarity = self.similarity_threshold
         
-        # Disable UI during processing and show progress bar
+        # Clear previous results
+        self.duplicates_list.clear()
+        self.duplicates = {}
+        self.comparison_in_progress = True
         self.set_ui_enabled(False)
+        
+        # Reset progress bar
         self.progress_bar.setValue(0)
-        self.progress_label.setText(self.lang_manager.translate('preparing_scan'))
+        
+        # Disable buttons during comparison
+        self.compare_button.setEnabled(False)
+        
+        # Show progress bar and status
+        self.status_label.setText(self.lang_manager.translate('comparing_images'))
         self.progress_frame.show()
         
-        # Create and configure worker
+        # Create and start the worker thread
         self.worker = ImageComparisonWorker(
             folder=folder,
-            recursive=recursive,
+            recursive=self.recursive_checkbox.isChecked(),
             similarity_threshold=similarity,
-            keep_better_quality=keep_better_quality,
-            preserve_metadata=preserve_metadata
+            keep_better_quality=self.keep_better_quality_checkbox.isChecked(),
+            preserve_metadata=self.preserve_metadata_checkbox.isChecked()
         )
         
         # Connect signals
@@ -375,7 +359,7 @@ class UI(QMainWindow):
         self.worker.signals.finished.connect(self.on_comparison_finished)
         self.worker.signals.error.connect(self._handle_worker_error)
         
-        # Start the worker in the thread pool
+        # Start the worker in a separate thread
         self.thread_pool.start(self.worker)
         
         # Update status
@@ -548,30 +532,6 @@ class UI(QMainWindow):
         except Exception as e:
             logger.error(f"Error updating preview: {e}")
             self.status_bar.showMessage(self.lang_manager.translate('error_updating_preview'))
-    
-    def update_duplicates_list(self):
-        """Update the duplicates list with the current duplicates."""
-        self.duplicates_list.clear()
-        
-        try:
-            # The duplicates dictionary is now {original_path: [duplicate1_path, duplicate2_path, ...]}
-            for original_path, dup_paths in self.duplicates.items():
-                for dup_path in dup_paths:
-                    # Create a display name that shows the relative path from the search directory
-                    display_name = os.path.relpath(dup_path, self.folder_entry.text()) if self.folder_entry.text() else dup_path
-                    
-                    # Create and add the list item
-                    item = QListWidgetItem(display_name)
-                    item.setData(Qt.ItemDataRole.UserRole, (original_path, dup_path))
-                    self.duplicates_list.addItem(item)
-            
-            # Update status with total number of duplicates found (not the number of groups)
-            total_duplicates = sum(len(dups) for dups in self.duplicates.values())
-            self.status_bar.showMessage(self.lang_manager.translate('duplicates_found').format(count=total_duplicates))
-                
-        except Exception as e:
-            logger.error(f"Error updating duplicates list: {e}")
-            self.status_bar.showMessage(self.lang_manager.translate('error_updating_list'))
     
     def select_all_duplicates(self):
         """Select all items in the duplicates list."""
@@ -837,16 +797,14 @@ class UI(QMainWindow):
                     self.apply_theme(new_theme, apply_style_flag=False)
             
             # Update similarity threshold if changed
-            new_threshold = settings.get('similarity_threshold', 90)
-            if new_threshold != self.similarity_threshold:
-                self.similarity_threshold = new_threshold
-                self.similarity_slider.setValue(new_threshold)
-                self.logger.info(f"Updated similarity threshold to {new_threshold}%")
-                
-                # Update the UI to reflect the new threshold
-                if hasattr(self, 'similarity_value'):
-                    self.similarity_value.setText(f"{new_threshold}%")
-        
+            if 'similarity_threshold' in settings:
+                new_threshold = int(settings['similarity_threshold'])
+                if new_threshold != self.similarity_threshold:
+                    self.similarity_threshold = new_threshold
+                    self.config['similarity_threshold'] = new_threshold
+                    self._save_config()
+                    self.logger.info(f"Updated similarity threshold to {new_threshold}%")
+                    
         except Exception as e:
             self.logger.error(f"Error applying updated settings: {e}")
     
@@ -1174,7 +1132,7 @@ class UI(QMainWindow):
             )
     
     def empty_trash(self):
-        """Empty the system trash/recycle bin."""
+        """Empty the system trash/recycle bin with platform-specific implementations."""
         try:
             # Ask for confirmation
             reply = QMessageBox.question(
@@ -1188,38 +1146,57 @@ class UI(QMainWindow):
             if reply == QMessageBox.StandardButton.No:
                 return
                 
-            # Import send2trash here to avoid making it a hard dependency
+            # Show progress in status bar
+            self.status_bar.showMessage(self.lang_manager.translate('edit_menu.emptying_trash'))
+            QApplication.processEvents()  # Update UI
+            
             try:
-                import send2trash
-                send2trash.cleanup()
-                self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_success'))
-                self.logger.info("Successfully emptied trash")
-            except ImportError:
-                self.status_bar.showMessage("send2trash module not available")
-                self.logger.error("send2trash module not available")
-                QMessageBox.warning(
-                    self,
-                    self.lang_manager.translate('error'),
-                    "The 'send2trash' module is required to empty the trash. Please install it with: pip install send2trash"
+                # Import the function from our module
+                from .empty_trash import empty_system_trash
+                
+                # Call the function to empty the trash
+                success, message = empty_system_trash()
+                
+                if success:
+                    # Show success message
+                    success_msg = self.lang_manager.translate('edit_menu.empty_trash_success')
+                    self.status_bar.showMessage(success_msg)
+                    self.logger.info("Successfully emptied trash")
+                    QMessageBox.information(
+                        self,
+                        self.lang_manager.translate('success'),
+                        success_msg
+                    )
+                else:
+                    # Show error message
+                    self.logger.error(f"Failed to empty trash: {message}")
+                    QMessageBox.critical(
+                        self,
+                        self.lang_manager.translate('error'),
+                        self.lang_manager.translate('edit_menu.empry_trash_failed', error=message)
+                    )
+            
+            except ImportError as e:
+                error_msg = (
+                    "Failed to import required modules.\n\n"
+                    "Please make sure all dependencies are installed.\n"
+                    f"Error: {str(e)}"
                 )
-            except Exception as e:
-                error_msg = str(e)
-                self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg))
-                self.logger.error(f"Failed to empty trash: {error_msg}", exc_info=True)
+                self.status_bar.showMessage("Module import error")
+                self.logger.error(f"Module import error: {e}")
                 QMessageBox.critical(
                     self,
                     self.lang_manager.translate('error'),
-                    self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg)
+                    error_msg
                 )
                 
         except Exception as e:
             error_msg = str(e)
-            self.status_bar.showMessage(self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg))
-            self.logger.error(f"Error emptying trash: {error_msg}", exc_info=True)
+            self.logger.error(f"Unexpected error in empty_trash: {error_msg}", exc_info=True)
             QMessageBox.critical(
                 self,
                 self.lang_manager.translate('error'),
-                self.lang_manager.translate('edit_menu.empty_trash_failed', error=error_msg)
+                self.lang_manager.translate('edit_menu.empry_trash_failed', error=error_msg)
             )
     
     def undo_last_operation(self):
