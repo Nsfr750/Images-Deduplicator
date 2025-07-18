@@ -292,17 +292,65 @@ class ImagePreviewDialog(QDialog):
     def show_previous(self):
         """Show the previous image in the list."""
         if self.current_index > 0:
-            self.load_image(self.current_index - 1)
+            self.logger.debug(f"User clicked 'Previous' button. Current index: {self.current_index}")
+            new_index = self.current_index - 1
+            self.logger.info(f"Loading previous image. New index: {new_index}, File: {self.image_paths[new_index]}")
+            self.load_image(new_index)
+        else:
+            self.logger.debug("Previous button clicked, but already at the first image")
     
     def show_next(self):
         """Show the next image in the list."""
         if self.current_index < len(self.image_paths) - 1:
-            self.load_image(self.current_index + 1)
+            self.logger.debug(f"User clicked 'Next' button. Current index: {self.current_index}")
+            new_index = self.current_index + 1
+            self.logger.info(f"Loading next image. New index: {new_index}, File: {self.image_paths[new_index]}")
+            self.load_image(new_index)
+        else:
+            self.logger.debug("Next button clicked, but already at the last image")
     
     def update_navigation_buttons(self):
         """Update the state of navigation buttons based on current index."""
-        self.prev_btn.setEnabled(self.current_index > 0)
-        self.next_btn.setEnabled(self.current_index < len(self.image_paths) - 1)
+        try:
+            has_previous = self.current_index > 0
+            has_next = self.current_index < len(self.image_paths) - 1 if self.image_paths else False
+            
+            self.prev_btn.setEnabled(has_previous)
+            self.next_btn.setEnabled(has_next)
+            
+            self.logger.debug(
+                f"Updated navigation buttons - "
+                f"Previous: {'enabled' if has_previous else 'disabled'}, "
+                f"Next: {'enabled' if has_next else 'disabled'}"
+            )
+        except Exception as e:
+            self.logger.error(f"Error updating navigation buttons: {str(e)}", exc_info=True)
+    
+    def keyPressEvent(self, event):
+        """Handle key press events for keyboard navigation."""
+        try:
+            key = event.key()
+            
+            if key == Qt.Key.Key_Left or key == Qt.Key.Key_Up:
+                self.logger.debug("Left/Up arrow key pressed - showing previous image")
+                self.show_previous()
+            elif key == Qt.Key.Key_Right or key == Qt.Key.Key_Down:
+                self.logger.debug("Right/Down arrow key pressed - showing next image")
+                self.show_next()
+            elif key == Qt.Key.Key_Escape:
+                self.logger.info("Escape key pressed - closing dialog")
+                self.close()
+            else:
+                super().keyPressEvent(event)
+        except Exception as e:
+            self.logger.error(f"Error handling key press event: {str(e)}", exc_info=True)
+    
+    def closeEvent(self, event):
+        """Handle the close event."""
+        self.logger.info("Preview dialog closing")
+        if hasattr(self, 'visibility_timer'):
+            self.killTimer(self.visibility_timer)
+        super().closeEvent(event)
 
 
 def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None) -> None:
@@ -313,64 +361,69 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
         image_paths: Single path or list of image paths to display
         parent: Parent widget
     """
+    logger = logging.getLogger(__name__)
+    
     try:
-        # Get the logger
-        logger.debug("show_image_preview called")
-        
-        # Ensure we have a list of paths
-        if not image_paths:
-            logger.error("No image paths provided")
-            return
-            
+        # Convert single path to list if needed
         if isinstance(image_paths, (str, Path)):
             image_paths = [str(image_paths)]
         else:
-            image_paths = [str(p) for p in image_paths if p]
+            image_paths = [str(p) for p in image_paths]
         
-        # Filter out non-existent paths
-        valid_paths = [p for p in image_paths if os.path.exists(p)]
+        logger.info(f"Requested to show preview for {len(image_paths)} images")
+        
+        # Validate image paths
+        valid_paths = []
+        for path in image_paths:
+            if os.path.exists(path):
+                valid_paths.append(path)
+            else:
+                logger.warning(f"Image not found, skipping: {path}")
         
         if not valid_paths:
-            logger.error(f"No valid image paths found. Tried: {image_paths}")
+            logger.error("No valid image paths provided for preview")
+            QMessageBox.warning(parent, "Error", "No valid images found to preview.")
             return
         
-        logger.debug(f"Creating preview dialog for {len(valid_paths)} images")
+        logger.debug(f"Creating preview dialog for {len(valid_paths)} valid images")
         
-        # Create the dialog
+        # Create and show the dialog
         dialog = ImagePreviewDialog(valid_paths, parent)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         
-        # Make sure the dialog is shown as a top-level window
+        # Ensure the dialog is shown as a modal dialog
+        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+        
+        # Show the dialog and ensure it's raised
+        logger.debug("About to show preview dialog")
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+        
+        # Force the window to stay on top
         dialog.setWindowFlags(
-            Qt.WindowType.Window |
-            Qt.WindowType.WindowTitleHint |
+            dialog.windowFlags() | 
+            Qt.WindowType.WindowStaysOnTopHint |
             Qt.WindowType.WindowSystemMenuHint |
             Qt.WindowType.WindowMinMaxButtonsHint |
             Qt.WindowType.WindowCloseButtonHint
         )
         
-        # Show the dialog
-        logger.debug("About to show dialog")
-        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        dialog.show()
+        # Make sure the dialog is visible and focused
+        dialog.showNormal()
         dialog.raise_()
         dialog.activateWindow()
         
-        # Ensure the dialog is properly shown
-        dialog.setWindowState(dialog.windowState() & ~Qt.WindowState.WindowMinimized)
-        dialog.setWindowState(Qt.WindowState.WindowActive)
+        # Log dialog state
+        logger.debug(f"Dialog shown. Visible: {dialog.isVisible()}, Active: {dialog.isActiveWindow()}")
         
-        # Process events to ensure the dialog is shown
-        QApplication.processEvents()
-        
-        # Return the dialog in case the caller needs it
         return dialog
         
     except Exception as e:
-        logger.error(f"Error in show_image_preview: {str(e)}", exc_info=True)
-        if 'dialog' in locals():
-            try:
-                dialog.close()
-                dialog.deleteLater()
-            except:
-                pass
-        QMessageBox.critical(parent, "Error", f"Failed to show image preview: {str(e)}")
+        logger.error(f"Error showing image preview: {str(e)}", exc_info=True)
+        QMessageBox.critical(
+            parent, 
+            "Error", 
+            f"Failed to show image preview: {str(e)}"
+        )
+        return None
