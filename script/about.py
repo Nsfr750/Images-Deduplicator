@@ -8,6 +8,8 @@ import os
 import sys
 import platform
 from pathlib import Path
+import psutil
+import subprocess
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None, language_manager=None):
@@ -164,20 +166,50 @@ class AboutDialog(QDialog):
     def get_system_info(self):
         """Get system information as HTML."""
         try:
+            import psutil
+            
             system = platform.system()
             release = platform.release()
             machine = platform.machine()
             python_version = platform.python_version()
             
+            # Get CPU information
+            cpu_info = platform.processor()
+            if not cpu_info and system == 'Windows':
+                cpu_info = platform.processor() or "Unknown"
+            elif not cpu_info and system == 'Darwin':
+                cpu_info = subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string']).strip().decode()
+            elif not cpu_info and system == 'Linux':
+                cpu_info = ""
+                with open('/proc/cpuinfo', 'r') as f:
+                    for line in f:
+                        if 'model name' in line:
+                            cpu_info = line.split(':', 1)[1].strip()
+                            break
+            
+            # Get core count
+            core_count = psutil.cpu_count(logical=True)
+            physical_cores = psutil.cpu_count(logical=False) or core_count
+            
+            # Get RAM information
+            ram = psutil.virtual_memory()
+            total_ram = ram.total / (1024 ** 3)  # Convert to GB
+            available_ram = ram.available / (1024 ** 3)  # Convert to GB
+            
             return (
                 f"<table style='width:100%; color:#ffffff;'>"
                 f"<tr><td style='width:40%;'>{self.translate('operating_system')}:</td>"
                 f"<td>{system} {release} ({machine})</td></tr>"
+                f"<tr><td>CPU:</td><td>{cpu_info}</td></tr>"
+                f"<tr><td>Cores:</td><td>{physical_cores} physical, {core_count} logical</td></tr>"
+                f"<tr><td>RAM:</td><td>{total_ram:.1f} GB total, {available_ram:.1f} GB available</td></tr>"
                 f"<tr><td>Python:</td><td>{python_version}</td></tr>"
                 f"<tr><td>Qt:</td><td>{QT_VERSION_STR}</td></tr>"
                 f"<tr><td>PyQt:</td><td>{PYQT_VERSION_STR}</td></tr>"
                 f"</table>"
             )
         except Exception as e:
+            import traceback
             print(f"Error getting system info: {e}")
+            print(traceback.format_exc())
             return self.translate("error_loading_system_info")

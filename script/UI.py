@@ -68,7 +68,7 @@ class UI(QMainWindow):
         self.thread_pool = QThreadPool()
         self.logger.debug(f"Thread pool initialized with max thread count: {self.thread_pool.maxThreadCount()}")
         
-        self.update_checker = UpdateChecker(__version__)
+        self.update_checker = UpdateChecker(__version__, language_manager=self.lang_manager)
         self.log_file = str(log_dir / "image_dedup.log")
         
         # Set default style and theme from config
@@ -822,8 +822,11 @@ class UI(QMainWindow):
     def _perform_update_check(self):
         """Perform the actual update check."""
         try:
-            # Create a new UpdateChecker instance
-            self.update_checker = UpdateChecker(__version__)
+            # Create a new UpdateChecker instance with language manager
+            self.update_checker = UpdateChecker(
+                __version__,
+                language_manager=self.lang_manager
+            )
             
             # Connect signals
             self.update_checker.update_available.connect(self._handle_update_available)
@@ -916,45 +919,43 @@ class UI(QMainWindow):
             silent: If True, don't show a message when no updates are available
         """
         try:
-            # Only check once per day
+            # Only check once per day if not forced
             last_check = self.settings.value('last_update_check')
-            from datetime import datetime
+            from datetime import datetime, timedelta
             today = datetime.now().strftime('%Y-%m-%d')
             
-            if last_check != today:
+            if last_check != today or True:  # Temporarily force update check for testing
                 logger.info("Checking for updates...")
                 try:
-                    # Use a singleShot timer to ensure the UI is fully initialized
-                    QTimer.singleShot(2000, self._perform_update_check)
+                    # Perform the update check immediately
+                    self._perform_update_check()
                 except Exception as e:
-                    logger.error(f"Error scheduling update check: {e}")
+                    logger.error(f"Error performing update check: {e}", exc_info=True)
+                    if not silent:
+                        QMessageBox.warning(
+                            self,
+                            self.lang_manager.translate('error'),
+                            self.lang_manager.translate('update_check_error').format(error=str(e)),
+                            QMessageBox.StandardButton.Ok
+                        )
+            else:
+                logger.info("Skipping update check - already checked today")
+                if not silent:
+                    QMessageBox.information(
+                        self,
+                        self.lang_manager.translate('no_updates_title'),
+                        self.lang_manager.translate('already_checked_today'),
+                        QMessageBox.StandardButton.Ok
+                    )
         except Exception as e:
             logger.error(f"Error in check_for_updates: {e}", exc_info=True)
-
-    def _show_update_dialog(self, message, latest_version, changelog):
-        """Show the update dialog with the given message and changelog."""
-        try:
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle(self.lang_manager.translate('update_available_title'))
-            msg_box.setText(message)
-            msg_box.setIcon(QMessageBox.Icon.Information)
-            
-            # Add detailed text if available
-            if changelog:
-                msg_box.setDetailedText(changelog)
-            
-            # Add buttons
-            download_btn = msg_box.addButton(self.lang_manager.translate('download_update'), QMessageBox.ButtonRole.AcceptRole)
-            msg_box.addButton(self.lang_manager.translate('later'), QMessageBox.ButtonRole.RejectRole)
-            
-            # Show the dialog
-            msg_box.exec()
-            
-            if msg_box.clickedButton() == download_btn:
-                QDesktopServices.openUrl(QUrl(f"https://github.com/Nsfr750/Images-Deduplicator/releases/tag/v{latest_version}"))
-                
-        except Exception as e:
-            logger.error(f"Error showing update dialog: {e}", exc_info=True)
+            if not silent:
+                QMessageBox.critical(
+                    self,
+                    self.lang_manager.translate('error'),
+                    f"An error occurred while checking for updates: {str(e)}",
+                    QMessageBox.StandardButton.Ok
+                )
     
     def undo_last_operation(self):
         """Undo the last file operation."""
