@@ -27,9 +27,6 @@
   - [x] Add language support
   - [x] Fix layout issues
   - [x] Improve content organization
-- [ ] Add theme customization options
-- [ ] Implement a welcome screen with recent projects
-- [ ] Add support for custom keyboard shortcuts
 - [ ] Add Wand/ImageMagick version info in About dialog
 
 ## Features
@@ -39,9 +36,7 @@
 - [x] Improve error handling and user feedback
 - [x] Add logging system with log viewer
 - [x] Implement undo/redo functionality for file operations
-- [ ] Add session persistence for user preferences
 - [x] Migrate from Pillow to Wand for image processing
-- [ ] Add support for additional metadata fields in image comparison
 
 ## Performance
 - [x] Optimize PyQt6 UI responsiveness
@@ -83,12 +78,10 @@
 - [x] Add comprehensive API documentation
 - [x] Improve installation and setup instructions
 - [x] Add troubleshooting section
-- [ ] Create video tutorials
 - [ ] Add more code examples
 - [ ] Document the image comparison algorithm
 - [ ] Add user guide
 - [ ] Add developer documentation
-- [ ] Add user guide with screenshots
 
 ## Testing
 - [x] Add unit tests for core functionality
@@ -100,12 +93,8 @@
 ## Future Enhancements
 - [ ] Create installers for different platforms
 - [ ] Add machine learning for better duplicate detection
-- [ ] Add support for video frame comparison
 - [ ] Implement machine learning for better duplicate detection
-- [ ] Add cloud storage integration
-- [ ] Implement a plugin system for extensibility
 - [ ] Add support for more image formats
-- [ ] Implement a command-line interface (CLI) version
 
 ## Bug Fixes & Improvements
 - [x] Fix application crash when closing application with active threads
