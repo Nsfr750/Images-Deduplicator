@@ -171,6 +171,20 @@ TRANSLATIONS = {
         'release_notes': 'Release Notes',
         'download': 'Download',
         'view_changes': 'View Changes',
+
+        #missing
+        'preparing_scan': 'Preparing Scan',
+        'comparison_complete': 'Compararison Complete',
+        'confirm_delete_selected': 'Confirm Delete Selected',
+        'confirm_delete_all': 'Confirm Delete All',
+        'confirm_delete_all_duplicates': 'Confirm Delete All Duplicates',
+        'deleting_duplicates': 'Deleting Duplicates',
+        'Yes': 'Yes',
+        'No': 'No',
+        'moved_to_trash': 'Moved to Trash',
+        'check_for_updates': 'Check for Updates',
+        'view_logs': 'View Logs',
+        'edit_menu.undo': 'Undo',
     },
     'it': {
         # Application
@@ -336,6 +350,20 @@ TRANSLATIONS = {
         'release_notes': 'Note di Rilascio',
         'download': 'Scarica',
         'view_changes': 'Visualizza Modifiche',
+
+        #missing
+        'preparing_scan': 'Preparazione Scansione',
+        'comparison_complete': 'Comparazione Completata',
+        'confirm_delete_selected': 'Conferma la Cancellazione',
+        'confirm_delete_all': 'Conferma la Cancellazione di tutti i file',
+        'confirm_delete_all_duplicates': 'Conferma la Cancellazione di tutti i file duplicati',
+        'deleting_duplicates': 'Eliminazione Duplicati',
+        'Yes': 'Si',
+        'No': 'No',
+        'moved_to_trash': 'Spostato/i nel cestino',
+        'check_for_updates': 'Controllo Aggiornamenti',
+        'view_logs': 'Guarda Logs',
+        'edit_menu.undo': 'Annulla',
     },
 }
 

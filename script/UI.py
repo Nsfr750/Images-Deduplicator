@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
     QLineEdit, QFileDialog, QMessageBox, QListWidget, QListWidgetItem,
     QProgressBar, QFrame, QSplitter, QSizePolicy, QGroupBox, QStatusBar,
-    QProgressDialog, QCheckBox, QSlider
+    QProgressDialog, QCheckBox, QSlider, QDialog, QDialogButtonBox
 )
 from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor, QImage
 from wand.image import Image as WandImage
@@ -197,31 +197,6 @@ class UI(QMainWindow):
         
         duplicates_layout.addWidget(self.duplicates_list)
         
-        # --- Image Previews ---
-        preview_frame = QFrame()
-        preview_layout = QHBoxLayout(preview_frame)
-        
-        # Original Image
-        original_group = QGroupBox(self.lang_manager.translate('original_image'))
-        original_layout = QVBoxLayout(original_group)
-        self.original_preview = QLabel()
-        self.original_path = QLabel()
-        self.original_path.setWordWrap(True)
-        original_layout.addWidget(self.original_preview, 1)
-        original_layout.addWidget(self.original_path)
-        
-        # Duplicate Image
-        duplicate_group = QGroupBox(self.lang_manager.translate('duplicate_image'))
-        duplicate_layout = QVBoxLayout(duplicate_group)
-        self.duplicate_preview = QLabel()
-        self.duplicate_path = QLabel()
-        self.duplicate_path.setWordWrap(True)
-        duplicate_layout.addWidget(self.duplicate_preview, 1)
-        duplicate_layout.addWidget(self.duplicate_path)
-        
-        preview_layout.addWidget(original_group, 1)
-        preview_layout.addWidget(duplicate_group, 1)
-        
         # --- Action Buttons ---
         buttons_frame = QFrame()
         buttons_layout = QHBoxLayout(buttons_frame)
@@ -252,14 +227,11 @@ class UI(QMainWindow):
         self.main_layout.addWidget(threshold_frame)
         self.main_layout.addWidget(self.compare_button)
         self.main_layout.addWidget(self.progress_frame)  # Add progress frame to main layout
-        self.main_layout.addWidget(duplicates_group, 1)
-        self.main_layout.addWidget(preview_frame, 2)
+        self.main_layout.addWidget(duplicates_group, 2)  # Give more space to duplicates list
         self.main_layout.addWidget(buttons_frame)
         
         # Set minimum sizes
-        self.duplicates_list.setMinimumHeight(150)
-        self.original_preview.setMinimumHeight(200)
-        self.duplicate_preview.setMinimumHeight(200)
+        self.duplicates_list.setMinimumHeight(400)  # Make the list taller to compensate for removed previews
         
         # Initially hide progress bar
         self.progress_frame.hide()
@@ -379,9 +351,11 @@ class UI(QMainWindow):
         self.duplicates_list.clear()
         self.clear_previews()
         
-        # Disable UI during processing
+        # Disable UI during processing and show progress bar
         self.set_ui_enabled(False)
         self.progress_bar.setValue(0)
+        self.progress_label.setText(self.lang_manager.translate('preparing_scan'))
+        self.progress_frame.show()
         
         # Create and configure worker
         self.worker = ImageComparisonWorker(
@@ -446,6 +420,9 @@ class UI(QMainWindow):
             self.progress_label.setText(self.lang_manager.translate('comparison_complete'))
             self.status_bar.showMessage(message)
             
+            # Hide progress bar after a short delay
+            QTimer.singleShot(1000, self.progress_frame.hide)
+            
             # Update duplicates list if provided
             if duplicates:
                 logger.info(f"Found {sum(len(dups) for dups in duplicates.values())} duplicates to display")
@@ -498,61 +475,97 @@ class UI(QMainWindow):
             self.status_bar.showMessage(self.lang_manager.translate('error_updating_list'))
     
     def update_preview(self):
-        """Update the image preview based on the current selection."""
+        """Handle selection changes in the duplicates list."""
         try:
             selected_items = self.duplicates_list.selectedItems()
             if not selected_items:
-                self.clear_previews()
                 return
-            
+                
             item = selected_items[0]
             item_data = item.data(Qt.ItemDataRole.UserRole)
             
-            if not item_data:
-                self.logger.warning("No item data found for selected item")
-                self.clear_previews()
+            if not item_data or not isinstance(item_data, (list, tuple)) or len(item_data) < 2:
                 return
                 
-            if not isinstance(item_data, (list, tuple)) or len(item_data) < 2:
-                self.logger.warning(f"Unexpected item data format: {item_data}")
-                self.clear_previews()
+            original_path, duplicate_path = item_data[0], item_data[1]
+            if not all([original_path, duplicate_path]):
                 return
                 
-            original_path = str(item_data[0])
-            duplicate_path = str(item_data[1])
-            
-            # Verify paths exist before showing preview
-            if not os.path.exists(original_path) or not os.path.exists(duplicate_path):
-                self.logger.error(f"One or both image paths do not exist. Original: {original_path}, Duplicate: {duplicate_path}")
-                self.clear_previews()
-                return
+            # Create preview dialog if it doesn't exist
+            if not hasattr(self, 'preview_dialog'):
+                self.preview_dialog = QDialog(self)
+                self.preview_dialog.setWindowTitle(self.lang_manager.translate('image_preview'))
+                self.preview_dialog.setModal(False)
                 
-            # Show preview in dialog
-            self.logger.debug(f"Showing preview for images - Original: {original_path}, Duplicate: {duplicate_path}")
-            self.logger.info(f"Previewing images - Original: {os.path.basename(original_path)}, Duplicate: {os.path.basename(duplicate_path)}")
+                layout = QVBoxLayout()
+                
+                # Original image preview
+                original_group = QGroupBox(self.lang_manager.translate('original_image'))
+                original_layout = QVBoxLayout()
+                self.original_preview = QLabel()
+                self.original_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.original_preview.setMinimumSize(400, 300)
+                self.original_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
+                self.original_path_label = QLabel()
+                self.original_path_label.setWordWrap(True)
+                original_layout.addWidget(self.original_preview, 1)
+                original_layout.addWidget(self.original_path_label)
+                original_group.setLayout(original_layout)
+                
+                # Duplicate image preview
+                duplicate_group = QGroupBox(self.lang_manager.translate('duplicate_image'))
+                duplicate_layout = QVBoxLayout()
+                self.duplicate_preview = QLabel()
+                self.duplicate_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.duplicate_preview.setMinimumSize(400, 300)
+                self.duplicate_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
+                self.duplicate_path_label = QLabel()
+                self.duplicate_path_label.setWordWrap(True)
+                duplicate_layout.addWidget(self.duplicate_preview, 1)
+                duplicate_layout.addWidget(self.duplicate_path_label)
+                duplicate_group.setLayout(duplicate_layout)
+                
+                # Add to main layout
+                layout.addWidget(original_group, 1)
+                layout.addWidget(duplicate_group, 1)
+                
+                # Close button
+                button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+                button_box.rejected.connect(self.preview_dialog.reject)
+                layout.addWidget(button_box)
+                
+                self.preview_dialog.setLayout(layout)
+                self.preview_dialog.resize(900, 800)
             
-            # Force the UI to update before showing the dialog
-            QApplication.processEvents()
+            # Show the dialog
+            self.preview_dialog.show()
+            self.preview_dialog.raise_()
+            self.preview_dialog.activateWindow()
             
-            # Import here to avoid circular imports
-            from script.image_dialog_preview import show_image_preview
-            show_image_preview([original_path, duplicate_path], self)
+            # Load and display the images
+            self.load_image_preview(original_path, self.original_preview, self.original_path_label)
+            self.load_image_preview(duplicate_path, self.duplicate_preview, self.duplicate_path_label)
+            
+            # Update status bar with basic info
+            self.status_bar.showMessage(
+                self.lang_manager.translate('selected_duplicates').format(
+                    original=os.path.basename(original_path),
+                    duplicate=os.path.basename(duplicate_path)
+                )
+            )
             
         except Exception as e:
             self.logger.error(f"Error in update_preview: {str(e)}", exc_info=True)
-            self.clear_previews()
+            self.status_bar.showMessage(self.lang_manager.translate('error_loading_preview'))
     
     def clear_previews(self):
         """Clear all preview widgets."""
         try:
-            # No need to clear previews anymore as they're in a separate dialog
-            # Just update the UI state if needed
-            if hasattr(self, 'original_path') and hasattr(self.original_path, 'clear'):
-                self.original_path.clear()
-            if hasattr(self, 'duplicate_path') and hasattr(self.duplicate_path, 'clear'):
-                self.duplicate_path.clear()
+            if hasattr(self, 'preview_dialog') and self.preview_dialog:
+                self.preview_dialog.close()
+                self.preview_dialog = None
         except Exception as e:
-            self.logger.error(f"Error clearing previews: {str(e)}", exc_info=True)
+            self.logger.error(f"Error clearing previews: {e}")
     
     def select_all_duplicates(self):
         """Select all items in the duplicates list."""
@@ -746,10 +759,12 @@ class UI(QMainWindow):
         # Update UI
         self.duplicates = {}
         self.duplicates_list.clear()
-        self.original_preview.clear()
-        self.duplicate_preview.clear()
-        self.original_path.clear()
-        self.duplicate_path.clear()
+        
+        # Clear the preview dialog if it exists
+        if hasattr(self, 'preview_dialog') and self.preview_dialog:
+            self.preview_dialog.close()
+            self.preview_dialog = None
+            
         self.update_button_states()
     
     def update_button_states(self):
@@ -877,10 +892,18 @@ class UI(QMainWindow):
                 try:
                     # Use a singleShot timer to ensure the UI is fully initialized
                     QTimer.singleShot(2000, self._perform_update_check)
+                    return  # Exit after scheduling the update check
                 except Exception as e:
                     logger.error(f"Error scheduling update check: {e}")
+            
+            # If we get here, either we already checked today or there was an error
+            # Set the last check date to today to avoid checking again
+            self.settings.setValue('last_update_check', today)
+            
         except Exception as e:
             logger.error(f"Error in check_for_updates_on_startup: {e}")
+            # Set a default last check date to prevent repeated errors
+            self.settings.setValue('last_update_check', today if 'today' in locals() else '1970-01-01')
     
     def _perform_update_check(self):
         """Perform the actual update check."""
@@ -981,28 +1004,28 @@ class UI(QMainWindow):
         Args:
             silent: If True, don't show a message when no updates are available
         """
+        # Prevent multiple simultaneous update checks
+        if hasattr(self, '_update_check_in_progress') and self._update_check_in_progress:
+            logger.debug("Update check already in progress, skipping...")
+            return
+            
+        self._update_check_in_progress = True
+        
         try:
             # Only check once per day if not forced
             last_check = self.settings.value('last_update_check')
-            from datetime import datetime, timedelta
+            from datetime import datetime
             today = datetime.now().strftime('%Y-%m-%d')
             
             if last_check != today or True:  # Temporarily force update check for testing
                 logger.info("Checking for updates...")
                 try:
-                    # Perform the update check immediately
-                    self._perform_update_check()
+                    # Use a singleShot timer to ensure the UI is responsive
+                    QTimer.singleShot(0, self._perform_update_check)
                 except Exception as e:
-                    logger.error(f"Error performing update check: {e}", exc_info=True)
-                    if not silent:
-                        QMessageBox.warning(
-                            self,
-                            self.lang_manager.translate('error'),
-                            self.lang_manager.translate('update_check_error').format(error=str(e)),
-                            QMessageBox.StandardButton.Ok
-                        )
+                    logger.error(f"Error scheduling update check: {e}")
+                    self._update_check_in_progress = False
             else:
-                logger.info("Skipping update check - already checked today")
                 if not silent:
                     QMessageBox.information(
                         self,
@@ -1010,8 +1033,10 @@ class UI(QMainWindow):
                         self.lang_manager.translate('already_checked_today'),
                         QMessageBox.StandardButton.Ok
                     )
+                self._update_check_in_progress = False
         except Exception as e:
             logger.error(f"Error in check_for_updates: {e}", exc_info=True)
+            self._update_check_in_progress = False
             if not silent:
                 QMessageBox.critical(
                     self,
@@ -1063,35 +1088,90 @@ class UI(QMainWindow):
         Args:
             event: The close event
         """
-        # Stop any running operations
-        if hasattr(self, 'worker') and self.worker and self.worker.isRunning():
-            reply = QMessageBox.question(
-                self,
-                self.lang_manager.translate('operation_in_progress'),
-                self.lang_manager.translate('confirm_close_during_operation'),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No
-            )
+        try:
+            # Stop any running worker threads
+            if hasattr(self, 'worker') and self.worker is not None:
+                try:
+                    if hasattr(self.worker, 'stop') and callable(self.worker.stop):
+                        self.worker.stop()
+                    if hasattr(self.worker, 'wait') and callable(self.worker.wait):
+                        self.worker.wait(1000)  # Wait up to 1 second
+                    if hasattr(self.worker, 'deleteLater'):
+                        self.worker.deleteLater()
+                except RuntimeError as e:
+                    if 'wrapped C/C++ object' not in str(e):
+                        logger.error(f"Error stopping worker: {e}", exc_info=True)
+                finally:
+                    self.worker = None
             
-            if reply == QMessageBox.StandardButton.No:
-                event.ignore()
-                return
-            else:
-                # Try to stop the worker gracefully
-                self.worker.requestInterruption()
-                self.worker.wait(2000)  # Wait up to 2 seconds for clean exit
-        
-        # Clean up resources
-        if hasattr(self, 'update_thread') and self.update_thread.isRunning():
-            self.update_thread.quit()
-            self.update_thread.wait()
+            # Clean up update thread if it exists
+            if hasattr(self, 'update_thread') and self.update_thread is not None:
+                try:
+                    # Check if the thread is still valid before accessing it
+                    if hasattr(self.update_thread, 'isRunning') and callable(self.update_thread.isRunning):
+                        if self.update_thread.isRunning():
+                            self.update_thread.quit()
+                            self.update_thread.wait(1000)  # Wait up to 1 second
+                    if hasattr(self.update_thread, 'deleteLater'):
+                        self.update_thread.deleteLater()
+                except RuntimeError as e:
+                    if 'wrapped C/C++ object' not in str(e):
+                        logger.error(f"Error cleaning up update thread: {e}", exc_info=True)
+                finally:
+                    self.update_thread = None
+            
+            # Clean up update checker if it exists
+            if hasattr(self, 'update_checker') and self.update_checker is not None:
+                try:
+                    if hasattr(self.update_checker, 'deleteLater'):
+                        self.update_checker.deleteLater()
+                except RuntimeError as e:
+                    if 'wrapped C/C++ object' not in str(e):
+                        logger.error(f"Error cleaning up update checker: {e}", exc_info=True)
+                finally:
+                    self.update_checker = None
+            
+            # Clean up thread pool
+            if hasattr(self, 'thread_pool') and self.thread_pool is not None:
+                try:
+                    self.thread_pool.waitForDone(1000)  # Wait up to 1 second for threads to finish
+                    self.thread_pool.clear()
+                except RuntimeError as e:
+                    if 'wrapped C/C++ object' not in str(e):
+                        logger.error(f"Error cleaning up thread pool: {e}", exc_info=True)
+                
+            # Clean up preview dialog if it exists
+            if hasattr(self, 'preview_dialog') and self.preview_dialog is not None:
+                try:
+                    if hasattr(self.preview_dialog, 'close'):
+                        self.preview_dialog.close()
+                    if hasattr(self.preview_dialog, 'deleteLater'):
+                        self.preview_dialog.deleteLater()
+                except RuntimeError as e:
+                    if 'wrapped C/C++ object' not in str(e):
+                        logger.error(f"Error cleaning up preview dialog: {e}", exc_info=True)
+                finally:
+                    self.preview_dialog = None
+                    
+        except Exception as e:
+            # Only log if it's not a wrapped C++ object error
+            if 'wrapped C/C++ object' not in str(e):
+                logger.error(f"Error during cleanup: {e}", exc_info=True)
         
         # Save window state and geometry
-        self.settings.setValue("windowState", self.saveState())
-        self.settings.setValue("geometry", self.saveGeometry())
+        try:
+            self.settings.setValue("windowState", self.saveState())
+            self.settings.setValue("geometry", self.saveGeometry())
+        except Exception as e:
+            if 'wrapped C/C++ object' not in str(e):
+                logger.error(f"Error saving window state: {e}", exc_info=True)
         
         # Save config
-        self._save_config()
+        try:
+            self._save_config()
+        except Exception as e:
+            if 'wrapped C/C++ object' not in str(e):
+                logger.error(f"Error saving config: {e}", exc_info=True)
         
         # Log application exit
         logger.info("Image Deduplicator shutting down")
@@ -1194,30 +1274,44 @@ class UI(QMainWindow):
                         img.background_color = 'white'
                         img.alpha_channel = 'remove'
                     
-                    # Convert to JPEG bytes
-                    img.format = 'jpeg'
-                    img.compression_quality = 85
+                    # Resize for preview while maintaining aspect ratio
+                    img.transform(resize=f"{preview_widget.width()}x{preview_widget.height()}>")
                     
-                    # Get image data as bytes and create QImage
-                    img_buffer = io.BytesIO()
-                    img.save(file=img_buffer)
-                    qimg = QImage.fromData(img_buffer.getvalue())
+                    # Convert to RGB and get raw image data
+                    img.format = 'rgb'
+                    img.depth = 8
+                    
+                    # Create QImage from raw RGB data
+                    width, height = img.size
+                    qimg = QImage(
+                        img.make_blob('RGB'),
+                        width,
+                        height,
+                        width * 3,  # Bytes per line (3 channels)
+                        QImage.Format.Format_RGB888
+                    )
+                    
+                    if qimg.isNull():
+                        raise ValueError("Failed to create QImage from image data")
+                    
+                    # Create and set pixmap
                     pixmap = QPixmap.fromImage(qimg)
+                    if pixmap.isNull():
+                        raise ValueError("Failed to create QPixmap from QImage")
                     
                     # Scale the pixmap to fit the preview widget while maintaining aspect ratio
-                    if not pixmap.isNull():
-                        scaled_pixmap = pixmap.scaled(
-                            preview_widget.size(),
-                            Qt.AspectRatioMode.KeepAspectRatio,
-                            Qt.TransformationMode.SmoothTransformation
-                        )
-                        preview_widget.setPixmap(scaled_pixmap)
-                        path_label.setText(str(image_path))
-                        self.logger.debug(f"Successfully loaded preview for {image_path.name}")
-                    else:
-                        raise ValueError("Failed to create valid QPixmap from image")
+                    scaled_pixmap = pixmap.scaled(
+                        preview_widget.size(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    
+                    preview_widget.setPixmap(scaled_pixmap)
+                    preview_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    path_label.setText(str(image_path))
+                    self.logger.debug(f"Successfully loaded preview for {image_path.name}")
                         
-            except (IOError, ValueError) as img_error:
+            except (IOError, ValueError, Exception) as img_error:
                 self.logger.error(f"Error loading image {image_path}: {img_error}", exc_info=True)
                 raise RuntimeError(f"Unsupported or corrupted image: {image_path.name}") from img_error
                 
@@ -1241,44 +1335,43 @@ class UI(QMainWindow):
             if hasattr(path_label, 'setText'):
                 path_label.setText("Error: Could not load preview")
                 
-            # Try to show a placeholder or clear the preview
-            try:
-                if hasattr(preview_widget, 'clear'):
-                    preview_widget.clear()
-            except Exception as cleanup_error:
-                self.logger.error(f"Error during preview cleanup: {cleanup_error}", exc_info=True)
+            # Clear the preview widget
+            if hasattr(preview_widget, 'clear'):
+                preview_widget.clear()
+            elif hasattr(preview_widget, 'setText'):
+                preview_widget.setText("Preview not available")
 
-def get_theme_stylesheet():
-    """Return the stylesheet for the current theme."""
-    return """
-    /* Progress bar */
-    QProgressBar {
-        border: 1px solid #3a3a3a;
-        border-radius: 4px;
-        background-color: #2d2d2d;
-        text-align: center;
-        height: 12px;
-    }
-    
-    QProgressBar::chunk {
-        background-color: #4CAF50;
-        border-radius: 2px;
-        width: 10px;
-        margin: 0.5px;
-    }
-    
-    QProgressBar:disabled {
-        background-color: #2a2a2a;
-    }
-    
-    QProgressBar::chunk:disabled {
-        background-color: #2e7d32;
-    }
-    
-    /* Progress label */
-    QLabel#progressLabel {
-        color: #aaaaaa;
-        font-size: 11px;
-        padding: 2px 0;
-    }
-    """
+    def get_theme_stylesheet(self):
+        """Return the stylesheet for the current theme."""
+        return """
+        /* Progress bar */
+        QProgressBar {
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            background-color: #2d2d2d;
+            text-align: center;
+            height: 12px;
+        }
+        
+        QProgressBar::chunk {
+            background-color: #4CAF50;
+            border-radius: 2px;
+            width: 10px;
+            margin: 0.5px;
+        }
+        
+        QProgressBar:disabled {
+            background-color: #2a2a2a;
+        }
+        
+        QProgressBar::chunk:disabled {
+            background-color: #2e7d32;
+        }
+        
+        /* Progress label */
+        QLabel#progressLabel {
+            color: #aaaaaa;
+            font-size: 11px;
+            padding: 2px 0;
+        }
+        """

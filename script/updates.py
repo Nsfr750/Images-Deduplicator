@@ -133,91 +133,6 @@ class UpdateChecker(QObject):
             return 0
 
 
-class UpdateDialog(QDialog):
-    """Dialog to show update information and options."""
-    
-    def __init__(self, update_info: Dict[str, Any], language_manager: Optional[LanguageManager] = None, parent=None):
-        """Initialize the update dialog.
-        
-        Args:
-            update_info: Dictionary containing update information.
-            language_manager: Instance of LanguageManager for translations.
-            parent: Parent widget.
-        """
-        super().__init__(parent)
-        self.update_info = update_info
-        self.lang_manager = language_manager or LanguageManager()
-        
-        self.setWindowTitle(self.translate("update_available_title"))
-        self.setMinimumSize(600, 400)
-        self.setWindowModality(Qt.WindowModality.ApplicationModal)
-        
-        self.setup_ui()
-    
-    def translate(self, key: str, **kwargs) -> str:
-        """Helper method to get translated text."""
-        if hasattr(self, 'lang_manager') and self.lang_manager:
-            return self.lang_manager.translate(key, **kwargs)
-        return key
-    
-    def setup_ui(self):
-        """Initialize the UI components."""
-        layout = QVBoxLayout(self)
-        
-        # Title
-        title_label = QLabel(self.translate("update_available_title"))
-        title_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-        layout.addWidget(title_label)
-        
-        # Version info
-        version_text = self.translate(
-            "update_version_info",
-            current_version=CURRENT_VERSION,
-            new_version=self.update_info['version']
-        )
-        version_label = QLabel(version_text)
-        layout.addWidget(version_label)
-        
-        # Release notes
-        notes_label = QLabel(self.translate("release_notes") + ":")
-        layout.addWidget(notes_label)
-        
-        self.notes_edit = QTextEdit()
-        self.notes_edit.setReadOnly(True)
-        self.notes_edit.setHtml(self.update_info['notes'] or self.translate("no_release_notes"))
-        layout.addWidget(self.notes_edit)
-        
-        # Button box
-        button_box = QDialogButtonBox()
-        
-        # Download button
-        self.download_btn = QPushButton(self.translate("download_update"))
-        self.download_btn.clicked.connect(self.download_update)
-        button_box.addButton(self.download_btn, QDialogButtonBox.ButtonRole.AcceptRole)
-        
-        # Later button
-        self.later_btn = QPushButton(self.translate("remind_later"))
-        self.later_btn.clicked.connect(self.reject)
-        button_box.addButton(self.later_btn, QDialogButtonBox.ButtonRole.RejectRole)
-        
-        # Skip this version button
-        self.skip_btn = QPushButton(self.translate("skip_version"))
-        self.skip_btn.clicked.connect(self.skip_version)
-        button_box.addButton(self.skip_btn, QDialogButtonBox.ButtonRole.ActionRole)
-        
-        layout.addWidget(button_box)
-    
-    def download_update(self):
-        """Open the download URL in the default browser and close the dialog."""
-        QDesktopServices.openUrl(QUrl(self.update_info['url']))
-        self.accept()
-    
-    def skip_version(self):
-        """Skip this version and close the dialog."""
-        # Here you could add logic to remember to skip this version
-        self.reject()
-
-
 def check_for_updates(parent, current_version: str, language_manager: Optional[LanguageManager] = None, 
                      force_check: bool = False) -> None:
     """Check for application updates and show a dialog if an update is available.
@@ -231,26 +146,105 @@ def check_for_updates(parent, current_version: str, language_manager: Optional[L
     lang_manager = language_manager or LanguageManager()
     
     def show_update_dialog(update_info):
-        dialog = UpdateDialog(update_info, lang_manager, parent)
-        dialog.exec()
-    
-    def show_no_updates():
-        if force_check:
+        """Show a dialog with update information."""
+        try:
+            dialog = QDialog(parent)
+            dialog.setWindowTitle(lang_manager.translate('update_available_title'))
+            dialog.setMinimumWidth(600)
+            
+            layout = QVBoxLayout(dialog)
+            
+            # Title
+            title_label = QLabel(lang_manager.translate('update_available_title'))
+            title_font = title_label.font()
+            title_font.setPointSize(14)
+            title_font.setBold(True)
+            title_label.setFont(title_font)
+            
+            # Current version
+            current_version_label = QLabel(
+                lang_manager.translate('current_version').format(version=current_version)
+            )
+            
+            # New version
+            new_version = update_info.get('version', 'unknown')
+            new_version_label = QLabel(
+                lang_manager.translate('new_version_available').format(version=new_version)
+            )
+            new_version_label.setStyleSheet("color: #2ecc71; font-weight: bold;")
+            
+            # Release notes
+            release_notes_label = QLabel(lang_manager.translate('release_notes'))
+            release_notes_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+            
+            # Release notes text area
+            release_notes = QTextEdit()
+            release_notes.setReadOnly(True)
+            release_notes.setPlainText(update_info.get('notes', lang_manager.translate('no_release_notes')))
+            release_notes.setMinimumHeight(150)
+            
+            # Buttons
+            button_box = QDialogButtonBox()
+            
+            # Download button
+            download_btn = QPushButton(lang_manager.translate('download_update'))
+            download_btn.setIcon(dialog.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+            download_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(update_info.get('url', ''))))
+            button_box.addButton(download_btn, QDialogButtonBox.ButtonRole.AcceptRole)
+            
+            # Remind me later button
+            later_btn = QPushButton(lang_manager.translate('remind_later'))
+            later_btn.clicked.connect(dialog.reject)
+            button_box.addButton(later_btn, QDialogButtonBox.ButtonRole.RejectRole)
+            
+            # Add widgets to layout
+            layout.addWidget(title_label)
+            layout.addWidget(current_version_label)
+            layout.addWidget(new_version_label)
+            layout.addSpacing(10)
+            layout.addWidget(release_notes_label)
+            layout.addWidget(release_notes)
+            layout.addSpacing(10)
+            layout.addWidget(button_box)
+            
+            # Set dialog properties
+            dialog.setLayout(layout)
+            dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
+            
+            # Show the dialog
+            dialog.exec()
+            
+        except Exception as e:
+            logger.error(f"Error showing update dialog: {e}", exc_info=True)
+            # Fallback to simple message box
             QMessageBox.information(
                 parent,
-                lang_manager.translate("no_updates_available_title"),
-                lang_manager.translate("no_updates_available_message", version=current_version)
+                lang_manager.translate('update_available_title'),
+                lang_manager.translate('update_available').format(
+                    current=current_version,
+                    latest=update_info.get('version', 'unknown')
+                )
             )
     
-    def show_error(message):
-        QMessageBox.warning(
+    def show_no_updates():
+        """Show a message that no updates are available."""
+        QMessageBox.information(
             parent,
-            lang_manager.translate("update_check_failed_title"),
-            message
+            lang_manager.translate('no_updates_title'),
+            lang_manager.translate('no_updates_message').format(version=current_version)
         )
     
-    # Create and configure the update checker
-    checker = UpdateChecker(current_version, lang_manager)
+    def show_error(error_msg):
+        """Show an error message."""
+        logger.error(f"Update check error: {error_msg}")
+        QMessageBox.warning(
+            parent,
+            lang_manager.translate('update_error_title'),
+            error_msg
+        )
+    
+    # Create the update checker
+    checker = UpdateChecker(current_version, language_manager=lang_manager)
     
     # Connect signals
     checker.update_available.connect(show_update_dialog)
