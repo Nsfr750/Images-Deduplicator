@@ -6,11 +6,12 @@ from PyQt6.QtWidgets import (
     QHBoxLayout, QFrame, QScrollArea, QSizePolicy, QComboBox, QLineEdit,
     QGroupBox, QGridLayout, QToolButton, QStyle, QMenu
 )
-from PyQt6.QtCore import Qt, QSize, QEvent, QUrl, QTimer
+from PyQt6.QtCore import Qt, QSize, QEvent, QUrl, QTimer, pyqtSignal
 from PyQt6.QtGui import QFont, QTextCursor, QDesktopServices, QAction
 
 from script.translations import t, LANGUAGES
-from script.version import get_version
+from script.version import get_version, __version__
+from script.language_manager import LanguageManager  # Import LanguageManager
 
 import re
 from difflib import SequenceMatcher
@@ -18,10 +19,21 @@ from difflib import SequenceMatcher
 class HelpDialog(QDialog):
     """Help dialog showing usage information and language selection."""
     
-    def __init__(self, parent=None, lang='en'):
+    # Signal for language change
+    language_changed = pyqtSignal(str)
+    
+    def __init__(self, parent=None, language_manager=None, lang='en'):
         super().__init__(parent)
-        self.lang = lang
-        self.setWindowTitle(t('help', lang))
+        
+        # Initialize language manager
+        self.lang_manager = language_manager if language_manager else LanguageManager(default_lang=lang)
+        self.lang = self.lang_manager.current_language
+        
+        # Connect language changed signal
+        if self.lang_manager:
+            self.lang_manager.language_changed.connect(self.on_language_changed)
+            
+        self.setWindowTitle(self.translate('help'))
         self.setMinimumSize(800, 600)
         
         # Search state
@@ -40,194 +52,47 @@ class HelpDialog(QDialog):
         self.search_timer.timeout.connect(self.perform_search)
         
         # Set application style
-        self.setStyleSheet("""
-            /* Base styles */
-            QDialog {
-                background-color: #1a1a1a;
-                color: #ffffff;
-            }
-            QLabel {
-                color: #ffffff;
-            }
-            
-            /* Buttons */
-            QPushButton {
-                background-color: #357abd;
-                color: #ffffff;
-                border: none;
-                padding: 8px 16px;
-                border-radius: 4px;
-                min-width: 80px;
-                font-size: 14px;
-            }
-            QPushButton:hover {
-                background-color: #2c6599;
-            }
-            
-            /* Tabs */
-            QTabBar::tab {
-                background: #222222;
-                color: #ffffff;
-                padding: 8px 12px;
-                border: 1px solid #333333;
-                border-bottom: none;
-            }
-            QTabBar::tab:selected {
-                background: #1a1a1a;
-                border-bottom: 1px solid #1a1a1a;
-                color: #357abd;
-            }
-            
-            /* Text Browser (main content) */
-            QTextBrowser {
-                background-color: #1a1a1a;
-                color: #ffffff;
-                border: none;
-                padding: 15px;
-                min-height: 200px;
-                font-size: 14px;
-                font-family: Arial, sans-serif;
-            }
-            QTextBrowser a {
-                color: #286CBD;
-                text-decoration: none;
-            }
-            QTextBrowser a:hover {
-                color: #2c6599;
-            }
-            QTextBrowser h1, QTextBrowser h2, QTextBrowser h3 {
-                color: #286CBD;
-                margin-bottom: 10px;
-            }
-            QTextBrowser h4 {
-                color: #666666;
-                margin-bottom: 8px;
-            }
-            QTextBrowser ul, QTextBrowser ol {
-                margin-left: 20px;
-                color: #ffffff;
-            }
-            QTextBrowser li {
-                margin-bottom: 5px;
-                color: #ffffff;
-            }
-            QTextBrowser p {
-                color: #ffffff;
-                margin-bottom: 10px;
-            }
-            QTextBrowser div {
-                color: #ffffff;
-            }
-            QTextBrowser span {
-                color: #ffffff;
-            }
-            QTextBrowser .highlight {
-                background-color: #333333;
-                color: #ffffff;
-            }
-            QTextBrowser .no-results {
-                color: #666666;
-            }
-            
-            /* Input fields */
-            QLineEdit {
-                background-color: #222222;
-                color: #ffffff;
-                padding: 8px;
-                border: 1px solid #333333;
-                border-radius: 4px;
-                margin: 5px;
-                font-size: 14px;
-            }
-            QLineEdit:focus {
-                border: 2px solid #357abd;
-            }
-            
-            /* Combo boxes */
-            QComboBox {
-                background-color: #222222;
-                color: #ffffff;
-                padding: 8px;
-                border: 1px solid #333333;
-                border-radius: 4px;
-                font-size: 14px;
-            }
-            
-            /* Group boxes */
-            QGroupBox {
-                margin-top: 20px;
-                padding: 10px;
-                border: 1px solid #333333;
-                background-color: #222222;
-                color: #ffffff;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                subcontrol-position: top center;
-                padding: 0 3px;
-                color: #DAD9A2;
-            }
-            
-            /* Tool buttons */
-            QToolButton {
-                background-color: #222222;
-                border: none;
-                padding: 5px;
-                color: #ffffff;
-            }
-            QToolButton:hover {
-                background-color: #333333;
-            }
-            
-            /* Search options button */
-            #searchOptionsButton {
-                padding: 5px;
-                border: 1px solid #333333;
-                background: #222222;
-                color: #ffffff;
-            }
-            
-            /* Clear search button */
-            #clearSearchButton {
-                background: #ff4444;
-                border: none;
-                border-radius: 10px;
-                padding: 2px 6px;
-                color: #ffffff;
-            }
-            #clearSearchButton:hover {
-                background: #cc0000;
-            }
-            
-            /* Match count */
-            #matchCount {
-                color: #666666;
-                margin-left: 10px;
-            }
-            
-            /* Scrollbar styling */
-            QScrollBar:vertical {
-                background: #222222;
-                width: 12px;
-                margin: 0px;
-            }
-            QScrollBar::handle:vertical {
-                background: #333333;
-                min-height: 20px;
-            }
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-                background: none;
-            }
-        """)
-        
         self.setup_ui()
+        
+    def translate(self, key, **kwargs):
+        """Helper method to get translated text."""
+        if hasattr(self, 'lang_manager') and self.lang_manager:
+            return self.lang_manager.translate(key, **kwargs)
+        return t(key, self.lang, **kwargs)
+    
+    def on_language_changed(self, lang_code):
+        """Handle language change."""
+        self.lang = lang_code
+        self.retranslate_ui()
+        
+    def retranslate_ui(self):
+        """Retranslate the UI elements."""
+        self.setWindowTitle(self.translate('help'))
+        self.tabs.setTabText(0, self.translate('usage'))
+        self.tabs.setTabText(1, self.translate('help_features'))
+        self.tabs.setTabText(2, self.translate('help_tips'))
+        
+        # Update buttons
+        self.close_button.setText(self.translate('help_close'))
+        
+        # Update search UI
+        self.search_input.setPlaceholderText(self.translate('search_help'))
+        self.case_sensitive_action.setText(self.translate('search_case_sensitive'))
+        self.whole_words_action.setText(self.translate('search_whole_words'))
+        self.highlight_action.setText(self.translate('search_highlight'))
+        self.fuzzy_action.setText(self.translate('search_fuzzy'))
+        
+        # Update content
+        self.setup_usage_tab()
+        self.setup_features_tab()
+        self.setup_tips_tab()
     
     def setup_ui(self):
-        """Initialize the UI components."""
-        layout = QVBoxLayout(self)
+        """Set up the user interface."""
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(10, 10, 10, 10)
+        main_layout.setSpacing(10)
         
         # Header with search and language selection
         header_frame = QWidget()
@@ -245,7 +110,7 @@ class HelpDialog(QDialog):
         
         # Search input with history
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText(t('search_help', self.lang))
+        self.search_input.setPlaceholderText(self.translate('search_help'))
         self.search_input.textChanged.connect(self.search_text_changed)
         self.search_input.setVisible(True)  # Ensure search input is visible
         
@@ -287,7 +152,7 @@ class HelpDialog(QDialog):
         lang_layout = QHBoxLayout()
         lang_layout.setContentsMargins(0, 0, 0, 0)
         
-        self.lang_label = QLabel(t('language', self.lang) + ":")
+        self.lang_label = QLabel(self.translate('language') + ":")
         
         # Create language buttons
         self.english_button = QPushButton("English")
@@ -332,7 +197,7 @@ class HelpDialog(QDialog):
         header_frame.setVisible(True)  # Ensure header frame is visible
         
         # Add header to main layout
-        layout.addWidget(header_frame)
+        main_layout.addWidget(header_frame)
         
         # Create tab widget
         self.tabs = QTabWidget()
@@ -342,9 +207,9 @@ class HelpDialog(QDialog):
         self.features_tab = QWidget()
         self.tips_tab = QWidget()
         
-        self.tabs.addTab(self.usage_tab, t('usage', self.lang))
-        self.tabs.addTab(self.features_tab, t('help_features', self.lang))
-        self.tabs.addTab(self.tips_tab, t('help_tips', self.lang))
+        self.tabs.addTab(self.usage_tab, self.translate('usage'))
+        self.tabs.addTab(self.features_tab, self.translate('help_features'))
+        self.tabs.addTab(self.tips_tab, self.translate('help_tips'))
         
         # Setup tab contents
         self.setup_usage_tab()
@@ -352,12 +217,12 @@ class HelpDialog(QDialog):
         self.setup_tips_tab()
         
         # Close button
-        self.close_button = QPushButton(t('help_close', self.lang))
+        self.close_button = QPushButton(self.translate('help_close'))
         self.close_button.clicked.connect(self.accept)
         self.close_button.setFixedWidth(100)
         
         # Add widgets to layout
-        layout.addWidget(self.tabs, 1)
+        main_layout.addWidget(self.tabs, 1)
         
         # Center the close button
         button_layout = QHBoxLayout()
@@ -365,7 +230,7 @@ class HelpDialog(QDialog):
         button_layout.addWidget(self.close_button)
         button_layout.addStretch()
         
-        layout.addLayout(button_layout)
+        main_layout.addLayout(button_layout)
         
         # Set tab order
         self.setTabOrder(self.search_input, self.english_button)
@@ -378,28 +243,28 @@ class HelpDialog(QDialog):
         menu = QMenu()
         
         # Case sensitivity
-        self.case_sensitive_action = QAction(t('search_case_sensitive', self.lang), self)
+        self.case_sensitive_action = QAction(self.translate('search_case_sensitive'), self)
         self.case_sensitive_action.setCheckable(True)
         self.case_sensitive_action.setChecked(self.search_options['case_sensitive'])
         self.case_sensitive_action.triggered.connect(self.update_search_options)
         menu.addAction(self.case_sensitive_action)
         
         # Whole words
-        self.whole_words_action = QAction(t('search_whole_words', self.lang), self)
+        self.whole_words_action = QAction(self.translate('search_whole_words'), self)
         self.whole_words_action.setCheckable(True)
         self.whole_words_action.setChecked(self.search_options['whole_words'])
         self.whole_words_action.triggered.connect(self.update_search_options)
         menu.addAction(self.whole_words_action)
         
         # Highlight
-        self.highlight_action = QAction(t('search_highlight', self.lang), self)
+        self.highlight_action = QAction(self.translate('search_highlight'), self)
         self.highlight_action.setCheckable(True)
         self.highlight_action.setChecked(self.search_options['highlight'])
         self.highlight_action.triggered.connect(self.update_search_options)
         menu.addAction(self.highlight_action)
         
         # Fuzzy matching
-        self.fuzzy_action = QAction(t('search_fuzzy', self.lang), self)
+        self.fuzzy_action = QAction(self.translate('search_fuzzy'), self)
         self.fuzzy_action.setCheckable(True)
         self.fuzzy_action.setChecked(self.search_options['fuzzy'])
         self.fuzzy_action.triggered.connect(self.update_search_options)
@@ -439,7 +304,7 @@ class HelpDialog(QDialog):
         
         # Update match count
         matches = self.find_matches(search_text)
-        self.match_count_label.setText(f"{len(matches)} {t('matches', self.lang)}")
+        self.match_count_label.setText(f"{len(matches)} {self.translate('matches')}")
         
         # Perform actual search
         self.filter_content(search_text)
@@ -647,7 +512,7 @@ class HelpDialog(QDialog):
                     }
                 </style>
                 <div class="no-results">
-                    {t('help_no_results', self.lang)}
+                    {self.translate('help_no_results')}
                 </div>
             """)
     
@@ -678,7 +543,7 @@ class HelpDialog(QDialog):
         content_layout.setSpacing(15)
         
         # Title and introduction
-        title = QLabel(t('help_usage_title', self.lang, version=get_version()))
+        title = QLabel(self.translate('help_usage_title', version=get_version()))
         title.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
@@ -686,7 +551,7 @@ class HelpDialog(QDialog):
             color: #286CBD;
         """)
         
-        intro = QLabel(t('help_usage_intro', self.lang))
+        intro = QLabel(self.translate('help_usage_intro'))
         intro.setWordWrap(True)
         intro.setStyleSheet("""
             font-size: 14px;
@@ -699,7 +564,7 @@ class HelpDialog(QDialog):
         content_layout.addWidget(intro)
         
         # Features section
-        features_group = QGroupBox(t('help_features_title', self.lang))
+        features_group = QGroupBox(self.translate('help_features_title'))
         features_layout = QVBoxLayout(features_group)  # Set parent widget here
         
         features_text = QTextBrowser()
@@ -721,10 +586,10 @@ class HelpDialog(QDialog):
             <li style="margin-bottom: 10px;"><b>{}</b></li>
         </ul>
         """.format(
-            t('help_feature_1', self.lang),
-            t('help_feature_2', self.lang),
-            t('help_feature_3', self.lang),
-            t('help_feature_4', self.lang)
+            self.translate('help_feature_1'),
+            self.translate('help_feature_2'),
+            self.translate('help_feature_3'),
+            self.translate('help_feature_4')
         )
         
         features_text.setHtml(features_content)
@@ -734,7 +599,7 @@ class HelpDialog(QDialog):
         content_layout.addWidget(features_group)
         
         # Usage steps section
-        steps_group = QGroupBox(t('help_usage_title_2', self.lang))
+        steps_group = QGroupBox(self.translate('help_usage_title_2'))
         steps_layout = QVBoxLayout(steps_group)  # Set parent widget here
         
         steps_text = QTextBrowser()
@@ -761,14 +626,14 @@ class HelpDialog(QDialog):
             </ul></li>
         </ol>
         """.format(
-            t('help_usage_step_1', self.lang),
-            t('help_usage_step_2', self.lang),
-            t('help_usage_step_3', self.lang),
-            t('help_usage_step_4', self.lang),
-            t('help_usage_step_5', self.lang),
-            t('help_usage_select_all', self.lang),
-            t('help_usage_delete_selected', self.lang),
-            t('help_usage_delete_all', self.lang)
+            self.translate('help_usage_step_1'),
+            self.translate('help_usage_step_2'),
+            self.translate('help_usage_step_3'),
+            self.translate('help_usage_step_4'),
+            self.translate('help_usage_step_5'),
+            self.translate('help_usage_select_all'),
+            self.translate('help_usage_delete_selected'),
+            self.translate('help_usage_delete_all')
         )
         
         steps_text.setHtml(steps_content)
@@ -778,7 +643,7 @@ class HelpDialog(QDialog):
         content_layout.addWidget(steps_group)
         
         # Supported formats section
-        formats_group = QGroupBox(t('help_supported_formats', self.lang))
+        formats_group = QGroupBox(self.translate('help_supported_formats'))
         formats_layout = QVBoxLayout(formats_group)  # Set parent widget here
         
         formats_text = QTextBrowser()
@@ -798,8 +663,8 @@ class HelpDialog(QDialog):
             <li style="margin-bottom: 10px;">{}</li>
         </ul>
         """.format(
-            t('help_formats_1', self.lang),
-            t('help_formats_2', self.lang)
+            self.translate('help_formats_1'),
+            self.translate('help_formats_2')
         )
         
         formats_text.setHtml(formats_content)
@@ -835,7 +700,7 @@ class HelpDialog(QDialog):
         content_layout.setSpacing(15)
         
         # Title
-        title = QLabel(t('help_features_title_full', self.lang))
+        title = QLabel(self.translate('help_features_title_full'))
         title.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
@@ -844,7 +709,7 @@ class HelpDialog(QDialog):
         """)
         
         # Image Comparison section
-        image_group = QGroupBox(t('help_features_image_title', self.lang))
+        image_group = QGroupBox(self.translate('help_features_image_title'))
         image_layout = QVBoxLayout(image_group)
         
         image_text = QTextBrowser()
@@ -860,9 +725,9 @@ class HelpDialog(QDialog):
         
         image_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_features_image_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_image_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_image_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_image_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_image_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_image_3')}</li>
         </ul>
         """
         
@@ -870,7 +735,7 @@ class HelpDialog(QDialog):
         image_layout.addWidget(image_text)
         
         # Batch Operations section
-        batch_group = QGroupBox(t('help_features_batch_title', self.lang))
+        batch_group = QGroupBox(self.translate('help_features_batch_title'))
         batch_layout = QVBoxLayout(batch_group)
         
         batch_text = QTextBrowser()
@@ -886,9 +751,9 @@ class HelpDialog(QDialog):
         
         batch_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_features_batch_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_batch_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_batch_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_batch_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_batch_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_batch_3')}</li>
         </ul>
         """
         
@@ -896,7 +761,7 @@ class HelpDialog(QDialog):
         batch_layout.addWidget(batch_text)
         
         # Quality Control section
-        quality_group = QGroupBox(t('help_features_quality_title', self.lang))
+        quality_group = QGroupBox(self.translate('help_features_quality_title'))
         quality_layout = QVBoxLayout(quality_group)
         
         quality_text = QTextBrowser()
@@ -912,9 +777,9 @@ class HelpDialog(QDialog):
         
         quality_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_features_quality_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_quality_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_features_quality_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_quality_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_quality_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_features_quality_3')}</li>
         </ul>
         """
         
@@ -950,7 +815,7 @@ class HelpDialog(QDialog):
         content_layout.setSpacing(15)
         
         # Title
-        title = QLabel(t('help_tips_title', self.lang))
+        title = QLabel(self.translate('help_tips_title'))
         title.setStyleSheet("""
             font-size: 20px;
             font-weight: bold;
@@ -959,7 +824,7 @@ class HelpDialog(QDialog):
         """)
         
         # Large Collections section
-        large_group = QGroupBox(t('help_tips_large_title', self.lang))
+        large_group = QGroupBox(self.translate('help_tips_large_title'))
         large_layout = QVBoxLayout(large_group)
         
         large_text = QTextBrowser()
@@ -975,9 +840,9 @@ class HelpDialog(QDialog):
         
         large_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_tips_large_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_large_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_large_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_large_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_large_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_large_3')}</li>
         </ul>
         """
         
@@ -985,7 +850,7 @@ class HelpDialog(QDialog):
         large_layout.addWidget(large_text)
         
         # Image Formats section
-        formats_group = QGroupBox(t('help_tips_formats_title', self.lang))
+        formats_group = QGroupBox(self.translate('help_tips_formats_title'))
         formats_layout = QVBoxLayout(formats_group)
         
         formats_text = QTextBrowser()
@@ -1001,9 +866,9 @@ class HelpDialog(QDialog):
         
         formats_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_tips_formats_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_formats_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_formats_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_formats_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_formats_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_formats_3')}</li>
         </ul>
         """
         
@@ -1011,7 +876,7 @@ class HelpDialog(QDialog):
         formats_layout.addWidget(formats_text)
         
         # Performance section
-        perf_group = QGroupBox(t('help_tips_perf_title', self.lang))
+        perf_group = QGroupBox(self.translate('help_tips_perf_title'))
         perf_layout = QVBoxLayout(perf_group)
         
         perf_text = QTextBrowser()
@@ -1027,9 +892,9 @@ class HelpDialog(QDialog):
         
         perf_content = f"""
         <ul style="list-style-type: disc; margin-left: 20px;">
-            <li style="margin-bottom: 10px;">{t('help_tips_perf_1', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_perf_2', self.lang)}</li>
-            <li style="margin-bottom: 10px;">{t('help_tips_perf_3', self.lang)}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_perf_1')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_perf_2')}</li>
+            <li style="margin-bottom: 10px;">{self.translate('help_tips_perf_3')}</li>
         </ul>
         """
         
@@ -1057,6 +922,7 @@ class HelpDialog(QDialog):
         if lang_code == self.lang:
             return  # No change needed
             
+        self.lang_manager.set_language(lang_code)
         self.lang = lang_code
         
         # Update button states
@@ -1064,25 +930,24 @@ class HelpDialog(QDialog):
         self.italian_button.setChecked(lang_code == 'it')
         
         # Update UI
-        self.setWindowTitle(t('help', self.lang))
         self.retranslate_ui()
         
         # Update search options menu
         self.search_options_button.setMenu(self.create_search_options_menu())
         
         # Update search input placeholder
-        self.search_input.setPlaceholderText(t('search_help', self.lang))
+        self.search_input.setPlaceholderText(self.translate('search_help'))
         
         # Update close button text
-        self.close_button.setText(t('help_close', self.lang))
+        self.close_button.setText(self.translate('help_close'))
         
         # Update tab names
-        self.tabs.setTabText(0, t('usage', self.lang))
-        self.tabs.setTabText(1, t('help_features', self.lang))
-        self.tabs.setTabText(2, t('help_tips', self.lang))
+        self.tabs.setTabText(0, self.translate('usage'))
+        self.tabs.setTabText(1, self.translate('help_features'))
+        self.tabs.setTabText(2, self.translate('help_tips'))
         
         # Update language label
-        self.lang_label.setText(t('language', self.lang) + ":")
+        self.lang_label.setText(self.translate('language') + ":")
         
         # Update tab contents
         self.setup_usage_tab()
@@ -1093,75 +958,42 @@ class HelpDialog(QDialog):
         if hasattr(self, 'last_search') and self.last_search:
             self.perform_search()
     
-    def retranslate_ui(self):
-        """Update all UI text elements to the current language."""
-        # Update header elements
-        self.search_input.setPlaceholderText(t('search_help', self.lang))
-        self.lang_label.setText(t('language', self.lang) + ":")
-        self.close_button.setText(t('help_close', self.lang))
-        
-        # Update search options menu
-        self.case_sensitive_action.setText(t('search_case_sensitive', self.lang))
-        self.whole_words_action.setText(t('search_whole_words', self.lang))
-        self.highlight_action.setText(t('search_highlight', self.lang))
-        self.fuzzy_action.setText(t('search_fuzzy', self.lang))
-        
-        # Update match count label
-        search_text = self.search_input.text()
-        if search_text:
-            matches = self.find_matches(search_text)
-            self.match_count_label.setText(f"{len(matches)} {t('matches', self.lang)}")
-        
-        # Update tab titles
-        self.tabs.setTabText(0, t('usage', self.lang))
-        self.tabs.setTabText(1, t('help_features', self.lang))
-        self.tabs.setTabText(2, t('help_tips', self.lang))
-        
-        # Update tab content
-        self.usage_tab.findChild(QTextBrowser).setHtml(self.get_usage_content())
-        self.features_tab.findChild(QTextBrowser).setHtml(self.get_features_content())
-        self.tips_tab.findChild(QTextBrowser).setHtml(self.get_tips_content())
-        
-        # Update any existing search results
-        if search_text:
-            self.filter_content(search_text)
-    
     def get_usage_content(self):
         """Get the original content for the usage tab."""
         content = f"""
-        <h1>{t('help_usage_title', self.lang, version=get_version())}</h1>
-        <p>{t('help_usage_intro', self.lang)}</p>
+        <h1>{self.translate('help_usage_title', version=get_version())}</h1>
+        <p>{self.translate('help_usage_intro')}</p>
         
-        <h2>{t('help_features_title', self.lang)}</h2>
+        <h2>{self.translate('help_features_title')}</h2>
         <ul>
-            <li><b>{t('help_feature_1', self.lang)}</b></li>
-            <li><b>{t('help_feature_2', self.lang)}</b></li>
-            <li><b>{t('help_feature_3', self.lang)}</b></li>
-            <li><b>{t('help_feature_4', self.lang)}</b></li>
+            <li><b>{self.translate('help_feature_1')}</b></li>
+            <li><b>{self.translate('help_feature_2')}</b></li>
+            <li><b>{self.translate('help_feature_3')}</b></li>
+            <li><b>{self.translate('help_feature_4')}</b></li>
         </ul>
         
-        <h2>{t('help_usage_title_2', self.lang)}</h2>
+        <h2>{self.translate('help_usage_title_2')}</h2>
         <ol>
-            <li>{t('help_usage_step_1', self.lang)}</li>
-            <li>{t('help_usage_step_2', self.lang)}</li>
-            <li>{t('help_usage_step_3', self.lang)}</li>
-            <li>{t('help_usage_step_4', self.lang)}</li>
-            <li>{t('help_usage_step_5', self.lang)}
+            <li>{self.translate('help_usage_step_1')}</li>
+            <li>{self.translate('help_usage_step_2')}</li>
+            <li>{self.translate('help_usage_step_3')}</li>
+            <li>{self.translate('help_usage_step_4')}</li>
+            <li>{self.translate('help_usage_step_5')}
                 <ul>
-                    <li><b>{t('help_usage_select_all', self.lang)}</b></li>
-                    <li><b>{t('help_usage_delete_selected', self.lang)}</b></li>
-                    <li><b>{t('help_usage_delete_all', self.lang)}</b></li>
+                    <li><b>{self.translate('help_usage_select_all')}</b></li>
+                    <li><b>{self.translate('help_usage_delete_selected')}</b></li>
+                    <li><b>{self.translate('help_usage_delete_all')}</b></li>
                 </ul>
             </li>
         </ol>
         
-        <h2>{t('help_supported_formats', self.lang)}</h2>
+        <h2>{self.translate('help_supported_formats')}</h2>
         <ul>
-            <li>{t('help_formats_1', self.lang)}</li>
-            <li>{t('help_formats_2', self.lang)}</li>
+            <li>{self.translate('help_formats_1')}</li>
+            <li>{self.translate('help_formats_2')}</li>
         </ul>
         
-        <h2>{t('help_visit_website', self.lang)}</h2>
+        <h2>{self.translate('help_visit_website')}</h2>
         <p>
             <a href="https://github.com/Nsfr750/Images-Deduplicator" 
                style="color: #4a90e2; text-decoration: none;"
@@ -1175,27 +1007,27 @@ class HelpDialog(QDialog):
     def get_features_content(self):
         """Get the original content for the features tab."""
         content = f"""
-        <h1>{t('help_features_title_full', self.lang)}</h1>
+        <h1>{self.translate('help_features_title_full')}</h1>
         
-        <h2>{t('help_features_image_title', self.lang)}</h2>
+        <h2>{self.translate('help_features_image_title')}</h2>
         <ul>
-            <li>{t('help_features_image_1', self.lang)}</li>
-            <li>{t('help_features_image_2', self.lang)}</li>
-            <li>{t('help_features_image_3', self.lang)}</li>
+            <li>{self.translate('help_features_image_1')}</li>
+            <li>{self.translate('help_features_image_2')}</li>
+            <li>{self.translate('help_features_image_3')}</li>
         </ul>
         
-        <h2>{t('help_features_batch_title', self.lang)}</h2>
+        <h2>{self.translate('help_features_batch_title')}</h2>
         <ul>
-            <li>{t('help_features_batch_1', self.lang)}</li>
-            <li>{t('help_features_batch_2', self.lang)}</li>
-            <li>{t('help_features_batch_3', self.lang)}</li>
+            <li>{self.translate('help_features_batch_1')}</li>
+            <li>{self.translate('help_features_batch_2')}</li>
+            <li>{self.translate('help_features_batch_3')}</li>
         </ul>
         
-        <h2>{t('help_features_quality_title', self.lang)}</h2>
+        <h2>{self.translate('help_features_quality_title')}</h2>
         <ul>
-            <li>{t('help_features_quality_1', self.lang)}</li>
-            <li>{t('help_features_quality_2', self.lang)}</li>
-            <li>{t('help_features_quality_3', self.lang)}</li>
+            <li>{self.translate('help_features_quality_1')}</li>
+            <li>{self.translate('help_features_quality_2')}</li>
+            <li>{self.translate('help_features_quality_3')}</li>
         </ul>
         """
         return content
@@ -1203,27 +1035,27 @@ class HelpDialog(QDialog):
     def get_tips_content(self):
         """Get the original content for the tips tab."""
         content = f"""
-        <h1>{t('help_tips_title', self.lang)}</h1>
+        <h1>{self.translate('help_tips_title')}</h1>
         
-        <h2>{t('help_tips_large_title', self.lang)}</h2>
+        <h2>{self.translate('help_tips_large_title')}</h2>
         <ul>
-            <li>{t('help_tips_large_1', self.lang)}</li>
-            <li>{t('help_tips_large_2', self.lang)}</li>
-            <li>{t('help_tips_large_3', self.lang)}</li>
+            <li>{self.translate('help_tips_large_1')}</li>
+            <li>{self.translate('help_tips_large_2')}</li>
+            <li>{self.translate('help_tips_large_3')}</li>
         </ul>
         
-        <h2>{t('help_tips_formats_title', self.lang)}</h2>
+        <h2>{self.translate('help_tips_formats_title')}</h2>
         <ul>
-            <li>{t('help_tips_formats_1', self.lang)}</li>
-            <li>{t('help_tips_formats_2', self.lang)}</li>
-            <li>{t('help_tips_formats_3', self.lang)}</li>
+            <li>{self.translate('help_tips_formats_1')}</li>
+            <li>{self.translate('help_tips_formats_2')}</li>
+            <li>{self.translate('help_tips_formats_3')}</li>
         </ul>
         
-        <h2>{t('help_tips_perf_title', self.lang)}</h2>
+        <h2>{self.translate('help_tips_perf_title')}</h2>
         <ul>
-            <li>{t('help_tips_perf_1', self.lang)}</li>
-            <li>{t('help_tips_perf_2', self.lang)}</li>
-            <li>{t('help_tips_perf_3', self.lang)}</li>
+            <li>{self.translate('help_tips_perf_1')}</li>
+            <li>{self.translate('help_tips_perf_2')}</li>
+            <li>{self.translate('help_tips_perf_3')}</li>
         </ul>
         """
         return content
@@ -1231,6 +1063,6 @@ class HelpDialog(QDialog):
 # For backward compatibility with Tkinter version
 class Help:
     @staticmethod
-    def show_help(parent):
+    def show_help(parent=None):
         dialog = HelpDialog(parent)
         dialog.exec()

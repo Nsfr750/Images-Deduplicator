@@ -1,19 +1,83 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QLabel, QPushButton, 
                              QHBoxLayout, QTextBrowser, QApplication)
-from PyQt6.QtCore import Qt, QSize, QUrl, QT_VERSION_STR, PYQT_VERSION_STR
+from PyQt6.QtCore import Qt, QSize, QUrl, QT_VERSION_STR, PYQT_VERSION_STR, pyqtSignal
 from PyQt6.QtGui import QPixmap, QIcon, QDesktopServices
 from .version import get_version
+from .language_manager import LanguageManager  # Import LanguageManager
 import os
 import sys
 import platform
 from pathlib import Path
 
 class AboutDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, language_manager=None):
         super().__init__(parent)
-        self.setWindowTitle("About Images-Deduplicator")
+        
+        # Initialize language manager
+        self.lang_manager = language_manager if language_manager else LanguageManager()
+        
+        # Connect language changed signal
+        if self.lang_manager:
+            self.lang_manager.language_changed.connect(self.on_language_changed)
+        
+        self.setWindowTitle(self.translate("about_title"))
         self.setMinimumSize(500, 400)
         
+        # Initialize UI
+        self.setup_ui()
+    
+    def translate(self, key, **kwargs):
+        """Helper method to get translated text."""
+        if hasattr(self, 'lang_manager') and self.lang_manager:
+            return self.lang_manager.translate(key, **kwargs)
+        return key  # Fallback to key if no translation available
+    
+    def on_language_changed(self, lang_code):
+        """Handle language change."""
+        self.retranslate_ui()
+    
+    def retranslate_ui(self):
+        """Retranslate the UI elements."""
+        self.setWindowTitle(self.translate("about_title"))
+        
+        # Update title and version
+        if hasattr(self, 'title_label'):
+            self.title_label.setText(self.translate("app_name"))
+        
+        if hasattr(self, 'version_label'):
+            self.version_label.setText(
+                self.translate("version", version=get_version())
+            )
+        
+        # Update description
+        if hasattr(self, 'description_label'):
+            self.description_label.setText(
+                self.translate("about_description")
+            )
+        
+        # Update system info
+        if hasattr(self, 'sys_info'):
+            self.sys_info.setHtml(self.get_system_info())
+        
+        # Update copyright
+        if hasattr(self, 'copyright_label'):
+            self.copyright_label.setText(
+                self.translate(
+                    "copyright",
+                    year="2025",
+                    author="Nsfr750"
+                )
+            )
+        
+        # Update buttons
+        if hasattr(self, 'github_btn'):
+            self.github_btn.setText(self.translate("github"))
+        
+        if hasattr(self, 'close_btn'):
+            self.close_btn.setText(self.translate("close"))
+    
+    def setup_ui(self):
+        """Initialize the user interface."""
         layout = QVBoxLayout(self)
         
         # App logo and title
@@ -42,15 +106,15 @@ class AboutDialog(QDialog):
         # App info
         app_info = QVBoxLayout()
         
-        title = QLabel("Images Deduplicator")
-        title.setStyleSheet("font-size: 20px; font-weight: bold;")
+        self.title_label = QLabel()
+        self.title_label.setStyleSheet("font-size: 20px; font-weight: bold;")
         
-        version = QLabel(f"Version {get_version()}")
-        version.setStyleSheet("color: #ffffff")
-        version.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.version_label = QLabel()
+        self.version_label.setStyleSheet("color: #ffffff")
+        self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        app_info.addWidget(title)
-        app_info.addWidget(version)
+        app_info.addWidget(self.title_label)
+        app_info.addWidget(self.version_label)
         app_info.addStretch()
         
         header.addLayout(app_info)
@@ -59,89 +123,61 @@ class AboutDialog(QDialog):
         layout.addLayout(header)
         
         # Description
-        description = QLabel(
-            "A tool to find and manage duplicate IMG files on your computer.\n"
-        )
-        description.setWordWrap(True)
-        layout.addWidget(description)
+        self.description_label = QLabel()
+        self.description_label.setWordWrap(True)
+        layout.addWidget(self.description_label)
         
         # System info
-        sys_info = QTextBrowser()
-        sys_info.setOpenLinks(True)
-        sys_info.setHtml(self.get_system_info())
-        sys_info.setMaximumHeight(150)
-        layout.addWidget(QLabel("<b>System Information:</b>"))
-        layout.addWidget(sys_info)
+        layout.addWidget(QLabel(f"<b>{self.translate('system_information')}:</b>"))
+        self.sys_info = QTextBrowser()
+        self.sys_info.setOpenLinks(True)
+        self.sys_info.setMaximumHeight(150)
+        layout.addWidget(self.sys_info)
         
         # Copyright and license
-        copyright = QLabel(
-            "© 2025 Nsfr750\n"
-            "This software is licensed under the GPL3 License."
-        )
-        copyright.setStyleSheet("color: #ffffff; font-size: 11px;")
-        copyright.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(copyright)
+        self.copyright_label = QLabel()
+        self.copyright_label.setStyleSheet("color: #ffffff; font-size: 11px;")
+        self.copyright_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.copyright_label)
         
         # Buttons
         buttons = QHBoxLayout()
         
         # GitHub button
-        github_btn = QPushButton("GitHub")
-        github_btn.clicked.connect(lambda: QDesktopServices.openUrl(
+        self.github_btn = QPushButton()
+        self.github_btn.clicked.connect(lambda: QDesktopServices.openUrl(
             QUrl("https://github.com/Nsfr750/Images-Deduplicator")))
         
         # Close button
-        close_btn = QPushButton("Close")
-        close_btn.clicked.connect(self.accept)
+        self.close_btn = QPushButton()
+        self.close_btn.clicked.connect(self.accept)
         
         buttons.addStretch()
-        buttons.addWidget(github_btn)
-        buttons.addWidget(close_btn)
+        buttons.addWidget(self.github_btn)
+        buttons.addWidget(self.close_btn)
         
         layout.addLayout(buttons)
+        
+        # Set initial translations
+        self.retranslate_ui()
     
     def get_system_info(self):
-        """Get system information for the about dialog."""
+        """Get system information as HTML."""
         try:
-            # Get PyQt version
-            python_version = sys.version.split(' ')[0]
+            system = platform.system()
+            release = platform.release()
+            machine = platform.machine()
+            python_version = platform.python_version()
             
-            # Get operating system information
-            os_info = f"{platform.system()} {platform.release()} {platform.version()}"
-            
-            # Get screen resolution
-            screen = QApplication.primaryScreen()
-            screen_geometry = screen.availableGeometry()
-            resolution = f"{screen_geometry.width()}x{screen_geometry.height()}"
-            
-            # Get memory information
-            try:
-                import psutil
-                memory = psutil.virtual_memory()
-                total_memory = memory.total / (1024 ** 3)  # Convert to GB
-                available_memory = memory.available / (1024 ** 3)
-                memory_info = f"{available_memory:.1f} GB available of {total_memory:.1f} GB"
-            except ImportError:
-                memory_info = "psutil not available"
-            
-            # Format the information as HTML
-            info = f"""
-            <html>
-            <body>
-            <table>
-            <tr><td><b>Operating System:</b></td><td>{os_info}</td></tr>
-            <tr><td><b>Python Version:</b></td><td>{python_version}</td></tr>
-            <tr><td><b>Qt Version:</b></td><td>{QT_VERSION_STR}</td></tr>
-            <tr><td><b>PyQt Version:</b></td><td>{PYQT_VERSION_STR}</td></tr>
-            <tr><td><b>Screen Resolution:</b></td><td>{resolution}</td></tr>
-            <tr><td><b>Memory:</b></td><td>{memory_info}</td></tr>
-            </table>
-            </body>
-            </html>
-            """
-            
-            return info
-            
+            return (
+                f"<table style='width:100%; color:#ffffff;'>"
+                f"<tr><td style='width:40%;'>{self.translate('operating_system')}:</td>"
+                f"<td>{system} {release} ({machine})</td></tr>"
+                f"<tr><td>Python:</td><td>{python_version}</td></tr>"
+                f"<tr><td>Qt:</td><td>{QT_VERSION_STR}</td></tr>"
+                f"<tr><td>PyQt:</td><td>{PYQT_VERSION_STR}</td></tr>"
+                f"</table>"
+            )
         except Exception as e:
             print(f"Error getting system info: {e}")
-            return f"<p>Error getting system information: {str(e)}</p>"
+            return self.translate("error_loading_system_info")

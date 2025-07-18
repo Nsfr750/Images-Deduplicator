@@ -39,6 +39,7 @@ from script.settings_dialog import SettingsDialog
 from script.menu import MenuManager
 from script.UI import UI
 from script.logger import logger
+from script.language_manager import LanguageManager  # Import LanguageManager
 
 class WorkerSignals(QObject):
     """Defines the signals available from a running worker thread."""
@@ -151,12 +152,8 @@ class ImageComparisonWorker(QRunnable):
         self.is_running = False
 
 
-def main():
-    """Main entry point for the application."""
-    # Set up the application
-    app = QApplication(sys.argv)
-    
-    # Load configuration
+def load_config():
+    """Load configuration from config.json."""
     config_file = Path('config.json')
     config = {}
     
@@ -167,12 +164,47 @@ def main():
         except (json.JSONDecodeError, IOError) as e:
             logger.error(f"Error loading config: {str(e)}")
     
-    # Create and show the main window
-    window = UI(config)
-    window.show()
+    return config
+
+
+def main():
+    """Main entry point for the application."""
+    # Set up the application
+    app = QApplication(sys.argv)
     
-    # Start the application event loop
-    sys.exit(app.exec())
+    # Set application information
+    app.setApplicationName("Image Deduplicator")
+    app.setApplicationVersion(__version__)
+    app.setOrganizationName("ImageDeduplicator")
+    
+    # Load configuration
+    config = load_config()
+    
+    # Set default language from config or system
+    default_lang = config.get('language', 'en')
+    
+    # Initialize language manager
+    language_manager = LanguageManager(default_lang=default_lang)
+    
+    # Set up styles
+    setup_styles(app)
+    
+    try:
+        # Create and show the main window
+        window = UI(config, language_manager)
+        window.show()
+        
+        # Run the application
+        sys.exit(app.exec())
+        
+    except Exception as e:
+        logger.critical(f"Unhandled exception: {e}", exc_info=True)
+        QMessageBox.critical(
+            None, 
+            "Fatal Error", 
+            f"A fatal error occurred and the application must close.\n\nError: {str(e)}"
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

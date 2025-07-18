@@ -1,6 +1,7 @@
 """
 Module for displaying image previews in a dialog window.
 """
+import logging
 import os
 from pathlib import Path
 from typing import Union, List, Optional
@@ -18,6 +19,8 @@ from script.logger import logger
 
 class ImagePreviewWidget(QGraphicsView):
     """Custom widget for displaying and interacting with image previews."""
+    
+    MAX_IMAGE_DIMENSION = 4000  # Maximum width/height for images to prevent memory issues
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,6 +42,43 @@ class ImagePreviewWidget(QGraphicsView):
         self._pan_start = QPoint()
         self._panning = False
         self.setMinimumSize(400, 400)
+        
+        # Store the current pixmap reference to prevent garbage collection
+        self._current_pixmap = None
+    
+    def clear(self):
+        """Clear the current image and free resources."""
+        try:
+            if self._current_pixmap and not self._current_pixmap.isNull():
+                self._current_pixmap = None
+                self._pixmap_item.setPixmap(QPixmap())
+                QApplication.processEvents()  # Allow GUI to update
+        except Exception as e:
+            logger.error(f"Error clearing preview widget: {e}", exc_info=True)
+    
+    def _resize_image_if_needed(self, img: Image.Image) -> Image.Image:
+        """Resize the image if it's too large to prevent memory issues."""
+        try:
+            width, height = img.size
+            
+            # Check if resizing is needed
+            if width <= self.MAX_IMAGE_DIMENSION and height <= self.MAX_IMAGE_DIMENSION:
+                return img
+                
+            # Calculate new dimensions while maintaining aspect ratio
+            ratio = min(
+                self.MAX_IMAGE_DIMENSION / width,
+                self.MAX_IMAGE_DIMENSION / height
+            )
+            new_width = int(width * ratio)
+            new_height = int(height * ratio)
+            
+            logger.info(f"Resizing large image from {width}x{height} to {new_width}x{new_height}")
+            return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+        except Exception as e:
+            logger.error(f"Error resizing image: {e}", exc_info=True)
+            return img
     
     def set_image(self, image_path: Union[str, Path]) -> bool:
         """
@@ -51,6 +91,9 @@ class ImagePreviewWidget(QGraphicsView):
             bool: True if image was loaded successfully, False otherwise
         """
         try:
+            # Clear any existing image first
+            self.clear()
+            
             if not image_path:
                 logger.error("No image path provided")
                 return False
@@ -59,11 +102,19 @@ class ImagePreviewWidget(QGraphicsView):
             if not os.path.exists(path_str):
                 logger.error(f"Image path does not exist: {path_str}")
                 return False
-                
-            # Load with Pillow for better format support
+            
+            # Get file size for logging
+            file_size = os.path.getsize(path_str) / (1024 * 1024)  # in MB
+            logger.debug(f"Loading image: {os.path.basename(path_str)} (Size: {file_size:.2f} MB)")
+            
+            # Load with Pillow for better format support and memory management
             try:
                 with Image.open(path_str) as img:
-                    logger.debug(f"Loaded image: {os.path.basename(path_str)}, size: {img.size}, mode: {img.mode}")
+                    logger.debug(f"Pillow loaded image: {img.size}, mode: {img.mode}")
+                    
+                    # Resize if the image is too large
+                    if max(img.size) > self.MAX_IMAGE_DIMENSION:
+                        img = self._resize_image_if_needed(img)
                     
                     # Convert to RGB if needed (for formats like PNG with alpha channel)
                     if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
@@ -72,44 +123,58 @@ class ImagePreviewWidget(QGraphicsView):
                         background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
                         img = background
                     
-                    # Convert to QPixmap
-                    qimg = ImageQt.ImageQt(img)
-                    if qimg.isNull():
-                        raise ValueError("Failed to create QImage from Pillow image")
+                    # Convert to QPixmap with error handling
+                    try:
+                        # Convert in smaller chunks to reduce memory spikes
+                        qimg = ImageQt.ImageQt(img)
+                        if qimg.isNull():
+                            raise ValueError("Failed to create QImage from Pillow image")
+                            
+                        # Create pixmap with explicit format to avoid format detection issues
+                        pixmap = QPixmap.fromImage(qimg)
+                        if pixmap.isNull():
+                            raise ValueError("Failed to create QPixmap from QImage")
                         
-                    pixmap = QPixmap.fromImage(qimg)
-                    if pixmap.isNull():
-                        raise ValueError("Failed to create QPixmap from QImage")
-                    
-                    logger.debug(f"Created QPixmap, size: {pixmap.size().width()}x{pixmap.size().height()}")
-                    
-                    # Store the current scroll positions
-                    h_scroll = self.horizontalScrollBar().value() if self.horizontalScrollBar() else 0
-                    v_scroll = self.verticalScrollBar().value() if self.verticalScrollBar() else 0
-                    
-                    # Update the pixmap
-                    self._pixmap_item.setPixmap(pixmap)
-                    
-                    # Reset the view
-                    self.setSceneRect(QRectF(pixmap.rect()))
-                    self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
-                    self._scale_factor = 1.0
-                    
-                    # Restore scroll positions if possible
-                    if self.horizontalScrollBar():
-                        self.horizontalScrollBar().setValue(h_scroll)
-                    if self.verticalScrollBar():
-                        self.verticalScrollBar().setValue(v_scroll)
+                        # Store reference to prevent garbage collection
+                        self._current_pixmap = pixmap
                         
-                    return True
-                    
-            except Exception as img_error:
-                logger.error(f"Error processing image {os.path.basename(path_str)}: {str(img_error)}", exc_info=True)
+                        # Update the pixmap item
+                        self._pixmap_item.setPixmap(pixmap)
+                        
+                        # Reset the view
+                        self.setSceneRect(QRectF(pixmap.rect()))
+                        
+                        # Fit the image to view while maintaining aspect ratio
+                        self.fitInView(self._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
+                        self._scale_factor = 1.0
+                        
+                        logger.debug(f"Successfully displayed image: {os.path.basename(path_str)}")
+                        return True
+                        
+                    except Exception as img_error:
+                        logger.error(f"Error converting image to QPixmap: {img_error}", exc_info=True)
+                        return False
+            
+            except Exception as load_error:
+                logger.error(f"Error loading image with Pillow: {load_error}", exc_info=True)
                 return False
                 
-        except Exception as e:
-            logger.error(f"Unexpected error in set_image for {image_path}: {str(e)}", exc_info=True)
+        except MemoryError:
+            logger.error("Insufficient memory to load image")
+            QMessageBox.critical(
+                self.parent(),
+                "Memory Error",
+                "Insufficient memory to load this image. Try using a smaller image."
+            )
             return False
+            
+        except Exception as e:
+            logger.error(f"Unexpected error in set_image: {e}", exc_info=True)
+            return False
+        
+        finally:
+            # Ensure we're not holding onto unnecessary resources
+            QApplication.processEvents()
     
     def wheelEvent(self, event: QWheelEvent):
         """Handle mouse wheel events for zooming."""
@@ -406,7 +471,7 @@ class ImagePreviewDialog(QDialog):
         """Zoom in on the current image."""
         try:
             if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.zoom_in()
+                self._preview_widget.scale(1.1, 1.1)
         except Exception as e:
             self.logger.error(f"Error zooming in: {e}", exc_info=True)
     
@@ -414,7 +479,7 @@ class ImagePreviewDialog(QDialog):
         """Zoom out from the current image."""
         try:
             if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.zoom_out()
+                self._preview_widget.scale(1.0 / 1.1, 1.0 / 1.1)
         except Exception as e:
             self.logger.error(f"Error zooming out: {e}", exc_info=True)
     
@@ -422,7 +487,7 @@ class ImagePreviewDialog(QDialog):
         """Fit the current image to the window."""
         try:
             if hasattr(self, '_preview_widget') and self._preview_widget:
-                self._preview_widget.fit_to_window()
+                self._preview_widget.fitInView(self._preview_widget._pixmap_item, Qt.AspectRatioMode.KeepAspectRatio)
         except Exception as e:
             self.logger.error(f"Error fitting to window: {e}", exc_info=True)
     
@@ -449,14 +514,19 @@ class ImagePreviewDialog(QDialog):
             event.accept()  # Always accept the close event
 
 
-def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None) -> None:
+def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], parent=None) -> Optional[ImagePreviewDialog]:
     """
     Show an image preview dialog in a way that's guaranteed to make it visible.
     
     Args:
         image_paths: Single path or list of image paths to display
         parent: Parent widget
+        
+    Returns:
+        Optional[ImagePreviewDialog]: The created dialog instance, or None if creation failed
     """
+    logger = logging.getLogger(__name__)
+    
     try:
         logger.debug("show_image_preview called")
         
@@ -471,14 +541,16 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
                 path_str = str(path)
                 if os.path.exists(path_str):
                     valid_paths.append(path_str)
+                    logger.debug(f"Added valid image path: {path_str}")
                 else:
                     logger.warning(f"Image path does not exist: {path_str}")
             except Exception as e:
                 logger.error(f"Error processing image path {path}: {e}", exc_info=True)
         
         if not valid_paths:
-            logger.error("No valid image paths provided to show_image_preview")
-            if parent:
+            error_msg = "No valid image paths provided to show_image_preview"
+            logger.error(error_msg)
+            if parent and hasattr(parent, 'isVisible') and parent.isVisible():
                 QMessageBox.warning(
                     parent,
                     "Preview Error",
@@ -486,7 +558,7 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
                 )
             return None
             
-        logger.debug(f"Showing preview for {len(valid_paths)} images")
+        logger.info(f"Preparing to show preview for {len(valid_paths)} images")
         
         # Create the dialog on the main thread
         dialog = None
@@ -494,37 +566,82 @@ def show_image_preview(image_paths: Union[str, Path, List[Union[str, Path]]], pa
         def create_dialog():
             nonlocal dialog
             try:
+                logger.debug("Creating ImagePreviewDialog instance")
                 dialog = ImagePreviewDialog(valid_paths, parent)
+                
+                # Ensure the dialog is properly cleaned up when closed
                 dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+                
+                # Connect to the finished signal to ensure proper cleanup
+                dialog.finished.connect(lambda: logger.debug("Preview dialog closed"))
+                
+                # Show the dialog
                 dialog.show()
+                
+                # Bring to front and activate
                 dialog.raise_()
                 dialog.activateWindow()
-                logger.debug("Preview dialog shown and activated")
+                
+                # Ensure the dialog is properly shown
+                QApplication.processEvents()
+                
+                logger.info("Preview dialog displayed successfully")
+                
+            except MemoryError as me:
+                error_msg = f"Insufficient memory to create preview dialog: {str(me)}"
+                logger.error(error_msg, exc_info=True)
+                if parent and hasattr(parent, 'isVisible') and parent.isVisible():
+                    QMessageBox.critical(
+                        parent,
+                        "Memory Error",
+                        "The system is low on memory. Please close other applications and try again."
+                    )
             except Exception as e:
-                logger.error(f"Error creating preview dialog: {e}", exc_info=True)
-                if parent:
+                error_msg = f"Error creating preview dialog: {str(e)}"
+                logger.error(error_msg, exc_info=True)
+                if parent and hasattr(parent, 'isVisible') and parent.isVisible():
                     QMessageBox.critical(
                         parent,
                         "Preview Error",
-                        f"Failed to create preview dialog: {str(e)}"
+                        f"Failed to create preview: {str(e)}"
                     )
         
-        # Ensure we're on the main thread
-        if QThread.currentThread() != QApplication.instance().thread():
+        # Get the application instance safely
+        app = QApplication.instance()
+        if not app:
+            logger.error("No QApplication instance found")
+            return None
+            
+        # Check if we're on the main thread
+        if QThread.currentThread() != app.thread():
             logger.debug("Scheduling dialog creation on main thread")
-            QMetaObject.invokeMethod(
-                QApplication.instance(),
-                create_dialog,
-                Qt.ConnectionType.QueuedConnection
-            )
+            try:
+                # Use a single-shot timer to ensure this runs on the main thread
+                QTimer.singleShot(0, create_dialog)
+                logger.debug("Dialog creation scheduled on main thread")
+            except Exception as e:
+                logger.error(f"Failed to schedule dialog creation: {e}", exc_info=True)
+                return None
         else:
+            logger.debug("Creating dialog directly on main thread")
             create_dialog()
             
         return dialog
         
+    except MemoryError as me:
+        error_msg = f"Insufficient memory to show preview: {str(me)}"
+        logger.error(error_msg, exc_info=True)
+        if parent and hasattr(parent, 'isVisible') and parent.isVisible():
+            QMessageBox.critical(
+                parent,
+                "Memory Error",
+                "The system is low on memory. Please close other applications and try again."
+            )
+        return None
     except Exception as e:
-        logger.error(f"Unexpected error in show_image_preview: {e}", exc_info=True)
-        if parent:
+        error_msg = f"Unexpected error in show_image_preview: {str(e)}"
+        logger.error(error_msg, exc_info=True)
+        if parent and hasattr(parent, 'isVisible') and parent.isVisible():
             QMessageBox.critical(
                 parent,
                 "Preview Error",

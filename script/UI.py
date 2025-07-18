@@ -1,6 +1,7 @@
 """
 UI module for Image Deduplicator application.
 """
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 import os
@@ -15,7 +16,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QPixmap, QDesktopServices, QPainter, QColor
 from PIL import Image, ImageQt
-from script.translations import t
+from script.translations import t, LANGUAGES
 from script.styles import apply_style, apply_theme
 from script.about import AboutDialog
 from script.help import HelpDialog as HelpDialogScript
@@ -26,99 +27,9 @@ from script.updates import UpdateChecker
 from script.version import __version__
 from script.workers import ImageComparisonWorker
 from script.settings_dialog import SettingsDialog  
-from script.logger import logger  # Import the enhanced logger
+from script.logger import logger
 from script.undo_manager import UndoManager, FileOperation
-from PyQt6 import sip
-import logging
-import send2trash
-from script.update_preview import update_preview as update_preview_handler
-import io
-
-class ImagePreview(QLabel):
-    """Custom widget for displaying image previews with aspect ratio preservation."""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.setMinimumSize(200, 200)
-        self.setStyleSheet("""
-            background-color: #3c3f41;
-            border: 1px solid #555;
-            border-radius: 4px;
-            color: #e0e0e0;
-        """)
-        self._pixmap = None
-        self._original_pixmap = None
-        
-    def setPixmap(self, pixmap):
-        """Set the pixmap and keep a reference to the original."""
-        if pixmap and not pixmap.isNull():
-            self._original_pixmap = pixmap
-            self._pixmap = pixmap.scaled(
-                self.size(), 
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            super().setPixmap(self._pixmap)
-        else:
-            self._original_pixmap = None
-            self._pixmap = None
-            super().setPixmap(QPixmap())
-    
-    def resizeEvent(self, event):
-        """Handle resize events to maintain aspect ratio."""
-        super().resizeEvent(event)
-        if self._original_pixmap and not self._original_pixmap.isNull():
-            self._pixmap = self._original_pixmap.scaled(
-                self.size(), 
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation
-            )
-            super().setPixmap(self._pixmap)
-    
-    def paintEvent(self, event):
-        """Custom paint event to handle painting with error checking."""
-        if not self._pixmap or self._pixmap.isNull():
-            # Draw placeholder when no image is set
-            painter = QPainter(self)
-            if not painter.isActive():
-                return
-                
-            try:
-                # Draw background
-                painter.fillRect(self.rect(), QColor(60, 63, 65))
-                
-                # Draw placeholder text
-                font = painter.font()
-                font.setPointSize(12)
-                painter.setFont(font)
-                painter.setPen(QColor(224, 224, 224))
-                
-                text = "No image"
-                text_rect = painter.fontMetrics().boundingRect(text)
-                text_rect.moveCenter(self.rect().center())
-                painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
-                
-            finally:
-                painter.end()
-        else:
-            # Draw the scaled pixmap
-            painter = QPainter(self)
-            if not painter.isActive():
-                return
-                
-            try:
-                # Draw background
-                painter.fillRect(self.rect(), QColor(60, 63, 65))
-                
-                # Calculate centered position for the pixmap
-                x = (self.width() - self._pixmap.width()) // 2
-                y = (self.height() - self._pixmap.height()) // 2
-                
-                # Draw the pixmap
-                painter.drawPixmap(x, y, self._pixmap)
-                
-            finally:
-                painter.end()
+from script.language_manager import LanguageManager  
 
 class UI(QMainWindow):
     """Main UI class for Image Deduplicator."""
@@ -126,7 +37,11 @@ class UI(QMainWindow):
     def __init__(self, config, lang='en'):
         super().__init__()
         self.config = config
-        self.lang = lang
+        
+        # Initialize language manager
+        self.lang_manager = LanguageManager(default_lang=lang)
+        self.lang = self.lang_manager.current_language  
+        
         self.duplicates = {}
         self.worker = None
         self.comparison_in_progress = False
@@ -173,6 +88,9 @@ class UI(QMainWindow):
         self.undo_manager = UndoManager()
         self.undo_action = None  # Will be set by MenuManager
         
+        # Connect language changed signal
+        self.lang_manager.language_changed.connect(self.on_language_changed)
+        
         # Initialize UI
         self.init_ui()
         self.setup_connections()
@@ -185,7 +103,7 @@ class UI(QMainWindow):
 
     def init_ui(self):
         """Initialize the user interface."""
-        self.setWindowTitle(t('app_title', self.lang, version=__version__))
+        self.setWindowTitle(self.lang_manager.translate('app_title', version=__version__))
         self.setGeometry(100, 100, 1000, 800)
         
         # Create central widget and main layout
@@ -195,8 +113,8 @@ class UI(QMainWindow):
         self.main_layout.setContentsMargins(10, 10, 10, 10)
         self.main_layout.setSpacing(10)
         
-        # Initialize menu bar
-        self.menu_manager = MenuManager(self, self.lang)
+        # Initialize menu bar with language manager
+        self.menu_manager = MenuManager(self, self.lang_manager)
         self.setMenuBar(self.menu_manager.menubar)
         
         # --- Folder Selection ---
@@ -204,17 +122,17 @@ class UI(QMainWindow):
         folder_layout = QHBoxLayout(folder_frame)
         folder_layout.setContentsMargins(0, 0, 0, 0)
         
-        self.folder_label = QLabel(t('select_folder', self.lang))
+        self.folder_label = QLabel(self.lang_manager.translate('select_folder'))
         self.folder_entry = QLineEdit()
         self.folder_entry.setReadOnly(True)
-        self.browse_button = QPushButton(t('browse', self.lang))
+        self.browse_button = QPushButton(self.lang_manager.translate('browse'))
         
         folder_layout.addWidget(self.folder_label)
         folder_layout.addWidget(self.folder_entry, 1)
         folder_layout.addWidget(self.browse_button)
         
         # --- Compare Button ---
-        self.compare_button = QPushButton(t('compare', self.lang))
+        self.compare_button = QPushButton(self.lang_manager.translate('compare'))
         self.compare_button.setObjectName("compareButton")
         
         # --- Progress Bar ---
@@ -231,7 +149,7 @@ class UI(QMainWindow):
         progress_layout.addWidget(self.progress_label)
         
         # --- Duplicates List ---
-        duplicates_group = QGroupBox(t('duplicates_found', self.lang))
+        duplicates_group = QGroupBox(self.lang_manager.translate('duplicates_found'))
         duplicates_layout = QVBoxLayout(duplicates_group)
         
         self.duplicates_list = QListWidget()
@@ -244,18 +162,18 @@ class UI(QMainWindow):
         preview_layout = QHBoxLayout(preview_frame)
         
         # Original Image
-        original_group = QGroupBox(t('original_image', self.lang))
+        original_group = QGroupBox(self.lang_manager.translate('original_image'))
         original_layout = QVBoxLayout(original_group)
-        self.original_preview = ImagePreview()
+        self.original_preview = QLabel()
         self.original_path = QLabel()
         self.original_path.setWordWrap(True)
         original_layout.addWidget(self.original_preview, 1)
         original_layout.addWidget(self.original_path)
         
         # Duplicate Image
-        duplicate_group = QGroupBox(t('duplicate_image', self.lang))
+        duplicate_group = QGroupBox(self.lang_manager.translate('duplicate_image'))
         duplicate_layout = QVBoxLayout(duplicate_group)
-        self.duplicate_preview = ImagePreview()
+        self.duplicate_preview = QLabel()
         self.duplicate_path = QLabel()
         self.duplicate_path.setWordWrap(True)
         duplicate_layout.addWidget(self.duplicate_preview, 1)
@@ -268,10 +186,10 @@ class UI(QMainWindow):
         buttons_frame = QFrame()
         buttons_layout = QHBoxLayout(buttons_frame)
         
-        self.select_all_button = QPushButton(t('select_all', self.lang))
-        self.select_none_button = QPushButton(t('select_none', self.lang))
-        self.delete_selected_button = QPushButton(t('delete_selected', self.lang))
-        self.delete_all_button = QPushButton(t('delete_all_duplicates', self.lang))
+        self.select_all_button = QPushButton(self.lang_manager.translate('select_all'))
+        self.select_none_button = QPushButton(self.lang_manager.translate('select_none'))
+        self.delete_selected_button = QPushButton(self.lang_manager.translate('delete_selected'))
+        self.delete_all_button = QPushButton(self.lang_manager.translate('delete_all_duplicates'))
         
         # Style delete buttons differently
         self.delete_selected_button.setObjectName("deleteButton")
@@ -286,7 +204,7 @@ class UI(QMainWindow):
         # --- Status Bar ---
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage(t('ready', self.lang))
+        self.status_bar.showMessage(self.lang_manager.translate('ready'))
         
         # Add all widgets to main layout
         self.main_layout.addWidget(folder_frame)
@@ -393,7 +311,7 @@ class UI(QMainWindow):
         """Open a folder selection dialog and update the folder path."""
         folder = QFileDialog.getExistingDirectory(
             self, 
-            t('select_folder', self.lang),
+            self.lang_manager.translate('select_folder'),
             self.folder_entry.text() or str(Path.home())
         )
         
@@ -405,8 +323,8 @@ class UI(QMainWindow):
         folder = self.folder_entry.text()
         if not folder or not Path(folder).is_dir():
             QMessageBox.warning(self, 
-                             t('error', self.lang), 
-                             t('invalid_folder', self.lang))
+                             self.lang_manager.translate('error'), 
+                             self.lang_manager.translate('invalid_folder'))
             return
         
         # Reset state
@@ -420,8 +338,8 @@ class UI(QMainWindow):
         # Show progress
         self.progress_frame.show()
         self.progress_bar.setValue(0)
-        self.progress_label.setText(t('scanning_folder', self.lang))
-        self.status_bar.showMessage(t('scanning_folder', self.lang))
+        self.progress_label.setText(self.lang_manager.translate('scanning_folder'))
+        self.status_bar.showMessage(self.lang_manager.translate('scanning_folder'))
         
         # Get settings from config
         recursive = self.config.get('recursive', True)
@@ -450,7 +368,7 @@ class UI(QMainWindow):
 
     def _handle_worker_error(self, msg):
         """Handle errors from the worker thread."""
-        QMessageBox.critical(self, t('error', self.lang), msg)
+        QMessageBox.critical(self, self.lang_manager.translate('error'), msg)
         self.set_ui_enabled(True)
         self.comparison_in_progress = False
     
@@ -462,7 +380,7 @@ class UI(QMainWindow):
             
             # Update progress bar and status
             self.progress_bar.setValue(100)
-            self.progress_label.setText(t('comparison_complete', self.lang))
+            self.progress_label.setText(self.lang_manager.translate('comparison_complete'))
             self.status_bar.showMessage(message)
             
             # Update duplicates list if provided
@@ -474,8 +392,8 @@ class UI(QMainWindow):
                 logger.info("No duplicates found")
                 QMessageBox.information(
                     self,
-                    t('no_duplicates', self.lang),
-                    t('no_duplicates_found_message', self.lang)
+                    self.lang_manager.translate('no_duplicates'),
+                    self.lang_manager.translate('no_duplicates_found_message')
                 )
                 
         except Exception as e:
@@ -483,7 +401,7 @@ class UI(QMainWindow):
             logger.error(f"Error processing comparison results: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
-                t('error', self.lang),
+                self.lang_manager.translate('error'),
                 error_msg
             )
         finally:
@@ -510,11 +428,11 @@ class UI(QMainWindow):
             
             # Update status with total number of duplicates found (not the number of groups)
             total_duplicates = sum(len(dups) for dups in self.duplicates.values())
-            self.status_bar.showMessage(t('duplicates_found', self.lang).format(count=total_duplicates))
+            self.status_bar.showMessage(self.lang_manager.translate('duplicates_found').format(count=total_duplicates))
             
         except Exception as e:
             logger.error(f"Error updating duplicates list: {e}")
-            self.status_bar.showMessage(t('error_updating_list', self.lang))
+            self.status_bar.showMessage(self.lang_manager.translate('error_updating_list'))
     
     def update_preview(self):
         """Update the image preview based on the current selection."""
@@ -587,8 +505,8 @@ class UI(QMainWindow):
         if not selected_items:
             QMessageBox.information(
                 self,
-                t('info', self.lang),
-                t('no_items_selected', self.lang)
+                self.lang_manager.translate('info'),
+                self.lang_manager.translate('no_items_selected')
             )
             return
 
@@ -605,8 +523,8 @@ class UI(QMainWindow):
         # Ask for confirmation
         confirm = QMessageBox.question(
             self,
-            t('confirm_delete', self.lang),
-            t('confirm_delete_selected', self.lang, count=len(selected_paths)),
+            self.lang_manager.translate('confirm_delete'),
+            self.lang_manager.translate('confirm_delete_selected', count=len(selected_paths)),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -640,14 +558,14 @@ class UI(QMainWindow):
         if failed_deletions:
             QMessageBox.warning(
                 self,
-                t('error', self.lang),
-                t('failed_to_delete_files', self.lang, count=len(failed_deletions))
+                self.lang_manager.translate('error'),
+                self.lang_manager.translate('failed_to_delete_files', count=len(failed_deletions))
             )
         elif selected_paths:
             QMessageBox.information(
                 self,
-                t('success', self.lang),
-                t('moved_to_trash', self.lang, count=len(selected_paths))
+                self.lang_manager.translate('success'),
+                self.lang_manager.translate('moved_to_trash', count=len(selected_paths))
             )
             
         # Update UI
@@ -659,8 +577,8 @@ class UI(QMainWindow):
         if not self.duplicates:
             QMessageBox.information(
                 self,
-                t('info', self.lang),
-                t('no_duplicates_found', self.lang)
+                self.lang_manager.translate('info'),
+                self.lang_manager.translate('no_duplicates_found')
             )
             return
 
@@ -669,16 +587,16 @@ class UI(QMainWindow):
         if total_duplicates == 0:
             QMessageBox.information(
                 self,
-                t('info', self.lang),
-                t('no_duplicates_to_delete', self.lang)
+                self.lang_manager.translate('info'),
+                self.lang_manager.translate('no_duplicates_to_delete')
             )
             return
 
         # Ask for confirmation
         confirm = QMessageBox.question(
             self,
-            t('confirm_delete_all', self.lang),
-            t('confirm_delete_all_duplicates', self.lang, count=total_duplicates),
+            self.lang_manager.translate('confirm_delete_all'),
+            self.lang_manager.translate('confirm_delete_all_duplicates', count=total_duplicates),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
         )
         
@@ -695,12 +613,12 @@ class UI(QMainWindow):
             
             # Create progress dialog
             progress = QProgressDialog(
-                t('deleting_duplicates', self.lang, count=total_duplicates),
-                t('cancel', self.lang),
+                self.lang_manager.translate('deleting_duplicates', count=total_duplicates),
+                self.lang_manager.translate('cancel'),
                 0, total_duplicates, self
             )
             progress.setWindowModality(Qt.WindowModality.WindowModal)
-            progress.setWindowTitle(t('deleting', self.lang))
+            progress.setWindowTitle(self.lang_manager.translate('deleting'))
             progress.setValue(0)
             progress.show()
             
@@ -737,8 +655,8 @@ class UI(QMainWindow):
             self.logger.error(f"Error during bulk delete: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
-                t('error', self.lang),
-                t('error_during_bulk_delete', self.lang, error=str(e))
+                self.lang_manager.translate('error'),
+                self.lang_manager.translate('error_during_bulk_delete', error=str(e))
             )
             return
             
@@ -750,16 +668,16 @@ class UI(QMainWindow):
         if failed_deletions:
             QMessageBox.warning(
                 self,
-                t('warning', self.lang),
-                t('some_deletions_failed', self.lang, 
+                self.lang_manager.translate('warning'),
+                self.lang_manager.translate('some_deletions_failed', 
                   success=deleted_count, 
                   failed=len(failed_deletions))
             )
         elif deleted_count > 0:
             QMessageBox.information(
                 self,
-                t('success', self.lang),
-                t('moved_to_trash', self.lang, count=deleted_count)
+                self.lang_manager.translate('success'),
+                self.lang_manager.translate('moved_to_trash', count=deleted_count)
             )
             
         # Update UI
@@ -797,7 +715,7 @@ class UI(QMainWindow):
     
     def show_help(self):
         """Show the help dialog."""
-        dialog = HelpDialogScript(self, self.lang)
+        dialog = HelpDialogScript(self, self.lang_manager)
         dialog.exec()
     
     def show_log_viewer(self):
@@ -807,7 +725,7 @@ class UI(QMainWindow):
     
     def show_settings(self):
         """Show the settings dialog."""
-        dialog = SettingsDialog(self, self.lang, self.config)
+        dialog = SettingsDialog(self, self.lang_manager, self.config)
         if dialog.exec():
             # Apply any changed settings
             if 'appearance' in dialog.config:
@@ -823,7 +741,7 @@ class UI(QMainWindow):
     
     def show_sponsor(self):
         """Show the sponsor dialog."""
-        dialog = SponsorDialog(self, self.lang)
+        dialog = SponsorDialog(self, self.lang_manager)
         dialog.exec()
     
     def set_language(self, lang_code):
@@ -831,47 +749,58 @@ class UI(QMainWindow):
         Set the application language.
         
         Args:
-            lang_code: Language code to set (e.g., 'en', 'es')
+            lang_code: Language code to set (e.g., 'en', 'it')
         """
-        if lang_code != self.lang:
-            self.lang = lang_code
+        if self.lang_manager.set_language(lang_code):
+            # Language was changed, no need to retranslate here as the signal will handle it
+            self.logger.info(f"Language changed to: {lang_code}")
             
-            # Save language preference
-            self.config['language'] = lang_code
-            self._save_config()
-            
-            # Update UI language
-            self.retranslate_ui()
-    
+    def on_language_changed(self, lang_code):
+        """Handle language change signal from LanguageManager."""
+        self.lang = lang_code
+        self.retranslate_ui()
+        self.config['language'] = lang_code
+        self._save_config()
+
     def retranslate_ui(self):
         """Retranslate all UI elements to the current language."""
-        self.setWindowTitle(t('app_title', self.lang, version=__version__))
+        # Update window title
+        self.setWindowTitle(self.lang_manager.translate('app_title', version=__version__))
         
-        # Update folder selection
-        self.folder_label.setText(t('select_folder', self.lang))
-        self.browse_button.setText(t('browse', self.lang))
-        self.compare_button.setText(t('compare', self.lang))
+        # Update main UI elements
+        if hasattr(self, 'folder_label'):
+            self.folder_label.setText(self.lang_manager.translate('select_folder'))
+        if hasattr(self, 'browse_button'):
+            self.browse_button.setText(self.lang_manager.translate('browse'))
+        if hasattr(self, 'compare_button'):
+            self.compare_button.setText(self.lang_manager.translate('compare'))
         
         # Update group boxes if they exist
         if hasattr(self, 'duplicates_group'):
-            self.duplicates_group.setTitle(t('duplicates_found', self.lang))
-        
-        # Update preview groups if they exist
+            self.duplicates_group.setTitle(self.lang_manager.translate('duplicates_found'))
         if hasattr(self, 'original_group'):
-            self.original_group.setTitle(t('original_image', self.lang))
+            self.original_group.setTitle(self.lang_manager.translate('original_image'))
         if hasattr(self, 'duplicate_group'):
-            self.duplicate_group.setTitle(t('duplicate_image', self.lang))
+            self.duplicate_group.setTitle(self.lang_manager.translate('duplicate_image'))
         
         # Update buttons
-        self.select_all_button.setText(t('select_all', self.lang))
-        self.select_none_button.setText(t('select_none', self.lang))
-        self.delete_selected_button.setText(t('delete_selected', self.lang))
-        self.delete_all_button.setText(t('delete_all_duplicates', self.lang))
+        if hasattr(self, 'select_all_button'):
+            self.select_all_button.setText(self.lang_manager.translate('select_all'))
+        if hasattr(self, 'select_none_button'):
+            self.select_none_button.setText(self.lang_manager.translate('select_none'))
+        if hasattr(self, 'delete_selected_button'):
+            self.delete_selected_button.setText(self.lang_manager.translate('delete_selected'))
+        if hasattr(self, 'delete_all_button'):
+            self.delete_all_button.setText(self.lang_manager.translate('delete_all_duplicates'))
         
         # Update status bar
-        if not self.comparison_in_progress:
-            self.status_bar.showMessage(t('ready', self.lang))
-    
+        if hasattr(self, 'status_bar') and not self.comparison_in_progress:
+            self.status_bar.showMessage(self.lang_manager.translate('ready'))
+        
+        # Update menu items
+        if hasattr(self, 'menu_manager'):
+            self.menu_manager.retranslate_ui()
+
     def check_for_updates_on_startup(self):
         """Check for updates on application startup."""
         try:
@@ -943,7 +872,7 @@ class UI(QMainWindow):
             today = datetime.now().strftime('%Y-%m-%d')
             self.settings.setValue('last_update_check', today)
             
-            msg = t('update_available', self.lang).format(
+            msg = self.lang_manager.translate('update_available').format(
                 current=__version__,
                 latest=version_info.get('version', 'unknown')
             )
@@ -1006,7 +935,7 @@ class UI(QMainWindow):
         """Show the update dialog with the given message and changelog."""
         try:
             msg_box = QMessageBox(self)
-            msg_box.setWindowTitle(t('update_available_title', self.lang))
+            msg_box.setWindowTitle(self.lang_manager.translate('update_available_title'))
             msg_box.setText(message)
             msg_box.setIcon(QMessageBox.Icon.Information)
             
@@ -1015,8 +944,8 @@ class UI(QMainWindow):
                 msg_box.setDetailedText(changelog)
             
             # Add buttons
-            download_btn = msg_box.addButton(t('download_update', self.lang), QMessageBox.ButtonRole.AcceptRole)
-            msg_box.addButton(t('later', self.lang), QMessageBox.ButtonRole.RejectRole)
+            download_btn = msg_box.addButton(self.lang_manager.translate('download_update'), QMessageBox.ButtonRole.AcceptRole)
+            msg_box.addButton(self.lang_manager.translate('later'), QMessageBox.ButtonRole.RejectRole)
             
             # Show the dialog
             msg_box.exec()
@@ -1032,15 +961,15 @@ class UI(QMainWindow):
         if not self.undo_manager.can_undo():
             QMessageBox.information(
                 self,
-                t('info', self.lang),
-                t('edit_menu.nothing_to_undo', self.lang)
+                self.lang_manager.translate('info'),
+                self.lang_manager.translate('edit_menu.nothing_to_undo')
             )
             return
             
         try:
             if self.undo_manager.undo_last_operation():
                 # Show success message
-                self.status_bar.showMessage(t('edit_menu.undo_success', self.lang))
+                self.status_bar.showMessage(self.lang_manager.translate('edit_menu.undo_success'))
                 
                 # Update undo action state
                 if self.undo_action:
@@ -1051,16 +980,16 @@ class UI(QMainWindow):
             else:
                 QMessageBox.warning(
                     self,
-                    t('error', self.lang),
-                    t('edit_menu.undo_failed', self.lang, error="Unknown error")
+                    self.lang_manager.translate('error'),
+                    self.lang_manager.translate('edit_menu.undo_failed', error="Unknown error")
                 )
                 
         except Exception as e:
             logger.error(f"Error during undo: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
-                t('error', self.lang),
-                t('edit_menu.undo_failed', self.lang, error=str(e))
+                self.lang_manager.translate('error'),
+                self.lang_manager.translate('edit_menu.undo_failed', error=str(e))
             )
     
     def closeEvent(self, event):
@@ -1074,8 +1003,8 @@ class UI(QMainWindow):
         if hasattr(self, 'worker') and self.worker and self.worker.isRunning():
             reply = QMessageBox.question(
                 self,
-                t('operation_in_progress', self.lang),
-                t('confirm_close_during_operation', self.lang),
+                self.lang_manager.translate('operation_in_progress'),
+                self.lang_manager.translate('confirm_close_during_operation'),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
@@ -1112,15 +1041,15 @@ class UI(QMainWindow):
         if not self.duplicates:
             QMessageBox.information(
                 self,
-                t('info', self.lang),
-                t('no_duplicates_found_message', self.lang)
+                self.lang_manager.translate('info'),
+                self.lang_manager.translate('no_duplicates_found_message')
             )
             return
             
         # Get save file path
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            t('save_report', self.lang),
+            self.lang_manager.translate('save_report'),
             'duplicates_report.txt',
             'Text Files (*.txt);;All Files (*)'
         )
@@ -1151,15 +1080,15 @@ class UI(QMainWindow):
                         f.write(f"  - {dup} ({size_kb:.2f} KB, modified: {mtime})\n")
                     
             # Show success message
-            self.status_bar.showMessage(t('report_saved', self.lang, path=file_path))
+            self.status_bar.showMessage(self.lang_manager.translate('report_saved', path=file_path))
             logger.info(f"Saved duplicates report to {file_path}")
             
         except Exception as e:
-            error_msg = t('error_saving_report', self.lang, error=str(e))
+            error_msg = self.lang_manager.translate('error_saving_report', error=str(e))
             logger.error(f"Error saving report: {e}", exc_info=True)
             QMessageBox.critical(
                 self,
-                t('error', self.lang),
+                self.lang_manager.translate('error'),
                 error_msg
             )
 

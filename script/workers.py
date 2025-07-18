@@ -183,11 +183,6 @@ class ImageMetadata:
             bool: True if successful, False otherwise
         """
         try:
-            # Skip temporary files
-            if os.path.splitext(image_path)[1].lower() == '.tmp':
-                logger.debug(f"Skipping metadata application for temporary file: {image_path}")
-                return False
-                
             if not metadata:
                 return True
                 
@@ -379,102 +374,6 @@ class ImageComparisonWorker(QRunnable):
                 
         return chunk_hashes
     
-    def _preserve_metadata_for_best_image(self, original_path: str, best_path: str) -> bool:
-        """Preserve metadata from the original image when keeping the best quality version.
-        
-        Args:
-            original_path: Path to the original image (with metadata)
-            best_path: Path to the best quality image (to receive metadata)
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
-        if not self.preserve_metadata:
-            logger.debug("Metadata preservation is disabled, skipping")
-            return True
-            
-        try:
-            # Skip if the files are the same
-            if os.path.samefile(original_path, best_path):
-                logger.debug(f"Original and best paths are the same: {original_path}")
-                return True
-                
-            logger.debug(f"Attempting to preserve metadata from {original_path} to {best_path}")
-            
-            # Get metadata from original
-            metadata = ImageMetadata.get_metadata(original_path)
-            if not metadata:
-                logger.debug(f"No metadata found in {original_path}, nothing to preserve")
-                return True  # No metadata to preserve
-                
-            # Create a temporary file with a unique name in the same directory as the target
-            temp_dir = os.path.dirname(best_path) or '.'
-            temp_fd, temp_path = tempfile.mkstemp(
-                suffix='.tmp',
-                prefix=f"{os.path.splitext(os.path.basename(best_path))[0]}_",
-                dir=temp_dir
-            )
-            os.close(temp_fd)  # Close the file descriptor as we'll use shutil
-            
-            try:
-                logger.debug(f"Created temporary file for metadata transfer: {temp_path}")
-                
-                # Copy the best image to the temporary file
-                shutil.copy2(best_path, temp_path)
-                
-                # Apply metadata to the temporary file
-                logger.debug(f"Applying metadata to temporary file: {temp_path}")
-                success = ImageMetadata.apply_metadata(temp_path, metadata)
-                
-                if success:
-                    # Create a backup of the original file
-                    backup_path = f"{best_path}.bak"
-                    try:
-                        shutil.copy2(best_path, backup_path)
-                        logger.debug(f"Created backup of original file: {backup_path}")
-                        
-                        # Replace the original best image with the one that has metadata
-                        os.replace(temp_path, best_path)
-                        logger.info(f"Successfully preserved metadata from {original_path} to {best_path}")
-                        
-                        # Clean up the backup file
-                        try:
-                            os.remove(backup_path)
-                            logger.debug(f"Cleaned up backup file: {backup_path}")
-                        except Exception as backup_cleanup_error:
-                            logger.warning(f"Failed to clean up backup file {backup_path}: {backup_cleanup_error}")
-                            
-                        return True
-                    except Exception as replace_error:
-                        # Restore from backup if available
-                        if os.path.exists(backup_path):
-                            try:
-                                os.replace(backup_path, best_path)
-                                logger.info("Restored original file from backup after error")
-                            except Exception as restore_error:
-                                logger.error(f"Failed to restore from backup: {restore_error}")
-                        raise
-                
-                logger.warning(f"Failed to apply metadata to {temp_path}")
-                return False
-                
-            except Exception as e:
-                logger.error(f"Error during metadata preservation: {str(e)}", exc_info=True)
-                return False
-                
-            finally:
-                # Always clean up the temporary file
-                if os.path.exists(temp_path):
-                    try:
-                        os.remove(temp_path)
-                        logger.debug(f"Cleaned up temporary file: {temp_path}")
-                    except Exception as cleanup_error:
-                        logger.error(f"Failed to clean up temporary file {temp_path}: {cleanup_error}")
-                
-        except Exception as e:
-            logger.error(f"Error in metadata preservation for {original_path} -> {best_path}: {str(e)}", exc_info=True)
-            return False
-    
     def _process_duplicates(self, hashes: Dict[str, List[str]]) -> Dict[str, List[str]]:
         """Process duplicate groups and keep the best quality image if enabled."""
         result = {}
@@ -499,6 +398,118 @@ class ImageComparisonWorker(QRunnable):
                 result[original] = file_paths[1:]
                 
         return result
+    
+    def _preserve_metadata_for_best_image(self, original_path: str, best_path: str) -> bool:
+        """Preserve metadata from the original image when keeping the best quality version.
+        
+        Args:
+            original_path: Path to the original image (with metadata)
+            best_path: Path to the best quality image (to receive metadata)
+            
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        if not self.preserve_metadata:
+            return True
+            
+        try:
+            # Skip if either file doesn't exist
+            if not os.path.exists(original_path) or not os.path.exists(best_path):
+                logger.warning(f"One or both files do not exist. Original: {original_path}, Best: {best_path}")
+                return False
+                
+            # Skip if files are the same
+            if os.path.samefile(original_path, best_path):
+                logger.debug("Original and best paths are the same, skipping metadata transfer")
+                return True
+                
+            logger.debug(f"Attempting to preserve metadata from {original_path} to {best_path}")
+            
+            # Get metadata from original
+            metadata = ImageMetadata.get_metadata(original_path)
+            if not metadata:
+                logger.debug(f"No metadata found in {original_path}, nothing to preserve")
+                return True  # No metadata to preserve
+                
+            # Get the file extension from the best path
+            file_ext = os.path.splitext(best_path)[1].lower()
+            
+            # Create a temporary file with the same extension in the same directory as the target
+            temp_dir = os.path.dirname(best_path) or '.'
+            temp_fd, temp_path = tempfile.mkstemp(
+                suffix=file_ext,  # Use the same file extension
+                prefix=f"{os.path.splitext(os.path.basename(best_path))[0]}_",
+                dir=temp_dir
+            )
+            os.close(temp_fd)  # Close the file descriptor as we'll use shutil
+            
+            try:
+                logger.debug(f"Created temporary file for metadata transfer: {temp_path}")
+                
+                # Copy the best image to the temporary file
+                shutil.copy2(best_path, temp_path) 
+                
+                # Apply metadata to the temporary file
+                logger.debug(f"Applying metadata to temporary file: {temp_path}")
+                success = ImageMetadata.apply_metadata(temp_path, metadata)
+                
+                if not success:
+                    logger.warning(f"Failed to apply metadata to {temp_path}")
+                    return False
+                
+                # Create a backup of the original file
+                backup_path = f"{best_path}.bak"
+                backup_created = False
+                
+                try:
+                    shutil.copy2(best_path, backup_path)
+                    backup_created = True
+                    logger.debug(f"Created backup of original file: {backup_path}")
+                    
+                    # Replace the original best image with the one that has metadata
+                    os.replace(temp_path, best_path)
+                    logger.info(f"Successfully preserved metadata from {original_path} to {best_path}")
+                    
+                    # Clean up the backup file
+                    try:
+                        os.remove(backup_path)
+                        logger.debug(f"Cleaned up backup file: {backup_path}")
+                    except Exception as backup_cleanup_error:
+                        logger.warning(f"Failed to clean up backup file {backup_path}: {backup_cleanup_error}")
+                        
+                    return True
+                    
+                except Exception as replace_error:
+                    error_msg = f"Error during file replacement: {str(replace_error)}"
+                    logger.error(error_msg, exc_info=True)
+                    
+                    # Restore from backup if available
+                    if backup_created and os.path.exists(backup_path):
+                        try:
+                            os.replace(backup_path, best_path)
+                            logger.info("Restored original file from backup after error")
+                        except Exception as restore_error:
+                            logger.error(f"Failed to restore from backup: {restore_error}")
+                            # At this point, we have both the original and backup, which is better than data loss
+                    
+                    return False
+                
+            except Exception as e:
+                logger.error(f"Error during metadata preservation: {str(e)}", exc_info=True)
+                return False
+                
+            finally:
+                # Always clean up the temporary file if it still exists
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                        logger.debug(f"Cleaned up temporary file: {temp_path}")
+                    except Exception as cleanup_error:
+                        logger.error(f"Failed to clean up temporary file {temp_path}: {cleanup_error}")
+                
+        except Exception as e:
+            logger.error(f"Error in metadata preservation for {original_path} -> {best_path}: {str(e)}", exc_info=True)
+            return False
     
     @pyqtSlot()
     def run(self) -> None:
