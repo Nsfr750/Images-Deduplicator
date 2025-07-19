@@ -1,0 +1,19 @@
+{
+  "code_signing": {
+    "windows": {
+      "cert_path": "path/to/certificate.pfx",
+      "cert_password": "your_password",
+      "timestamp_url": "http://timestamp.digicert.com"
+    },
+    "darwin": {
+      "identity": "Developer ID Application: Nsfr750",
+      "keychain": "path/to/keychain"
+    },
+    "linux": {
+      "gpg_key": "your-gpg-key-id"
+    }
+  },
+  "author": "Nsfr750",
+  "email": "nsfr750@yandex.com",
+  "version": "1.6.0"
+}

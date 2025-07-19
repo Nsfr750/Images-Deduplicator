@@ -119,7 +119,5 @@ plan.md
 comp.bat
 docs/HELP-ITA.exe
 docs/HELP-ENG.exe
-build_installers.py
-images-deduplicator.spec
-Images-Deduplicator-Windows-1.6.0.spec
-Images-Deduplicator-Linux-1.6.0.spec
+
+install-scripts/Images Deduplicator Setup.txt
