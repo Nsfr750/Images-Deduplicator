@@ -37,6 +37,7 @@
 - [x] Add logging system with log viewer
 - [x] Implement undo/redo functionality for file operations
 - [x] Migrate from Pillow to Wand for image processing
+- [x] Create installers for windows platforms
 
 ## Performance
 - [x] Optimize PyQt6 UI responsiveness
@@ -66,10 +67,6 @@
 - [x] Implement undo functionality for file operations
 - [x] Add confirmation dialogs for destructive actions
 
-## Localization
-- [ ] Complete translations for all PyQt6 dialogs
-- [ ] Add language auto-detection
-
 ## Documentation
 - [x] Update README with PyQt6 information
 - [x] Update CHANGELOG with recent changes
@@ -78,7 +75,6 @@
 - [x] Add comprehensive API documentation
 - [x] Improve installation and setup instructions
 - [x] Add troubleshooting section
-- [ ] Add more code examples
 - [ ] Document the image comparison algorithm
 - [ ] Add user guide
 - [ ] Add developer documentation
@@ -91,7 +87,6 @@
 - [ ] Implement automated UI testing
 
 ## Future Enhancements
-- [x] Create installers for different platforms
 - [ ] Add machine learning for better duplicate detection
 - [ ] Implement machine learning for better duplicate detection
 - [ ] Add support for more image formats
