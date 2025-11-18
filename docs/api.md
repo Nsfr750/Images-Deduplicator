@@ -132,6 +132,7 @@ Handles language switching and string translations.
 ## Utilities
 
 ### Logging
+
 ```python
 # script/logger.py
 ```
@@ -144,6 +145,7 @@ Centralized logging functionality.
 - Log rotation
 
 ### Configuration
+
 ```python
 # script/config.py
 ```

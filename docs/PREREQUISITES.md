@@ -14,12 +14,14 @@ Before you can run or contribute to the Images-Deduplicator project, you'll need
 ## Development Environment Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/Nsfr750/Images-Deduplicator.git
    cd Images-Deduplicator
    ```
 
 2. **Create a virtual environment** (recommended):
+
    ```bash
    python -m venv venv
    # On Windows:
@@ -29,6 +31,7 @@ Before you can run or contribute to the Images-Deduplicator project, you'll need
    ```
 
 3. **Install Python dependencies**:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -38,6 +41,7 @@ Before you can run or contribute to the Images-Deduplicator project, you'll need
 The project uses the following key Python packages (automatically installed via requirements.txt):
 
 ### Core Dependencies
+
 - **Wand** (>=0.6.11) - Image processing with ImageMagick
   - Replaces Pillow for better format support and performance
   - Requires ImageMagick to be installed on the system
@@ -53,6 +57,7 @@ The project uses the following key Python packages (automatically installed via 
   - Used for update checking and online features
 
 ### System Utilities
+
 - **psutil** (>=5.9.0) - System information and process management
 - **send2trash** (>=1.8.0) - Safe file operations with trash/recycle bin support
 - **pywin32** (>=306) - Windows API integration (Windows only)
@@ -66,27 +71,36 @@ Wand requires ImageMagick to be installed on your system. Follow these platform-
 ### Windows Installation
 
 1. **Download the installer**:
+
    - Visit the [ImageMagick download page](https://imagemagick.org/script/download.php#windows)
+   
    - Download the latest stable release (e.g., `ImageMagick-7.x.x-Q16-HDRI-x64-dll.exe`)
 
 2. **Run the installer**:
+
    - Double-click the downloaded installer
+
    - **Important**: Check these options during installation:
      - ☑ Add application directory to your system path
      - ☑ Install development headers and libraries for C and C++
      - ☑ Install legacy utilities (e.g., convert, identify)
+
    - Complete the installation with default settings
 
 3. **Verify installation**:
+
    Open a new Command Prompt and run:
+
    ```
    magick --version
    ```
+
    You should see version information if installed correctly.
 
 ### macOS Installation
 
 #### Using Homebrew (recommended):
+
 ```bash
 # Install Homebrew if not already installed
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -96,6 +110,7 @@ brew install imagemagick
 ```
 
 #### Verify installation:
+
 ```bash
 magick --version
 ```
@@ -103,6 +118,7 @@ magick --version
 ### Linux Installation
 
 #### Debian/Ubuntu:
+
 ```bash
 # Update package lists
 sudo apt-get update
@@ -115,6 +131,7 @@ sudo apt-get install -y \
 ```
 
 #### Fedora/RHEL/CentOS:
+
 ```bash
 sudo dnf install -y ImageMagick ImageMagick-devel
 # or
@@ -176,12 +193,15 @@ pip install -r requirements-dev.txt
 ### Common Issues
 
 1. **Wand can't find ImageMagick**
+
    - Ensure ImageMagick is installed and in your system PATH
    - On Windows, restart your terminal/IDE after installation
    - Verify with `magick --version` in your terminal
 
 2. **Permission issues on Linux/macOS**
+
    - You may need to add your user to the appropriate groups:
+
      ```bash
      # On Linux
      sudo usermod -a -G magick $USER
@@ -189,9 +209,11 @@ pip install -r requirements-dev.txt
      ```
 
 3. **Memory issues with large images**
+
    - Increase ImageMagick's resource limits in `policy.xml`
    - Location: `/etc/ImageMagick-7/policy.xml` (Linux/macOS) or `C:\Program Files\ImageMagick-7\policy.xml` (Windows)
    - Adjust these values as needed:
+
      ```xml
      <policy domain="resource" name="memory" value="4GiB"/>
      <policy domain="resource" name="width" value="32KP"/>
@@ -199,6 +221,7 @@ pip install -r requirements-dev.txt
      ```
 
 4. **Unsupported image formats**
+
    - Install additional codecs if needed:
      - **Linux**: `sudo apt-get install libmagick++-dev`
      - **macOS**: `brew install libheif libraw`
@@ -209,11 +232,13 @@ pip install -r requirements-dev.txt
 To build the documentation locally:
 
 1. Install documentation dependencies:
+
    ```bash
    pip install -r docs/requirements.txt
    ```
 
 2. Build the documentation:
+
    ```bash
    cd docs
    make html
@@ -226,8 +251,10 @@ The documentation will be available in `docs/_build/html/index.html`
 ### Common Issues
 
 1. **Missing Dependencies**:
+
    - Ensure all required system libraries are installed
    - On Linux, you might need to install additional packages:
+
      ```bash
      # For Debian/Ubuntu
      sudo apt-get install python3-dev python3-tk
@@ -236,11 +263,14 @@ The documentation will be available in `docs/_build/html/index.html`
      ```
 
 2. **Performance Issues**:
+
    - For large image collections, consider increasing Python's memory limits
    - Close other memory-intensive applications while running the deduplicator
 
 3. **GUI Scaling Issues**:
+
    - On high-DPI displays, you might need to set the appropriate environment variable:
+
      ```bash
      export QT_SCALE_FACTOR=1.5  # Adjust the scale factor as needed
      ```
@@ -248,6 +278,9 @@ The documentation will be available in `docs/_build/html/index.html`
 ## Getting Help
 
 If you encounter any issues setting up the development environment, please:
+
 1. Check the [GitHub Issues](https://github.com/Nsfr750/Images-Deduplicator/issues) for similar problems
+
 2. If your issue isn't reported, please open a new issue with detailed information about your problem
+
 3. Join our [Discord server](https://discord.gg/BvvkUEP9) for community support
