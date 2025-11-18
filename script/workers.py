@@ -7,10 +7,114 @@ import hashlib
 import json
 import shutil
 from pathlib import Path
-from typing import Dict, List, Tuple, Optional, Set, Any
+from typing import Dict, List, Tuple, Optional, Set, Any, Union
 from datetime import datetime, timedelta
 import tempfile
 import io
+import pickle
+from dataclasses import dataclass, field
+from enum import Enum, auto
+
+class ProgressState(Enum):
+    NOT_STARTED = auto()
+    SCANNING = auto()
+    PROCESSING = auto()
+    COMPLETED = auto()
+    PAUSED = auto()
+    ERROR = auto()
+
+@dataclass
+class ProgressData:
+    """Class to hold progress data for saving and resuming operations."""
+    state: ProgressState = ProgressState.NOT_STARTED
+    folder: str = ""
+    recursive: bool = True
+    processed_files: List[str] = field(default_factory=list)
+    remaining_files: List[str] = field(default_factory=list)
+    duplicates: Dict[str, List[str]] = field(default_factory=dict)
+    current_batch: List[str] = field(default_factory=list)
+    total_files: int = 0
+    processed_count: int = 0
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    error_message: Optional[str] = None
+
+class ProgressManager:
+    """Manages saving and loading progress for long-running operations."""
+    
+    def __init__(self, progress_file: Union[str, Path] = "progress.bin"):
+        """Initialize the progress manager.
+        
+        Args:
+            progress_file: Path to the file where progress will be saved
+        """
+        self.progress_file = Path(progress_file)
+        self.progress_dir = self.progress_file.parent
+        self.progress_dir.mkdir(parents=True, exist_ok=True)
+    
+    def save_progress(self, progress_data: ProgressData) -> bool:
+        """Save the current progress to disk.
+        
+        Args:
+            progress_data: The progress data to save
+            
+        Returns:
+            bool: True if save was successful, False otherwise
+        """
+        try:
+            # Create a temporary file first to ensure atomic write
+            temp_file = self.progress_file.with_suffix('.tmp')
+            with open(temp_file, 'wb') as f:
+                pickle.dump(progress_data, f)
+            
+            # On Windows, we need to remove the destination file first if it exists
+            if self.progress_file.exists():
+                self.progress_file.unlink()
+                
+            # Rename the temp file to the actual file
+            temp_file.rename(self.progress_file)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error saving progress: {e}")
+            # Clean up temp file if it exists
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except:
+                    pass
+            return False
+    
+    def load_progress(self) -> Optional[ProgressData]:
+        """Load the saved progress from disk.
+        
+        Returns:
+            Optional[ProgressData]: The loaded progress data, or None if loading failed
+        """
+        try:
+            if not self.progress_file.exists():
+                return None
+                
+            with open(self.progress_file, 'rb') as f:
+                return pickle.load(f)
+                
+        except Exception as e:
+            logger.error(f"Error loading progress: {e}")
+            return None
+    
+    def clear_progress(self) -> bool:
+        """Clear the saved progress.
+        
+        Returns:
+            bool: True if deletion was successful, False otherwise
+        """
+        try:
+            if self.progress_file.exists():
+                self.progress_file.unlink()
+            return True
+        except Exception as e:
+            logger.error(f"Error clearing progress: {e}")
+            return False
 
 from wand.image import Image as WandImage
 import imagehash
@@ -29,8 +133,14 @@ SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp',
 class WorkerSignals(QObject):
     """Defines the signals available from a running worker thread."""
     progress = pyqtSignal(int)  # Progress percentage
+    progress_details = pyqtSignal(int, int, str)  # current, total, status
     finished = pyqtSignal(str, dict)  # message, duplicates
     error = pyqtSignal(str)  # Error message
+    paused = pyqtSignal()  # Emitted when processing is paused
+    resumed = pyqtSignal()  # Emitted when processing is resumed
+    progress_saved = pyqtSignal(str)  # Path to saved progress file
+    progress_loaded = pyqtSignal(bool)  # Whether progress was successfully loaded
+    state_changed = pyqtSignal(str)  # Current state as string
 
 class HashCache:
     """Handles caching of image hashes to disk for faster subsequent runs."""
@@ -229,7 +339,8 @@ class ImageComparisonWorker(QRunnable):
     def __init__(self, folder: str, recursive: bool = True, 
                  similarity_threshold: int = 85,
                  keep_better_quality: bool = True,
-                 preserve_metadata: bool = True):
+                 preserve_metadata: bool = True,
+                 batch_size: int = 50):
         """Initialize the image comparison worker.
         
         Args:
@@ -238,6 +349,7 @@ class ImageComparisonWorker(QRunnable):
             similarity_threshold: Threshold for considering images similar (0-100)
             keep_better_quality: Whether to keep the higher quality image from duplicates
             preserve_metadata: Whether to preserve metadata when keeping the best quality image
+            batch_size: Number of images to process in each batch (default: 50)
         """
         super().__init__()
         self.folder = os.path.abspath(folder)
@@ -245,12 +357,17 @@ class ImageComparisonWorker(QRunnable):
         self.similarity_threshold = similarity_threshold
         self.keep_better_quality = keep_better_quality
         self.preserve_metadata = preserve_metadata
+        self.batch_size = max(1, min(batch_size, 200))  # Ensure batch size is between 1 and 200
         self.signals = WorkerSignals()
         self.is_running = True
         self._stop_requested = False
         
         # Initialize hash cache
         self.hash_cache = HashCache()
+        
+        # Track processed files and batches
+        self._processed_count = 0
+        self._total_files = 0
     
     def stop(self) -> None:
         """Request the worker to stop processing."""
@@ -286,6 +403,27 @@ class ImageComparisonWorker(QRunnable):
             return []
         
         return image_files
+        
+    def _group_files_by_size(self, file_paths: List[str]) -> Dict[int, List[str]]:
+        """Group files by their size in bytes.
+        
+        Args:
+            file_paths: List of file paths to group
+            
+        Returns:
+            Dictionary mapping file sizes to lists of file paths with that size
+        """
+        size_groups = {}
+        for file_path in file_paths:
+            try:
+                size = os.path.getsize(file_path)
+                if size in size_groups:
+                    size_groups[size].append(file_path)
+                else:
+                    size_groups[size] = [file_path]
+            except OSError as e:
+                logger.warning(f"Could not get size for {file_path}: {e}")
+        return size_groups
     
     def _get_image_hashes(self, img_path: str) -> Tuple[str, str]:
         """Get the perceptual and average hashes for an image.
@@ -361,12 +499,20 @@ class ImageComparisonWorker(QRunnable):
             Dictionary mapping combined hashes to lists of matching file paths
         """
         chunk_hashes = {}
+        processed = 0
+        total = len(chunk)
         
         for img_path in chunk:
             if self._stop_requested:
                 return {}
                 
             try:
+                # Update progress for this chunk
+                processed += 1
+                if processed % 10 == 0:  # Update progress every 10 images
+                    progress = 10 + int(80 * (self._processed_count + processed) / self._total_files)
+                    self.signals.progress.emit(min(progress, 90))
+                
                 # Get hashes for the image
                 phash, ahash = self._get_image_hashes(img_path)
                 
@@ -391,22 +537,27 @@ class ImageComparisonWorker(QRunnable):
         
         for _, file_paths in hashes.items():
             if len(file_paths) > 1:  # Only process groups with duplicates
-                if self.keep_better_quality:
-                    # Sort by quality (resolution first, then file size)
-                    file_paths.sort(
-                        key=lambda x: self._get_image_quality_score(x),
-                        reverse=True
-                    )
-                    
-                    # Preserve metadata from the best image if needed
-                    if self.preserve_metadata and len(file_paths) > 1:
-                        best_image = file_paths[0]
-                        for duplicate in file_paths[1:]:
-                            self._preserve_metadata_for_best_image(duplicate, best_image)
+                # First, group by file size for additional validation
+                size_groups = self._group_files_by_size(file_paths)
                 
-                # The first item is considered the original (best quality if enabled)
-                original = file_paths[0]
-                result[original] = file_paths[1:]
+                for size, same_size_files in size_groups.items():
+                    if len(same_size_files) > 1:  # Only process groups with same size
+                        if self.keep_better_quality:
+                            # Sort by quality (resolution first, then file size)
+                            same_size_files.sort(
+                                key=lambda x: self._get_image_quality_score(x),
+                                reverse=True
+                            )
+                            
+                            # Preserve metadata from the best image if needed
+                            if self.preserve_metadata and len(same_size_files) > 1:
+                                best_image = same_size_files[0]
+                                for duplicate in same_size_files[1:]:
+                                    self._preserve_metadata_for_best_image(duplicate, best_image)
+                        
+                        # The first item is considered the original (best quality if enabled)
+                        original = same_size_files[0]
+                        result[original] = same_size_files[1:]
                 
         return result
     
@@ -448,6 +599,25 @@ class ImageComparisonWorker(QRunnable):
                 
             total_files = len(image_files)
             self.signals.progress.emit(5)  # Initial progress
+            
+            # First, group files by size to find potential duplicates quickly
+            size_groups = self._group_files_by_size(image_files)
+            potential_duplicates = []
+            
+            # Only process groups with more than one file of the same size
+            for size, files in size_groups.items():
+                if len(files) > 1:
+                    potential_duplicates.extend(files)
+            
+            if not potential_duplicates:
+                self.signals.finished.emit("No potential duplicates found (based on file size).", {})
+                return
+                
+            # Update progress
+            self.signals.progress.emit(10)
+            
+            # Now process only the potential duplicates with image hashing
+            image_files = potential_duplicates
             
             logger.info(f"Found {total_files} image files to process")
             

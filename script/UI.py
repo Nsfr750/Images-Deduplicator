@@ -479,51 +479,55 @@ class UI(QMainWindow):
             if not all([original_path, duplicate_path]):
                 return
                 
-            # Create preview dialog if it doesn't exist
-            if not hasattr(self, 'preview_dialog'):
+            # Create or update preview dialog
+            if hasattr(self, 'preview_dialog'):
+                # Clear existing layout if it exists
+                if self.preview_dialog.layout():
+                    # Create a temporary widget to clear the layout
+                    temp_widget = QWidget()
+                    temp_widget.setLayout(self.preview_dialog.layout())
+                    temp_widget.deleteLater()
+            else:
                 self.preview_dialog = QDialog(self)
                 self.preview_dialog.setWindowTitle(self.lang_manager.translate('image_preview'))
                 self.preview_dialog.setModal(False)
-                
-                layout = QVBoxLayout()
-                
-                # Original image preview
-                original_group = QGroupBox(self.lang_manager.translate('original_image'))
-                original_layout = QVBoxLayout()
-                self.original_preview = QLabel()
-                self.original_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.original_preview.setMinimumSize(400, 300)
-                self.original_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
-                self.original_path_label = QLabel()
-                self.original_path_label.setWordWrap(True)
-                original_layout.addWidget(self.original_preview, 1)
-                original_layout.addWidget(self.original_path_label)
-                original_group.setLayout(original_layout)
-                
-                # Duplicate image preview
-                duplicate_group = QGroupBox(self.lang_manager.translate('duplicate_image'))
-                duplicate_layout = QVBoxLayout()
-                self.duplicate_preview = QLabel()
-                self.duplicate_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.duplicate_preview.setMinimumSize(400, 300)
-                self.duplicate_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
-                self.duplicate_path_label = QLabel()
-                self.duplicate_path_label.setWordWrap(True)
-                duplicate_layout.addWidget(self.duplicate_preview, 1)
-                duplicate_layout.addWidget(self.duplicate_path_label)
-                duplicate_group.setLayout(duplicate_layout)
-                
-                # Add to main layout
-                layout.addWidget(original_group, 1)
-                layout.addWidget(duplicate_group, 1)
-                
-                # Close button
-                button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-                button_box.rejected.connect(self.preview_dialog.reject)
-                layout.addWidget(button_box)
-                
-                self.preview_dialog.setLayout(layout)
                 self.preview_dialog.resize(900, 800)
+            
+            # Create main layout and set it on the dialog
+            main_layout = QVBoxLayout(self.preview_dialog)
+            
+            # Original image preview
+            original_group = QGroupBox(self.lang_manager.translate('original_image'))
+            original_layout = QVBoxLayout(original_group)  # Set layout directly on the group
+            self.original_preview = QLabel()
+            self.original_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.original_preview.setMinimumSize(400, 300)
+            self.original_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
+            self.original_path_label = QLabel()
+            self.original_path_label.setWordWrap(True)
+            original_layout.addWidget(self.original_preview, 1)
+            original_layout.addWidget(self.original_path_label)
+            
+            # Duplicate image preview
+            duplicate_group = QGroupBox(self.lang_manager.translate('duplicate_image'))
+            duplicate_layout = QVBoxLayout(duplicate_group)  # Set layout directly on the group
+            self.duplicate_preview = QLabel()
+            self.duplicate_preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.duplicate_preview.setMinimumSize(400, 300)
+            self.duplicate_preview.setStyleSheet("background-color: #2d2d2d; border: 1px solid #3a3a3a;")
+            self.duplicate_path_label = QLabel()
+            self.duplicate_path_label.setWordWrap(True)
+            duplicate_layout.addWidget(self.duplicate_preview, 1)
+            duplicate_layout.addWidget(self.duplicate_path_label)
+            
+            # Add to main layout
+            main_layout.addWidget(original_group, 1)
+            main_layout.addWidget(duplicate_group, 1)
+            
+            # Close button
+            button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            button_box.rejected.connect(self.preview_dialog.reject)
+            main_layout.addWidget(button_box)
             
             # Show the dialog
             self.preview_dialog.show()

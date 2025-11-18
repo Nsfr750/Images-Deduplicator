@@ -1,0 +1,5 @@
+# Images Deduplicator Setup
+pip install -r requirements.txt
+pip install pyinstaller
+python build_simple.py
+makensis installer.nsi

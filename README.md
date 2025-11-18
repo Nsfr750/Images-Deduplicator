@@ -10,9 +10,20 @@
 
 A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Built with PyQt6 and Wand (ImageMagick) for robust image processing across multiple formats.
 
-## Latest Improvements (v1.6.0)
+## Latest Improvements (v1.7.0)
 
-### 🚀 New Features
+### 🐛 Bug Fixes
+- **PyQt6 Signal Handling**
+  - Fixed signal import error in workers.py
+  - Updated WorkerSignals class to use pyqtSignal consistently
+  - Improved thread safety in signal handling
+
+### 🔧 Maintenance
+- Updated project dependencies
+- Improved code documentation
+- Enhanced error handling
+
+### 🚀 New in v1.6.0
 - **Complete Migration to Wand**
   - Replaced Pillow with Wand (ImageMagick) for enhanced image processing
   - Added native support for additional formats: PSD, GIF, BMP, and more

@@ -120,3 +120,5 @@ comp.bat
 docs/HELP-ITA.exe
 docs/HELP-ENG.exe
 install-scripts/
+.windsurf/rules
+/logs

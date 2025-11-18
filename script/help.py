@@ -786,8 +786,43 @@ class HelpDialog(QDialog):
         quality_text.setHtml(quality_content)
         quality_layout.addWidget(quality_text)
         
+        # Version 1.7.0 Improvements section
+        version_group = QGroupBox("Version 1.7.0 Improvements")
+        version_layout = QVBoxLayout(version_group)
+        
+        version_text = QTextBrowser()
+        version_text.setReadOnly(True)
+        version_text.setStyleSheet("""
+            font-family: Arial;
+            font-size: 12pt;
+            background: #1a1a1a;
+            border: 1px solid #333333;
+            border-radius: 8px;
+            padding: 15px;
+            color: #e0e0e0;
+        """)
+        
+        version_content = """
+        <h3>PyQt6 Signal Handling Improvements</h3>
+        <ul style="list-style-type: disc; margin-left: 20px;">
+            <li style="margin-bottom: 10px;">Fixed signal import error in workers.py</li>
+            <li style="margin-bottom: 10px;">Updated WorkerSignals class to use pyqtSignal consistently</li>
+            <li style="margin-bottom: 10px;">Improved thread safety in signal handling</li>
+        </ul>
+        <h3>Maintenance Updates</h3>
+        <ul style="list-style-type: disc; margin-left: 20px;">
+            <li style="margin-bottom: 10px;">Updated project dependencies</li>
+            <li style="margin-bottom: 10px;">Improved code documentation</li>
+            <li style="margin-bottom: 10px;">Enhanced error handling</li>
+        </ul>
+        """
+        
+        version_text.setHtml(version_content)
+        version_layout.addWidget(version_text)
+        
         # Add all groups to content layout
         content_layout.addWidget(title)
+        content_layout.addWidget(version_group)
         content_layout.addWidget(image_group)
         content_layout.addWidget(batch_group)
         content_layout.addWidget(quality_group)

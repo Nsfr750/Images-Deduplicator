@@ -7,7 +7,7 @@ for the Images Deduplicator project.
 
 # Version components
 MAJOR_VERSION = 1
-MINOR_VERSION = 6  # Bumped for Wand migration
+MINOR_VERSION = 7  # Update for new features and improvements
 PATCH_VERSION = 0
 
 # Additional version qualifiers

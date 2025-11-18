@@ -1,5 +1,12 @@
 # TO DO List
 
+## Version 1.7.0 (2025-11-18)
+- [x] Fixed PyQt6 signal handling in workers.py
+- [x] Updated WorkerSignals to use pyqtSignal consistently
+- [x] Improved thread safety in signal handling
+- [x] Updated project documentation
+- [x] Bumped version to 1.7.0
+
 ## High Priority
 - [ ] Add file size comparison as an additional duplicate detection method
 - [ ] Implement batch processing for large image collections

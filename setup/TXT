@@ -1,0 +1,31 @@
+V. 1.7.0
+--------------------------
+python.exe -m venv --clear X:\GitHub\Image-Deduplicator\venv
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+py -m venv venv
+.\venv\Scripts\activate
+py -m pip install -r requirements.txt
+py -m pip install --upgrade pip
+python main.py
+python setup/comp.py --clean
+--------------------------
+py -m pip install -e .
+py -m pip install -e ".[tpm,homomorphic,dev]"
+py -m pip install -e ".[postquantum]" --upgrade
+python setup/setup.py per l'uso con questa app
+--------------------------
+aggiorna setup/comp.py per l'uso con questa app
+aggiorna setup/installer.nsi per l'uso con questa app
+aggiorna setup/code_signing.json e setup/code_signing.py per l'uso con questa app
+--------------------------
+aggiorna script/version.py (sezioni versione, changelog e history), requirements.txt, README.md, CHANGELOG.md, TO_DO.md per la versione 1.7.0
+aggiorna docs/ROADMAP.md, docs/STRUCTURE.md, docs/SECURITY.md docs/API.md per la versione 1.7.0
+aggiorna script/help.py con le nuove informazioni della versione 1.7.0
+--------------------------
+usa assets/app-icon.png come icona dell'app
+--------------------------
+applica le modifiche
+
+continua
+
+retry

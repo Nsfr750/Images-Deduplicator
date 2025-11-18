@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 1.7.0 (2025-11-18)
+
+### 🐛 Fixed
+
+- **PyQt6 Signal Handling**
+  - Fixed signal import error in workers.py
+  - Updated WorkerSignals class to use pyqtSignal consistently
+  - Improved thread safety in signal handling
+
+### 🔧 Maintenance
+
+- Updated project dependencies
+- Improved code documentation
+- Enhanced error handling
+
 ## Version 1.6.0 (2025-07-18)
 
 ### 🚀 Added
