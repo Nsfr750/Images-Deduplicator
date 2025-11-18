@@ -1,5 +1,6 @@
 # Project Structure
 
+```text
 project-root/ 
 │       ├── script/ # Main application code 
 │       ├── init.py 
@@ -36,3 +37,5 @@ project-root/
 │       ├── .gitignore 
 │       ├── README.md 
 │       └── requirements.txt
+
+```
