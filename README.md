@@ -170,7 +170,6 @@ Licensed under GPLv3 - see the [LICENSE](LICENSE) file for details.
 If you find this project useful, consider supporting its development:
 
 - [GitHub Sponsors](https://github.com/sponsors/Nsfr750)
-- [Patreon](https://www.patreon.com/Nsfr750)
 - [PayPal](https://paypal.me/3dmega)
 
 ## Author
