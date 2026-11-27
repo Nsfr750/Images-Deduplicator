@@ -10,50 +10,45 @@
 
 A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Built with PyQt6 and Wand (ImageMagick) for robust image processing across multiple formats.
 
-## Latest Improvements (v1.7.0)
+## Latest Improvements (v1.8.0)
+
+### 🚀 New Features
+
+- **File Size Comparison**
+  - Optional, additional duplicate detection method with a UI toggle
+  - Size-based pre-filtering skips most hashing work on large collections
+
+- **Batch Processing**
+  - Image collections processed in sequential batches for lower memory usage
+
+- **Progress Saving & Resuming**
+  - Long scans checkpoint progress and resume automatically after interruption
+
+- **Performance Metrics**
+  - Per-run metrics: file counts, cache hits/misses, timings and throughput
+
+- **Improved Error Handling**
+  - Clear messages for offline network drives, permissions and missing folders
+
+- **Tests & Documentation**
+  - Comprehensive Wand image processing test suite (49 tests)
+  - New `docs/WAND.md` covering Wand features and limitations
 
 ### 🐛 Bug Fixes
-- **PyQt6 Signal Handling**
-  - Fixed signal import error in workers.py
-  - Updated WorkerSignals class to use pyqtSignal consistently
-  - Improved thread safety in signal handling
 
-### 🔧 Maintenance
-- Updated project dependencies
-- Improved code documentation
-- Enhanced error handling
-
-### 🚀 New in v1.6.0
-- **Complete Migration to Wand**
-  - Replaced Pillow with Wand (ImageMagick) for enhanced image processing
-  - Added native support for additional formats: PSD, GIF, BMP, and more
-  - Improved metadata extraction and preservation
-  - Better handling of large and complex image files
-
-### 🛠️ Stability & Performance
-- **Thread Safety**
-  - Fixed QThread destruction warnings
-  - Improved update checker reliability
-  - Better resource cleanup on application exit
-  - Optimized memory management for large image collections
-
-### 📚 Documentation
-- **Comprehensive Guides**
-  - Complete API documentation
-  - Step-by-step installation for all platforms
-  - Troubleshooting common issues
-  - Migration guide from Pillow to Wand
-
-### 🌍 Localization
-- **Improved Language Support**
-  - Fixed syntax errors in translations
-  - Better handling of special characters
-  - More consistent UI text across languages
+- **Metadata Extraction**
+  - Fixed EXIF entries never being collected during scans
+- **UI Stability**
+  - Fixed a crash on starting comparison (undefined status label)
 
 ## Features
 
 - **Modern UI** with dark theme and improved usability
 - **Fast Duplicate Detection** using perceptual hashing
+- **File Size Comparison** as an optional, additional detection method
+- **Batch Processing** for large image collections
+- **Progress Saving & Resuming** for long-running scans
+- **Performance Metrics** for every comparison run
 - **Multiple Language Support** with automatic detection
 - **Smart Preview** with aspect ratio preservation
 - **Undo Support** for all file operations

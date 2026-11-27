@@ -238,6 +238,8 @@ TRANSLATIONS = {
         'file_handling': 'File Handling',
         'preserve_metadata': 'Preserve metadata when deleting',
         'preserve_metadata_tooltip': 'Preserve metadata (EXIF, etc.) when deleting duplicate files',
+        'use_file_size': 'Compare file sizes',
+        'use_file_size_tooltip': 'Use file size comparison as an additional duplicate detection method',
         'save': 'Save',
         'cancel': 'Cancel',
         
@@ -515,6 +517,8 @@ TRANSLATIONS = {
         'file_handling': 'Gestione File',
         'preserve_metadata': 'Mantieni i metadati durante l\'eliminazione',
         'preserve_metadata_tooltip': 'Mantiene i metadati (EXIF, ecc.) durante l\'eliminazione dei file duplicati',
+        'use_file_size': 'Confronta dimensioni file',
+        'use_file_size_tooltip': 'Usa il confronto delle dimensioni dei file come metodo aggiuntivo di rilevamento duplicati',
         'save': 'Salva',
         'cancel': 'Annulla',
         

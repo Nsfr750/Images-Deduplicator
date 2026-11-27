@@ -11,6 +11,20 @@ from pathlib import Path
 import psutil
 import subprocess
 
+def get_wand_version_info():
+    """Get Wand and ImageMagick versions.
+
+    Returns:
+        Tuple of (wand_version, imagemagick_version) as strings,
+        or (None, None) if Wand/ImageMagick is not available.
+    """
+    try:
+        from wand.version import VERSION as wand_version, MAGICK_VERSION as magick_version
+        return str(wand_version), str(magick_version)
+    except Exception:
+        return None, None
+
+
 class AboutDialog(QDialog):
     def __init__(self, parent=None, language_manager=None):
         super().__init__(parent)
@@ -210,7 +224,12 @@ class AboutDialog(QDialog):
             ram = psutil.virtual_memory()
             total_ram = ram.total / (1024 ** 3)  # Convert to GB
             available_ram = ram.available / (1024 ** 3)  # Convert to GB
-            
+
+            # Get Wand / ImageMagick versions
+            wand_version, magick_version = get_wand_version_info()
+            wand_version = wand_version or self.translate("not_installed")
+            magick_version = magick_version or self.translate("not_installed")
+
             return (
                 f"<table style='width:100%; color:#ffffff;'>"
                 f"<tr><td style='width:40%;'>{self.translate('operating_system')}:</td>"
@@ -221,6 +240,8 @@ class AboutDialog(QDialog):
                 f"<tr><td>Python:</td><td>{python_version}</td></tr>"
                 f"<tr><td>Qt:</td><td>{QT_VERSION_STR}</td></tr>"
                 f"<tr><td>PyQt:</td><td>{PYQT_VERSION_STR}</td></tr>"
+                f"<tr><td>Wand:</td><td>{wand_version}</td></tr>"
+                f"<tr><td>ImageMagick:</td><td>{magick_version}</td></tr>"
                 f"</table>"
             )
         except Exception as e:

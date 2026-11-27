@@ -13,11 +13,14 @@ Images-Deduplicator/
 │   └── settings.json               # User settings and preferences
 │
 ├── docs/                           # Documentation
+│   ├── api.md                      # API reference
 │   ├── CHANGELOG.md                # Project changelog
+│   ├── PREREQUISITES.md            # Development environment setup
 │   ├── README.md                   # Main documentation
 │   ├── ROADMAP.md                  # Development roadmap
 │   ├── SECURITY.md                 # Security policy
 │   ├── STRUCTURE.md                # This file (project structure)
+│   ├── WAND.md                     # Wand/ImageMagick features and limitations
 │   └── IMAGES/                     # Documentation images and screenshots
 │
 ├── logs/                           # Application logs
@@ -49,8 +52,10 @@ Images-Deduplicator/
 │
 ├── tests/                          # Test files
 │   ├── __init__.py
-│   ├── test_ui.py                  # UI component tests
-│   └── test_workers.py             # Worker thread tests
+│   ├── conftest.py                 # Pytest configuration
+│   ├── test_file_operations.py     # File operations and undo tests
+│   ├── test_update_preview.py      # Update preview tests
+│   └── test_workers_wand.py        # Wand image processing tests
 │
 ├── .gitignore                      # Git ignore rules
 ├── README.md                       # Project README

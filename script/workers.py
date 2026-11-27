@@ -3,9 +3,11 @@ Worker classes for background tasks in Image Deduplicator.
 """
 import os
 import concurrent.futures
+import errno
 import hashlib
 import json
 import shutil
+import time
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Set, Any, Union
 from datetime import datetime, timedelta
@@ -33,6 +35,7 @@ class ProgressData:
     remaining_files: List[str] = field(default_factory=list)
     duplicates: Dict[str, List[str]] = field(default_factory=dict)
     current_batch: List[str] = field(default_factory=list)
+    hashes: Dict[str, List[str]] = field(default_factory=dict)
     total_files: int = 0
     processed_count: int = 0
     start_time: Optional[datetime] = None
@@ -116,6 +119,41 @@ class ProgressManager:
             logger.error(f"Error clearing progress: {e}")
             return False
 
+@dataclass
+class ComparisonMetrics:
+    """Performance metrics collected during an image comparison run."""
+    total_files: int = 0
+    size_filtered_files: int = 0
+    hashed_files: int = 0
+    cache_hits: int = 0
+    cache_misses: int = 0
+    errors: int = 0
+    inaccessible_dirs: int = 0
+    scan_time_seconds: float = 0.0
+    hash_time_seconds: float = 0.0
+    total_time_seconds: float = 0.0
+
+    @property
+    def files_per_second(self) -> float:
+        """Throughput in files per second over the hashing stage."""
+        return self.hashed_files / self.hash_time_seconds if self.hash_time_seconds > 0 else 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Return the metrics as a plain dictionary."""
+        return {
+            'total_files': self.total_files,
+            'size_filtered_files': self.size_filtered_files,
+            'hashed_files': self.hashed_files,
+            'cache_hits': self.cache_hits,
+            'cache_misses': self.cache_misses,
+            'errors': self.errors,
+            'inaccessible_dirs': self.inaccessible_dirs,
+            'scan_time_seconds': round(self.scan_time_seconds, 3),
+            'hash_time_seconds': round(self.hash_time_seconds, 3),
+            'total_time_seconds': round(self.total_time_seconds, 3),
+            'files_per_second': round(self.files_per_second, 2),
+        }
+
 from wand.image import Image as WandImage
 import imagehash
 from PyQt6.QtCore import QRunnable, QObject, pyqtSignal, pyqtSlot
@@ -125,6 +163,7 @@ from script.logger import logger
 
 # Constants
 CACHE_FILE = Path("cache/image_hashes.json")
+PROGRESS_FILE = Path("cache/scan_progress.bin")
 CACHE_EXPIRY_DAYS = 7  # Number of days to keep cache entries
 MAX_WORKERS = os.cpu_count() or 4  # Number of worker threads
 CHUNK_SIZE = 50  # Number of images to process in each chunk
@@ -141,6 +180,7 @@ class WorkerSignals(QObject):
     progress_saved = pyqtSignal(str)  # Path to saved progress file
     progress_loaded = pyqtSignal(bool)  # Whether progress was successfully loaded
     state_changed = pyqtSignal(str)  # Current state as string
+    metrics_ready = pyqtSignal(dict)  # Performance metrics of the finished run
 
 class HashCache:
     """Handles caching of image hashes to disk for faster subsequent runs."""
@@ -259,7 +299,8 @@ class ImageMetadata:
                 metadata['resolution'] = (img.resolution[0], img.resolution[1])
                 
                 # Get EXIF data if available
-                if hasattr(img, 'metadata') and 'exif:' in img.metadata:
+                if hasattr(img, 'metadata') and any(
+                        key.startswith('exif:') for key in img.metadata):
                     metadata['exif'] = {}
                     for key, value in img.metadata.items():
                         if key.startswith('exif:'):
@@ -336,13 +377,15 @@ class ImageMetadata:
 class ImageComparisonWorker(QRunnable):
     """Worker thread for image comparison with optimized performance and caching."""
     
-    def __init__(self, folder: str, recursive: bool = True, 
+    def __init__(self, folder: str, recursive: bool = True,
                  similarity_threshold: int = 85,
                  keep_better_quality: bool = True,
                  preserve_metadata: bool = True,
-                 batch_size: int = 50):
+                 batch_size: int = 50,
+                 use_file_size: bool = True,
+                 progress_file: Optional[Union[str, Path]] = None):
         """Initialize the image comparison worker.
-        
+
         Args:
             folder: Path to the folder containing images
             recursive: Whether to search subdirectories
@@ -350,6 +393,11 @@ class ImageComparisonWorker(QRunnable):
             keep_better_quality: Whether to keep the higher quality image from duplicates
             preserve_metadata: Whether to preserve metadata when keeping the best quality image
             batch_size: Number of images to process in each batch (default: 50)
+            use_file_size: Use file size comparison as an additional duplicate
+                detection method — pre-filters candidates by file size and only
+                reports same-size groups as duplicates (default: True)
+            progress_file: Path to the file where scan progress is saved for
+                resuming interrupted operations (default: cache/scan_progress.bin)
         """
         super().__init__()
         self.folder = os.path.abspath(folder)
@@ -358,13 +406,17 @@ class ImageComparisonWorker(QRunnable):
         self.keep_better_quality = keep_better_quality
         self.preserve_metadata = preserve_metadata
         self.batch_size = max(1, min(batch_size, 200))  # Ensure batch size is between 1 and 200
+        self.use_file_size = use_file_size
         self.signals = WorkerSignals()
         self.is_running = True
         self._stop_requested = False
-        
-        # Initialize hash cache
+
+        # Initialize hash cache, progress manager and metrics
         self.hash_cache = HashCache()
-        
+        self.progress_manager = ProgressManager(progress_file or PROGRESS_FILE)
+        self.metrics = ComparisonMetrics()
+        self._scan_started_at = datetime.now()
+
         # Track processed files and batches
         self._processed_count = 0
         self._total_files = 0
@@ -374,16 +426,57 @@ class ImageComparisonWorker(QRunnable):
         self._stop_requested = True
         self.is_running = False
     
+    def _describe_fs_error(self, err: OSError, path: Optional[str] = None) -> str:
+        """Map filesystem errors to user-friendly messages.
+
+        Covers common cases for network drives (UNC paths), permission
+        problems and missing folders.
+
+        Args:
+            err: The caught OSError
+            path: The path the error relates to (defaults to the scan folder)
+
+        Returns:
+            A human-readable error description
+        """
+        target = path or getattr(err, 'filename', None) or self.folder
+        winerror = getattr(err, 'winerror', None)
+        if isinstance(err, PermissionError) or err.errno in (errno.EACCES, errno.EPERM):
+            return f"Access denied: {target}. Check folder permissions."
+        if winerror in (53, 67, 1231) or err.errno in (
+            errno.ENETUNREACH, errno.EHOSTUNREACH, errno.ENETDOWN,
+        ):
+            return f"Network drive is not accessible: {target}. Check the connection and try again."
+        if isinstance(err, FileNotFoundError) or err.errno == errno.ENOENT:
+            return f"Folder not found: {target}"
+        return str(err)
+
+    def _check_folder_access(self) -> Optional[str]:
+        """Verify the scan folder is accessible.
+
+        Probes the directory without listing it fully — catches offline
+        network drives, permission problems and special folders early.
+
+        Returns:
+            A user-friendly error message, or None if the folder is accessible
+        """
+        try:
+            with os.scandir(self.folder) as it:
+                next(it, None)
+            return None
+        except OSError as e:
+            return self._describe_fs_error(e)
+
     def _get_image_files(self, folder: str) -> List[str]:
         """Get a list of image files in the specified folder."""
         image_files = []
-        
+
         try:
             if self.recursive:
-                for root, _, files in os.walk(folder):
+                for root, _, files in os.walk(folder, onerror=self._on_walk_error):
                     if self._stop_requested:
                         return []
-                        
+
                     for f in files:
                         ext = os.path.splitext(f)[1].lower()
                         if ext in SUPPORTED_IMAGE_EXTENSIONS:
@@ -392,17 +485,23 @@ class ImageComparisonWorker(QRunnable):
                 for f in os.listdir(folder):
                     if self._stop_requested:
                         return []
-                        
+
                     ext = os.path.splitext(f)[1].lower()
                     if ext in SUPPORTED_IMAGE_EXTENSIONS:
                         image_files.append(os.path.abspath(os.path.join(folder, f)))
-                        
+
         except OSError as e:
-            logger.error(f"Error scanning directory: {e}")
-            self.signals.error.emit(f"Error scanning directory: {e}")
+            description = self._describe_fs_error(e, folder)
+            logger.error(f"Error scanning directory: {description} ({e})")
+            self.signals.error.emit(description)
             return []
-        
+
         return image_files
+
+    def _on_walk_error(self, err: OSError) -> None:
+        """Collect errors for directories that cannot be walked into."""
+        self.metrics.inaccessible_dirs += 1
+        logger.warning(f"Skipping inaccessible directory: {self._describe_fs_error(err)} ({err})")
         
     def _group_files_by_size(self, file_paths: List[str]) -> Dict[int, List[str]]:
         """Group files by their size in bytes.
@@ -437,8 +536,10 @@ class ImageComparisonWorker(QRunnable):
         # Try to get from cache first
         cache_entry = self.hash_cache.get(img_path)
         if cache_entry:
+            self.metrics.cache_hits += 1
             return cache_entry['phash'], cache_entry['ahash']
-        
+
+        self.metrics.cache_misses += 1
         try:
             with WandImage(filename=img_path) as img:
                 # Convert to RGB if needed (for consistent hashing)
@@ -465,6 +566,7 @@ class ImageComparisonWorker(QRunnable):
                 return phash, ahash
                 
         except Exception as e:
+            self.metrics.errors += 1
             logger.warning(f"Error processing {img_path}: {e}")
             # Return a dummy hash to avoid breaking the processing
             return "0" * 16, "0" * 16
@@ -515,13 +617,14 @@ class ImageComparisonWorker(QRunnable):
                 
                 # Get hashes for the image
                 phash, ahash = self._get_image_hashes(img_path)
-                
+                self.metrics.hashed_files += 1
+
                 # Combine hashes for better accuracy
                 combined_hash = f"{phash}:{ahash}"
-                
+
                 # Add to results
                 if combined_hash in chunk_hashes:
-                    chunk_hashes[combined_hash].append(img_path) 
+                    chunk_hashes[combined_hash].append(img_path)
                 else:
                     chunk_hashes[combined_hash] = [img_path]
                     
@@ -534,12 +637,16 @@ class ImageComparisonWorker(QRunnable):
     def _process_duplicates(self, hashes: Dict[str, List[str]]) -> Dict[str, List[str]]:
         """Process duplicate groups and keep the best quality image if enabled."""
         result = {}
-        
+
         for _, file_paths in hashes.items():
             if len(file_paths) > 1:  # Only process groups with duplicates
-                # First, group by file size for additional validation
-                size_groups = self._group_files_by_size(file_paths)
-                
+                # When file size comparison is enabled, files with matching
+                # hashes are additionally validated by file size
+                if self.use_file_size:
+                    size_groups = self._group_files_by_size(file_paths)
+                else:
+                    size_groups = {0: file_paths}
+
                 for size, same_size_files in size_groups.items():
                     if len(same_size_files) > 1:  # Only process groups with same size
                         if self.keep_better_quality:
@@ -584,97 +691,261 @@ class ImageComparisonWorker(QRunnable):
             logger.warning(f"Error preserving metadata from {original_path} to {best_path}: {e}")
             return False
     
+    def _iter_batches(self, file_paths: List[str]) -> List[List[str]]:
+        """Split file paths into sequential batches of ``batch_size`` images.
+
+        Args:
+            file_paths: Files to split
+
+        Returns:
+            List of batches (lists of file paths)
+        """
+        return [
+            file_paths[i:i + self.batch_size]
+            for i in range(0, len(file_paths), self.batch_size)
+        ]
+
+    def _save_progress(
+        self,
+        state: ProgressState,
+        processed_files: List[str],
+        remaining_files: List[str],
+        hashes: Dict[str, List[str]],
+        error_message: Optional[str] = None,
+    ) -> None:
+        """Persist the current scan progress so the run can be resumed.
+
+        Args:
+            state: Current progress state
+            processed_files: Files already hashed in this run
+            remaining_files: Files still waiting to be hashed
+            hashes: Combined-hash map collected so far
+            error_message: Optional error description for failed runs
+        """
+        data = ProgressData(
+            state=state,
+            folder=self.folder,
+            recursive=self.recursive,
+            processed_files=list(processed_files),
+            remaining_files=list(remaining_files),
+            hashes=hashes,
+            total_files=len(processed_files) + len(remaining_files),
+            processed_count=len(processed_files),
+            start_time=self._scan_started_at,
+            end_time=datetime.now() if state in (ProgressState.COMPLETED, ProgressState.ERROR, ProgressState.PAUSED) else None,
+            error_message=error_message,
+        )
+        if self.progress_manager.save_progress(data):
+            self.signals.progress_saved.emit(str(self.progress_manager.progress_file))
+            self.signals.state_changed.emit(state.name)
+
+    def _load_saved_progress(
+        self, candidate_files: List[str]
+    ) -> Tuple[Dict[str, List[str]], List[str], Set[str]]:
+        """Load saved progress for the same folder and split out done files.
+
+        Args:
+            candidate_files: Files selected for hashing in this run
+
+        Returns:
+            Tuple of (saved hash map, remaining files, already processed set)
+        """
+        empty: Tuple[Dict[str, List[str]], List[str], Set[str]] = ({}, list(candidate_files), set())
+        saved = self.progress_manager.load_progress()
+        if not saved:
+            return empty
+        if saved.folder != self.folder or saved.recursive != self.recursive:
+            self.progress_manager.clear_progress()
+            return empty
+
+        processed = set(saved.processed_files)
+        remaining = [f for f in candidate_files if f not in processed]
+        done = processed.intersection(candidate_files)
+        hashes = getattr(saved, 'hashes', None) or {}
+
+        self.signals.progress_loaded.emit(bool(done))
+        if done:
+            logger.info(
+                f"Resuming scan: {len(done)} files already processed, "
+                f"{len(remaining)} remaining"
+            )
+        return hashes, remaining, done
+
+    def _log_metrics(self) -> None:
+        """Log a summary of the collected performance metrics."""
+        m = self.metrics
+        logger.info(
+            "Comparison finished: %d files scanned, %d hashed "
+            "(%d cache hits, %d misses, %d errors, %d inaccessible dirs) "
+            "in %.2fs (scan %.2fs, hashing %.2fs, %.1f files/s)",
+            m.total_files, m.hashed_files, m.cache_hits, m.cache_misses,
+            m.errors, m.inaccessible_dirs, m.total_time_seconds,
+            m.scan_time_seconds, m.hash_time_seconds, m.files_per_second,
+        )
+
     def run(self) -> None:
         """Main processing function that runs in a separate thread."""
+        run_started = time.monotonic()
         try:
             if not os.path.isdir(self.folder):
                 self.signals.error.emit(f"Directory not found: {self.folder}")
                 return
-            
-            # Get all image files
-            image_files = self._get_image_files(self.folder)
-            if not image_files:
-                self.signals.finished.emit("No image files found in the specified directory.", {})
+
+            # Early accessibility probe — catches offline network drives and
+            # permission problems before the full scan
+            access_error = self._check_folder_access()
+            if access_error:
+                self.signals.error.emit(access_error)
                 return
-                
+
+            # Get all image files
+            scan_started = time.monotonic()
+            image_files = self._get_image_files(self.folder)
+            self.metrics.scan_time_seconds = time.monotonic() - scan_started
+            self.metrics.total_files = len(image_files)
+            if not image_files:
+                if self.metrics.inaccessible_dirs:
+                    msg = (f"No image files found. {self.metrics.inaccessible_dirs} "
+                           "directories were skipped (access denied).")
+                else:
+                    msg = "No image files found in the specified directory."
+                self.signals.finished.emit(msg, {})
+                return
+
             total_files = len(image_files)
             self.signals.progress.emit(5)  # Initial progress
-            
-            # First, group files by size to find potential duplicates quickly
-            size_groups = self._group_files_by_size(image_files)
-            potential_duplicates = []
-            
-            # Only process groups with more than one file of the same size
-            for size, files in size_groups.items():
-                if len(files) > 1:
-                    potential_duplicates.extend(files)
-            
+
+            if self.use_file_size:
+                # File size comparison: only files sharing a size with at
+                # least one other file can be duplicates
+                size_groups = self._group_files_by_size(image_files)
+                potential_duplicates = [
+                    f for files in size_groups.values() if len(files) > 1 for f in files
+                ]
+            else:
+                potential_duplicates = list(image_files)
+
+            self.metrics.size_filtered_files = len(potential_duplicates)
+
             if not potential_duplicates:
+                self.progress_manager.clear_progress()
                 self.signals.finished.emit("No potential duplicates found (based on file size).", {})
                 return
-                
+
             # Update progress
             self.signals.progress.emit(10)
-            
-            # Now process only the potential duplicates with image hashing
-            image_files = potential_duplicates
-            
-            logger.info(f"Found {total_files} image files to process")
-            
-            # Process images in chunks
-            all_hashes = {}
-            processed = 0
-            
+
+            # Resume previously saved progress for this folder, if any
+            all_hashes, remaining_files, done = self._load_saved_progress(potential_duplicates)
+            processed_files: Set[str] = set(done)
+
+            logger.info(
+                f"Found {total_files} image files, "
+                f"{len(potential_duplicates)} candidates to process "
+                f"({len(remaining_files)} remaining after resume)"
+            )
+
+            self._total_files = len(potential_duplicates)
+            self._processed_count = len(done)
+
+            # Process images in sequential batches; each batch is hashed in a
+            # thread pool and progress is checkpointed between batches
+            hash_started = time.monotonic()
             with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-                # Split into chunks for better progress reporting
-                chunks = [image_files[i:i + CHUNK_SIZE] 
-                         for i in range(0, len(image_files), CHUNK_SIZE)]
-                
-                future_to_chunk = {
-                    executor.submit(self._process_image_chunk, chunk): chunk 
-                    for chunk in chunks
-                }
-                
-                for future in concurrent.futures.as_completed(future_to_chunk):
+                for batch in self._iter_batches(remaining_files):
                     if self._stop_requested:
                         logger.info("Processing stopped by user")
+                        self._save_progress(
+                            ProgressState.PAUSED,
+                            sorted(processed_files),
+                            remaining_files,
+                            all_hashes,
+                        )
+                        self.signals.paused.emit()
                         return
-                        
-                    chunk = future_to_chunk[future]
-                    try:
-                        chunk_result = future.result()
-                        # Merge results
-                        for key, value in chunk_result.items():
-                            if key in all_hashes:
-                                all_hashes[key].extend(value)
-                            else:
-                                all_hashes[key] = value
-                                
-                        processed += len(chunk)
-                        progress = min(95, 5 + int((processed / total_files) * 90))
-                        self.signals.progress.emit(progress)
-                        
-                    except Exception as e:
-                        logger.error(f"Error processing chunk: {e}")
-                        continue
-            
+
+                    chunks = [
+                        batch[i:i + CHUNK_SIZE]
+                        for i in range(0, len(batch), CHUNK_SIZE)
+                    ]
+                    future_to_chunk = {
+                        executor.submit(self._process_image_chunk, chunk): chunk
+                        for chunk in chunks
+                    }
+
+                    batch_completed = True
+                    for future in concurrent.futures.as_completed(future_to_chunk):
+                        if self._stop_requested:
+                            batch_completed = False
+                            break
+
+                        chunk = future_to_chunk[future]
+                        try:
+                            chunk_result = future.result()
+                            for key, value in chunk_result.items():
+                                if key in all_hashes:
+                                    all_hashes[key].extend(value)
+                                else:
+                                    all_hashes[key] = value
+
+                            processed_files.update(chunk)
+                            remaining_files = [f for f in remaining_files if f not in chunk]
+                            self._processed_count = len(processed_files)
+                            progress = min(95, 5 + int((self._processed_count / self._total_files) * 90))
+                            self.signals.progress.emit(progress)
+
+                        except Exception as e:
+                            self.metrics.errors += 1
+                            logger.error(f"Error processing chunk: {e}")
+                            continue
+
+                    # Checkpoint progress after every batch
+                    if batch_completed:
+                        self._save_progress(
+                            ProgressState.PROCESSING,
+                            sorted(processed_files),
+                            remaining_files,
+                            all_hashes,
+                        )
+
+            if self._stop_requested:
+                self._save_progress(
+                    ProgressState.PAUSED,
+                    sorted(processed_files),
+                    remaining_files,
+                    all_hashes,
+                )
+                self.signals.paused.emit()
+                return
+
+            self.metrics.hash_time_seconds = time.monotonic() - hash_started
+
             # Process duplicates
             logger.info("Processing duplicate groups...")
             duplicates = self._process_duplicates(all_hashes)
-            
+
             # Save cache
             self.hash_cache.save()
-            
+
+            # Finished — emit metrics and clear saved progress
+            self.metrics.total_time_seconds = time.monotonic() - run_started
+            self._log_metrics()
+            self.signals.metrics_ready.emit(self.metrics.to_dict())
+            self.progress_manager.clear_progress()
+
             # Emit finished signal
             self.signals.progress.emit(100)
-            
+
             if duplicates:
                 msg = f"Found {len(duplicates)} groups of duplicate images."
             else:
                 msg = "No duplicate images found."
-                
+            if self.metrics.inaccessible_dirs:
+                msg += (f" ({self.metrics.inaccessible_dirs} directories "
+                        "were skipped — access denied)")
+
             self.signals.finished.emit(msg, duplicates)
-            
+
         except Exception as e:
             logger.error(f"Error in image comparison: {e}", exc_info=True)
             self.signals.error.emit(f"An error occurred: {str(e)}")

@@ -155,7 +155,12 @@ class UI(QMainWindow):
         self.preserve_metadata_checkbox = QCheckBox(self.lang_manager.translate('preserve_metadata'))
         self.preserve_metadata_checkbox.setChecked(True)  # Default to True
         options_layout.addWidget(self.preserve_metadata_checkbox)
-        
+
+        # File size comparison option
+        self.use_file_size_checkbox = QCheckBox(self.lang_manager.translate('use_file_size'))
+        self.use_file_size_checkbox.setChecked(True)  # Default to True
+        options_layout.addWidget(self.use_file_size_checkbox)
+
         options_layout.addStretch()
         
         # --- Compare Button ---
@@ -342,7 +347,7 @@ class UI(QMainWindow):
         self.compare_button.setEnabled(False)
         
         # Show progress bar and status
-        self.status_label.setText(self.lang_manager.translate('comparing_images'))
+        self.status_bar.showMessage(self.lang_manager.translate('comparing_images'))
         self.progress_frame.show()
         
         # Create and start the worker thread
@@ -351,7 +356,9 @@ class UI(QMainWindow):
             recursive=self.recursive_checkbox.isChecked(),
             similarity_threshold=similarity,
             keep_better_quality=self.keep_better_quality_checkbox.isChecked(),
-            preserve_metadata=self.preserve_metadata_checkbox.isChecked()
+            preserve_metadata=self.preserve_metadata_checkbox.isChecked(),
+            batch_size=self.config.get('batch_size', 50),
+            use_file_size=self.use_file_size_checkbox.isChecked()
         )
         
         # Connect signals

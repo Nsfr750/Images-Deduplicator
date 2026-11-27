@@ -7,7 +7,7 @@ for the Images Deduplicator project.
 
 # Version components
 MAJOR_VERSION = 1
-MINOR_VERSION = 7  # Update for new features and improvements
+MINOR_VERSION = 8  # Update for new features and improvements
 PATCH_VERSION = 0
 
 # Additional version qualifiers
@@ -15,7 +15,7 @@ VERSION_QUALIFIER = ''  # Could be 'alpha', 'beta', 'rc', or ''
 
 # Dependency versions
 PYQT6_VERSION = '6.4.0'
-PILLOW_VERSION = '9.0.0'
+WAND_VERSION = '0.6.11'
 IMAGEHASH_VERSION = '4.3.1'
 
 def get_version():
@@ -52,7 +52,7 @@ def get_version_info():
         'full_version': get_version(),
         'dependencies': {
             'PyQt6': PYQT6_VERSION,
-            'Pillow': PILLOW_VERSION,
+            'Wand': WAND_VERSION,
             'imagehash': IMAGEHASH_VERSION
         }
     }
@@ -86,7 +86,7 @@ def get_versions():
         'app_version': __version__,
         'dependencies': {
             'PyQt6': PYQT6_VERSION,
-            'Pillow': PILLOW_VERSION,
+            'Wand': WAND_VERSION,
             'imagehash': IMAGEHASH_VERSION
         }
     }

@@ -1,5 +1,46 @@
 # Changelog
 
+## Version 1.8.0 (2026-11-27)
+
+### 🚀 Added
+
+- **File Size Comparison**
+  - Added file size comparison as an optional duplicate detection method
+  - Size-based pre-filtering of candidates with a UI toggle ("Compare file sizes")
+  - Same-size validation of hash-matched groups can be disabled to catch
+    resaved duplicates
+
+- **Batch Processing**
+  - Image collections are processed in sequential batches (configurable
+    `batch_size`, 1–200) for better memory behavior on large folders
+  - Progress is checkpointed between batches
+
+- **Progress Saving & Resuming**
+  - Long scans save progress to `cache/scan_progress.bin` after every batch
+  - Interrupted scans resume automatically on the next run of the same folder
+  - New worker signals: `paused`, `progress_saved`, `progress_loaded`,
+    `state_changed`
+
+- **Performance Metrics**
+  - Per-run metrics: file counts, cache hits/misses, errors, skipped
+    directories, stage timings and throughput
+  - Emitted via the `metrics_ready` signal and written to the log
+
+- **Error Handling**
+  - Early folder accessibility probe with user-friendly messages for offline
+    network drives (UNC), permission problems and missing folders
+  - Inaccessible directories during recursive scans are counted and reported
+
+- **Tests & Documentation**
+  - Comprehensive test suite for Wand image processing (49 tests)
+  - New `docs/WAND.md`: Wand-specific features, pipeline details and
+    limitations
+
+### 🐛 Fixed
+
+- Fixed EXIF extraction in `ImageMetadata.get_metadata()` — EXIF entries were
+  never collected due to a wrong key check
+
 ## Version 1.7.0 (2025-11-18)
 
 ### 🐛 Fixed
