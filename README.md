@@ -1,14 +1,31 @@
 # Images Deduplicator
 
-[![GitHub license](https://img.shields.io/github/license/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/blob/master/LICENSE)
-[![GitHub issues](https://img.shields.io/github/issues/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/issues)
-[![GitHub stars](https://img.shields.io/github/stars/Nsfr750/Images-Deduplicator)](https://github.com/Nsfr750/Images-Deduplicator/stargazers)
-[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
-[![PyQt6](https://img.shields.io/badge/PyQt6-6.4.0+-blue)](https://www.riverbankcomputing.com/software/pyqt/)
-[![Wand](https://img.shields.io/badge/Wand-0.6.11%2B-blue)](https://docs.wand-py.org/)
-[![ImageMagick](https://img.shields.io/badge/ImageMagick-7.0.0+-blue)](https://imagemagick.org/)
+[![GitHub license][b-license]][gh-license]
+[![GitHub issues][b-issues]][gh-issues]
+[![GitHub stars][b-stars]][gh-stars]
+[![Python Version][b-python]][python]
+[![PyQt6][b-pyqt]][pyqt]
+[![Wand][b-wand]][wand-docs]
+[![ImageMagick][b-im]][im]
 
-A powerful desktop application for finding and managing duplicate images in your folders using perceptual hashing technology. Built with PyQt6 and Wand (ImageMagick) for robust image processing across multiple formats.
+[b-license]: https://img.shields.io/github/license/Nsfr750/Images-Deduplicator
+[b-issues]: https://img.shields.io/github/issues/Nsfr750/Images-Deduplicator
+[b-stars]: https://img.shields.io/github/stars/Nsfr750/Images-Deduplicator
+[b-python]: https://img.shields.io/badge/python-3.8%2B-blue
+[b-pyqt]: https://img.shields.io/badge/PyQt6-6.4.0+-blue
+[b-wand]: https://img.shields.io/badge/Wand-0.6.11%2B-blue
+[b-im]: https://img.shields.io/badge/ImageMagick-7.0.0+-blue
+[gh-license]: https://github.com/Nsfr750/Images-Deduplicator/blob/master/LICENSE
+[gh-issues]: https://github.com/Nsfr750/Images-Deduplicator/issues
+[gh-stars]: https://github.com/Nsfr750/Images-Deduplicator/stargazers
+[python]: https://www.python.org/
+[pyqt]: https://www.riverbankcomputing.com/software/pyqt/
+[wand-docs]: https://docs.wand-py.org/
+[im]: https://imagemagick.org/
+
+A powerful desktop application for finding and managing duplicate images
+in your folders using perceptual hashing technology. Built with PyQt6 and
+Wand (ImageMagick) for robust image processing across multiple formats.
 
 ## Latest Improvements (v1.8.0)
 
@@ -67,15 +84,18 @@ A powerful desktop application for finding and managing duplicate images in your
 ### 1. Install System Dependencies
 
 #### Windows
-1. Download and install ImageMagick from [https://imagemagick.org/script/download.php#windows](https://imagemagick.org/script/download.php#windows)
-2. During installation, make sure to check "Add application directory to your system path"
+
+1. Download and install ImageMagick from the [download page][im-dl]
+2. During installation, check "Add application directory to your system path"
 
 #### macOS
+
 ```bash
 brew install imagemagick
 ```
 
 #### Linux (Debian/Ubuntu)
+
 ```bash
 sudo apt-get update
 sudo apt-get install -y libmagickwand-dev
@@ -84,18 +104,21 @@ sudo apt-get install -y libmagickwand-dev
 ### 2. Install Python Dependencies
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/Nsfr750/Images-Deduplicator.git
    cd Images-Deduplicator
    ```
 
 2. Create and activate a virtual environment (recommended):
+
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    ```
 
 3. Install the required Python packages:
+
    ```bash
    pip install -r requirements.txt
    ```
@@ -103,6 +126,7 @@ sudo apt-get install -y libmagickwand-dev
 ## Usage
 
 1. Launch the application:
+
    ```bash
    python main.py
    ```
@@ -117,17 +141,21 @@ sudo apt-get install -y libmagickwand-dev
 ## Troubleshooting
 
 ### Wand/ImageMagick Issues
-- If you get `Wand` import errors, ensure ImageMagick is properly installed and in your system PATH
-- On Windows, you may need to restart your terminal/IDE after installing ImageMagick
-- For Linux, you might need to install additional development packages:
+
+- If you get `Wand` import errors, ensure ImageMagick is in your PATH
+- On Windows, you may need to restart your terminal/IDE after installing
+  ImageMagick
+- For Linux, you might need additional development packages:
+
   ```bash
   sudo apt-get install -y libmagickwand-dev
   ```
 
 ### Performance Tips
+
 - For large image collections, increase the chunk size in the settings
-- Use the "Preserve Metadata" option only when necessary as it can slow down processing
-- Close other memory-intensive applications when working with large numbers of images
+- Enable "Preserve Metadata" only when needed — it slows down processing
+- Close memory-intensive applications when processing many images
 
 ## Contributing
 
@@ -135,15 +163,18 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the GPLv3 License - see the [LICENSE](LICENSE) file for details.
+Licensed under GPLv3 - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
 If you find this project useful, consider supporting its development:
+
 - [GitHub Sponsors](https://github.com/sponsors/Nsfr750)
 - [Patreon](https://www.patreon.com/Nsfr750)
 - [PayPal](https://paypal.me/3dmega)
 
 ## Author
 
-Nsfr750 - [GitHub](https://github.com/Nsfr750) | [Discord](https://discord.gg/BvvkUEP9)
+Nsfr750 - [GitHub](https://github.com/Nsfr750)
+
+[im-dl]: https://imagemagick.org/script/download.php#windows

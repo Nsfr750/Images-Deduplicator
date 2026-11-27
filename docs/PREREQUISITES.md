@@ -1,15 +1,16 @@
 # Prerequisites
 
-Before you can run or contribute to the Images-Deduplicator project, you'll need to set up your development environment with the following prerequisites:
+Before you can run or contribute to the Images-Deduplicator project,
+set up your development environment with the following prerequisites:
 
 ## System Requirements
 
 - **Operating System**: Windows 10/11, macOS 10.15+, or Linux with Python 3.8+
 - **Python**: 3.8 or higher (recommended: 3.10+ for better performance)
 - **RAM**: Minimum 4GB (8GB+ recommended for large image collections)
-- **Disk Space**: At least 200MB free space (plus space for your image collection)
+- **Disk Space**: 200MB+ free (plus space for your image collection)
 - **Display**: 1366x768 resolution or higher
-- **ImageMagick**: Required for Wand image processing (see installation instructions below)
+- **ImageMagick**: Required by Wand (see installation below)
 
 ## Development Environment Setup
 
@@ -38,7 +39,7 @@ Before you can run or contribute to the Images-Deduplicator project, you'll need
 
 ## Python Dependencies
 
-The project uses the following key Python packages (automatically installed via requirements.txt):
+The project's key Python packages (installed via `requirements.txt`):
 
 ### Core Dependencies
 
@@ -66,15 +67,16 @@ The project uses the following key Python packages (automatically installed via 
 
 ## ImageMagick Installation
 
-Wand requires ImageMagick to be installed on your system. Follow these platform-specific instructions:
+Wand requires ImageMagick on your system. Follow these instructions:
 
 ### Windows Installation
 
 1. **Download the installer**:
 
-   - Visit the [ImageMagick download page](https://imagemagick.org/script/download.php#windows)
-   
-   - Download the latest stable release (e.g., `ImageMagick-7.x.x-Q16-HDRI-x64-dll.exe`)
+   - Visit the [ImageMagick download page][im-dl]
+
+   - Download the latest stable release
+     (e.g., `ImageMagick-7.x.x-Q16-HDRI-x64-dll.exe`)
 
 2. **Run the installer**:
 
@@ -91,7 +93,7 @@ Wand requires ImageMagick to be installed on your system. Follow these platform-
 
    Open a new Command Prompt and run:
 
-   ```
+   ```text
    magick --version
    ```
 
@@ -99,17 +101,18 @@ Wand requires ImageMagick to be installed on your system. Follow these platform-
 
 ### macOS Installation
 
-#### Using Homebrew (recommended):
+#### Using Homebrew (recommended)
 
 ```bash
 # Install Homebrew if not already installed
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+/bin/bash -c "$(curl -fsSL \
+    https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
 # Install ImageMagick with required dependencies
 brew install imagemagick
 ```
 
-#### Verify installation:
+#### Verify installation
 
 ```bash
 magick --version
@@ -117,7 +120,7 @@ magick --version
 
 ### Linux Installation
 
-#### Debian/Ubuntu:
+#### Debian/Ubuntu
 
 ```bash
 # Update package lists
@@ -130,7 +133,7 @@ sudo apt-get install -y \
     libmagickcore-dev
 ```
 
-#### Fedora/RHEL/CentOS:
+#### Fedora/RHEL/CentOS
 
 ```bash
 sudo dnf install -y ImageMagick ImageMagick-devel
@@ -154,12 +157,13 @@ print(f"Features: {wand.version.MAGICK_FEATURES}")
 
 # Test basic image operations
 try:
-    with Image(filename='wizard:' if not sys.platform.startswith('win') else 'rose:') as img:
+    test_src = 'rose:' if sys.platform.startswith('win') else 'wizard:'
+    with Image(filename=test_src) as img:
         print(f"Test image: {img.format} {img.width}x{img.height}")
     print("✅ Wand is working correctly!")
 except Exception as e:
     print(f"❌ Error: {str(e)}")
-    print("Please ensure ImageMagick is properly installed and in your system PATH.")
+    print("Please ensure ImageMagick is installed and in your PATH.")
 ```
 
 ## Development Dependencies (Optional)
@@ -170,7 +174,7 @@ For development and contributing to the project, install additional tools:
 pip install -r requirements-dev.txt
 ```
 
-### Included Tools:
+### Included Tools
 
 - **Testing**
   - `pytest` - Testing framework
@@ -211,7 +215,8 @@ pip install -r requirements-dev.txt
 3. **Memory issues with large images**
 
    - Increase ImageMagick's resource limits in `policy.xml`
-   - Location: `/etc/ImageMagick-7/policy.xml` (Linux/macOS) or `C:\Program Files\ImageMagick-7\policy.xml` (Windows)
+   - Location: `/etc/ImageMagick-7/policy.xml` (Linux/macOS)
+   - Windows: `C:\Program Files\ImageMagick-7\policy.xml`
    - Adjust these values as needed:
 
      ```xml
@@ -246,7 +251,7 @@ To build the documentation locally:
 
 The documentation will be available in `docs/_build/html/index.html`
 
-## Troubleshooting
+## Additional Troubleshooting
 
 ### Common Issues
 
@@ -269,7 +274,7 @@ The documentation will be available in `docs/_build/html/index.html`
 
 3. **GUI Scaling Issues**:
 
-   - On high-DPI displays, you might need to set the appropriate environment variable:
+   - On high-DPI displays, set the appropriate environment variable:
 
      ```bash
      export QT_SCALE_FACTOR=1.5  # Adjust the scale factor as needed
@@ -279,8 +284,9 @@ The documentation will be available in `docs/_build/html/index.html`
 
 If you encounter any issues setting up the development environment, please:
 
-1. Check the [GitHub Issues](https://github.com/Nsfr750/Images-Deduplicator/issues) for similar problems
+1. Check the [GitHub Issues][gh-issues] for similar problems
 
-2. If your issue isn't reported, please open a new issue with detailed information about your problem
+2. If it isn't reported, open a new issue with detailed information
 
-3. Join our [Discord server](https://discord.gg/BvvkUEP9) for community support
+[im-dl]: https://imagemagick.org/script/download.php#windows
+[gh-issues]: https://github.com/Nsfr750/Images-Deduplicator/issues
