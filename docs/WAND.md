@@ -108,6 +108,59 @@ throughput (files/s). The summary is written to the log and emitted via the
   ImageMagick (`img.save`) — only fields supported by the target format
   survive the round-trip.
 
+## Examples
+
+### Read an image and its metadata
+
+```python
+from wand.image import Image as WandImage
+from script.workers import ImageMetadata
+
+with WandImage(filename='photo.jpg') as img:
+    print(img.format, img.width, img.height)
+    print(img.metadata.get('exif:Make'))
+
+# Or via the project helper (returns {} on failure)
+meta = ImageMetadata.get_metadata('photo.jpg')
+print(meta.get('exif', {}))
+```
+
+### Normalize colorspace before hashing
+
+```python
+with WandImage(filename='scan.tiff') as img:
+    if img.colorspace != 'srgb':
+        img.transform_colorspace('srgb')
+    img.format = 'png'
+    img.save(file=buffer)  # buffer: io.BytesIO for imagehash input
+```
+
+### Read a PSD or a GIF
+
+```python
+# PSD -> flattened composite; GIF -> first frame
+with WandImage(filename='design.psd') as img:
+    preview_png = img.make_blob('png')
+```
+
+### Preserve metadata on the best copy
+
+```python
+from script.workers import ImageMetadata
+
+meta = ImageMetadata.get_metadata('original.jpg')
+ImageMetadata.apply_metadata('best.jpg', meta)
+```
+
+### Hash two files the worker way
+
+```python
+from script.workers import ImageComparisonWorker
+
+worker = ImageComparisonWorker(folder='/photos')
+phash, ahash = worker._get_image_hashes('a.jpg')
+```
+
 ## Known limitations
 
 - **ImageMagick delegate coverage** — the readable format list depends on

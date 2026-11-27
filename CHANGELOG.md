@@ -53,6 +53,13 @@
   - O(1) remaining-file tracking during batch processing
   - Similarity clustering is skipped when exact matching is configured
 
+- **Documentation**
+  - New `docs/USER_GUIDE.md` — end-user guide
+  - New `docs/DEVELOPMENT.md` — developer/contributor guide
+  - New `docs/MIGRATION.md` — Pillow to Wand migration guide
+  - Rewrote `docs/api.md` to match the real module API
+  - Added Wand-specific code examples to `docs/WAND.md`
+
 ### 🐛 Fixed
 
 - Fixed EXIF extraction in `ImageMetadata.get_metadata()` — EXIF entries were

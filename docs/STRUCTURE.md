@@ -15,13 +15,16 @@ Images-Deduplicator/
 ├── docs/                           # Documentation
 │   ├── api.md                      # API reference
 │   ├── CHANGELOG.md                # Project changelog
+│   ├── DEVELOPMENT.md              # Developer guide
+│   ├── MIGRATION.md                # Pillow to Wand migration guide
 │   ├── PREREQUISITES.md            # Development environment setup
 │   ├── README.md                   # Main documentation
 │   ├── ROADMAP.md                  # Development roadmap
 │   ├── SECURITY.md                 # Security policy
 │   ├── STRUCTURE.md                # This file (project structure)
-│   ├── WAND.md                     # Wand/ImageMagick features and limitations
-│   └── IMAGES/                     # Documentation images and screenshots
+│   ├── USER_GUIDE.md               # End-user guide
+│   ├── WAND.md                     # Wand features + limits
+│   └── IMAGES/                     # Docs images + screenshots
 │
 ├── logs/                           # Application logs
 │   └── app.log                     # Main application log file

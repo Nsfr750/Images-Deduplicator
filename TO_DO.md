@@ -67,17 +67,17 @@
 - [x] Add caching for faster subsequent scans
 - [x] Implement parallel processing for image comparison
 - [ ] Optimize Wand image loading and processing
+- [ ] Add support for GPU acceleration
+- [ ] Optimize database queries for large datasets
 
 ## Documentation
 
 - [x] Update installation instructions for Wand/ImageMagick
-- [ ] Add Wand-specific examples to documentation
-- [ ] Document migration guide from Pillow to Wand
-- [ ] Update API documentation for new Wand-based functions
+- [x] Add Wand-specific examples to documentation
+- [x] Document migration guide from Pillow to Wand
+- [x] Update API documentation for new Wand-based functions
 - [x] Improve handling of large image files
-- [ ] Add support for GPU acceleration
-- [ ] Optimize database queries for large datasets
-- [ ] Implement background processing for better responsiveness
+- [x] Implement background processing for better responsiveness
 - [x] Update README with PyQt6 information
 - [x] Update CHANGELOG with recent changes
 - [x] Update README with new features
@@ -86,8 +86,8 @@
 - [x] Improve installation and setup instructions
 - [x] Add troubleshooting section
 - [x] Document the image comparison algorithm
-- [ ] Add user guide
-- [ ] Add developer documentation
+- [x] Add user guide
+- [x] Add developer documentation
 
 ## Quality of Life
 
