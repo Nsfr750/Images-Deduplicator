@@ -70,6 +70,7 @@ TRANSLATIONS = {
         'qt_version': 'PyQt Version:',
         'cpu_info': 'CPU:',
         'memory_info': 'RAM:',
+        'not_installed': 'Not installed',
         'github': 'GitHub',
         
         # Help dialog
@@ -367,6 +368,7 @@ TRANSLATIONS = {
         'qt_version': 'Versione PyQt:',
         'cpu_info': 'CPU:',
         'memory_info': 'RAM:',
+        'not_installed': 'Non installato',
         'github': 'GitHub',
 
         # Help dialog

@@ -6,7 +6,7 @@
 
 - **File Size Comparison**
   - Added file size comparison as an optional duplicate detection method
-  - Size-based pre-filtering of candidates with a UI toggle ("Compare file sizes")
+  - Size-based pre-filtering of candidates with a UI toggle
   - Same-size validation of hash-matched groups can be disabled to catch
     resaved duplicates
 
@@ -35,6 +35,23 @@
   - Comprehensive test suite for Wand image processing (49 tests)
   - New `docs/WAND.md`: Wand-specific features, pipeline details and
     limitations
+
+- **About Dialog**
+  - Added Wand and ImageMagick version info to system information
+
+- **Similarity Groups**
+  - Images are now organized into similarity groups — hash keys within the
+    configured `similarity_threshold` (Hamming distance) are clustered
+    together instead of requiring exact hash matches
+
+- **Image Quality Comparison**
+  - Composite quality score (resolution, encoder quality, file size) picks
+    the best image of each group
+
+- **Algorithm Optimization**
+  - File sizes are cached between grouping and scoring passes
+  - O(1) remaining-file tracking during batch processing
+  - Similarity clustering is skipped when exact matching is configured
 
 ### 🐛 Fixed
 
@@ -109,39 +126,48 @@
   - Added Wand and ImageMagick requirements
 
 ## Version 1.5.2 (2025-07-18)
+
 ### Added
+
 - Enhanced thread safety in the update checker
 - Comprehensive API documentation
 - Improved installation and setup instructions
 - Added troubleshooting section for common issues
 
 ### Fixed
+
 - Potential memory leaks in image comparison
 - Optimized resource cleanup on application exit
 - Improved error handling for corrupted image files
 - Fixed race conditions in thread management
 
 ### Changed
+
 - Improved status messages and tooltips
 - Enhanced accessibility features
 - Better handling of high DPI displays
 - Updated dependencies to their latest stable versions
 
 ## Version 1.5.1 (2025-07-17)
+
 ### Added
+
 - Added robust error handling for image preview loading
 - Improved memory management for image processing
 - Added widget safety checks to prevent crashes
 - Added detailed error logging for image loading issues
 
 ### Fixed
+
 - Fixed application crash when selecting images with invalid formats
 - Fixed handling of temporary files during metadata preservation
 - Improved error messages for better user feedback
 - Fixed import issue with sip module in PyQt6
 
 ## Version 1.5.0 (2025-07-10)
+
 ### Added
+
 - Added comprehensive logging system with log viewer
 - Implemented log level filtering (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 - Added dark theme as default for better user experience
@@ -159,6 +185,7 @@
   - Enhanced text readability with proper contrast
 
 ### Changed
+
 - Reorganized project structure with Python package layout
 - Moved all Python modules to `script` package
 - Updated all imports to use package-relative imports
@@ -171,6 +198,7 @@
   - Enhanced search functionality
 
 ### Fixed
+
 - Fixed crash when closing application with active threads
 - Fixed infinite recursion in theme/style application
 - Fixed language menu display issues
@@ -186,7 +214,9 @@
   - Fixed layout conflicts
 
 ## Version 1.4.5 (2025-07-09)
+
 ### Added
+
 - Migrated from Tkinter to PyQt6 for a more modern and responsive UI
 - New modern dialogs with improved user experience
 - Enhanced status bar with better messaging
@@ -196,6 +226,7 @@
 - Improved dark mode support
 
 ### Changed
+
 - Completely redesigned UI using Qt widgets
 - Updated all dialogs to use PyQt6 (About, Help, Sponsor, Update)
 - Improved threading model for better performance
@@ -204,6 +235,7 @@
 - Improved window management and resizing behavior
 
 ### Fixed
+
 - Fixed issues with language switching in the new Qt interface
 - Resolved threading issues during image comparison
 - Fixed status bar visibility and functionality
@@ -211,7 +243,9 @@
 - Fixed various UI layout issues
 
 ## Version 1.4.0 (2025-06-23)
+
 ### Added
+
 - Multi-language support (English, Italian)
 - Automatic update checking on startup
 - Language selection menu
@@ -221,6 +255,7 @@
 - Improved error handling and user feedback
 
 ### Fixed
+
 - Fixed file deletion error handling
 - Improved UI responsiveness during long operations
 - Fixed layout issues in various dialogs
@@ -228,19 +263,24 @@
 - Fixed translation strings and improved localization coverage
 
 ## Version 1.3.0 (2025-05-22)
+
 ### Added
+
 - "Select All" button for duplicates
 - Improved UI organization with better button placement
 - Better scrollbar positioning in results list
 - Removed quality threshold functionality for simpler UI
 
 ### Fixed
+
 - Removed redundant "Delete All Duplicates" button
 - Improved spacing and layout consistency
 - Fixed button organization in action frame
 
 ## Version 1.2.0 (2025-05-21)
+
 ### Added
+
 - Multiple file selection for deletion
 - Improved error handling in file operations
 - Quality threshold slider for duplicate detection
@@ -249,6 +289,7 @@
 - Progress tracking during image comparison
 
 ### Changed
+
 - Enhanced About dialog with proper window layout
 - Improved code organization and readability
 - Better error handling and user feedback
@@ -256,24 +297,29 @@
 - Improved image preview functionality
 
 ### Fixed
+
 - Various UI bugs and inconsistencies
 - Fixed threading issues for smoother operation
 - Improved memory management for large image sets
 - Better handling of special characters in file paths
 
 ## Version 1.1.0 (2025-05-20)
+
 ### Added
+
 - Modular code structure with separate files for About, Sponsor, and Version
 - Version information integration
 - Proper menu structure for About and Sponsor
 
 ### Changed
+
 - Moved sponsor window to a menu
 - Updated About dialog to use ttk widgets
 - Improved code organization and readability
 - Fixed version display in main window
 
 ### Fixed
+
 - Various UI bugs and inconsistencies
 - Improved error handling in file operations
 - Sponsor window initialization error
@@ -281,7 +327,9 @@
 - Version information display
 
 ## Version 1.1.0
+
 ### Added
+
 - Comprehensive help documentation
 - Quality threshold slider for duplicate detection
 - Side-by-side image preview
@@ -291,18 +339,22 @@
 - Support for multiple image formats
 
 ### Changed
+
 - Improved UI layout and organization
 - Better menu structure
 - Enhanced image preview functionality
 - Added quality comparison between images
 
 ### Fixed
+
 - Various UI initialization issues
 - Fixed image preview errors
 - Improved error handling and user feedback
 
 ## Version 1.0.0
-Initial release with basic functionality
+
+Initial release with basic functionality:
+
 - Image duplicate detection using perceptual hashing
 - Basic GUI interface
 - Folder browsing and image comparison

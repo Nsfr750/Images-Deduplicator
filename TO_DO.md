@@ -42,12 +42,12 @@
   - [x] Add language support
   - [x] Fix layout issues
   - [x] Improve content organization
-- [ ] Add Wand/ImageMagick version info in About dialog
+- [x] Add Wand/ImageMagick version info in About dialog
 
 ## Features
 
-- [ ] Add image organization by similarity groups
-- [ ] Implement image quality comparison
+- [x] Add image organization by similarity groups
+- [x] Implement image quality comparison
 - [x] Add support for more image formats (PSD, GIF, BMP via Wand)
 - [x] Improve error handling and user feedback
 - [x] Add logging system with log viewer
@@ -58,7 +58,7 @@
 ## Performance
 
 - [x] Optimize PyQt6 UI responsiveness
-- [ ] Optimize image comparison algorithm
+- [x] Optimize image comparison algorithm
 - [x] Implement caching for faster duplicate detection
 - [x] Implement background processing for large folders
 - [x] Add image metadata preservation options (Basic support with Wand)
@@ -78,16 +78,6 @@
 - [ ] Add support for GPU acceleration
 - [ ] Optimize database queries for large datasets
 - [ ] Implement background processing for better responsiveness
-
-## Quality of Life
-
-- [x] Add image preview with zoom functionality
-- [x] Add option to save duplicate reports
-- [x] Implement undo functionality for file operations
-- [x] Add confirmation dialogs for destructive actions
-
-## Documentation
-
 - [x] Update README with PyQt6 information
 - [x] Update CHANGELOG with recent changes
 - [x] Update README with new features
@@ -98,6 +88,13 @@
 - [x] Document the image comparison algorithm
 - [ ] Add user guide
 - [ ] Add developer documentation
+
+## Quality of Life
+
+- [x] Add image preview with zoom functionality
+- [x] Add option to save duplicate reports
+- [x] Implement undo functionality for file operations
+- [x] Add confirmation dialogs for destructive actions
 
 ## Testing
 

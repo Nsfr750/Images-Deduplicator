@@ -20,11 +20,13 @@ operations. Wand provides:
 Wand requires **ImageMagick** to be installed on the system. Wand is only the
 binding — all decoding is done by the ImageMagick shared libraries.
 
-| OS      | Installation                                              |
-|---------|-----------------------------------------------------------|
-| Windows | https://imagemagick.org/script/download.php#windows       |
-| macOS   | `brew install imagemagick`                                 |
-| Linux   | `sudo apt-get install libmagickwand-dev` (Debian/Ubuntu)  |
+| OS | Installation |
+| --- | --- |
+| Windows | [imagemagick.org installer][im-win] |
+| macOS | `brew install imagemagick` |
+| Linux | `sudo apt-get install libmagickwand-dev` (Debian/Ubuntu) |
+
+[im-win]: https://imagemagick.org/script/download.php#windows
 
 If the shared library is not found, Wand raises
 `ImportError: MagickWand shared library not found` on import.
@@ -34,7 +36,7 @@ If the shared library is not found, Wand raises
 The scanner collects files with these extensions
 (`SUPPORTED_IMAGE_EXTENSIONS` in `script/workers.py`):
 
-```
+```text
 .jpg .jpeg .png .tiff .tif .webp .psd .gif .bmp
 ```
 
@@ -72,11 +74,16 @@ The duplicate detection pipeline (`ImageComparisonWorker` in
    (`batch_size`, 1–200, default 50). Each batch is hashed in a thread pool
    (`MAX_WORKERS = os.cpu_count()`), and progress is checkpointed between
    batches to `cache/scan_progress.bin`.
-5. **Grouping** — files sharing the same combined hash (and the same file
-   size when size comparison is enabled) form duplicate groups. With
-   "Keep better quality" enabled, groups are sorted by resolution and file
-   size so the best copy leads the group; its metadata can optionally be
-   copied from the duplicates it replaces.
+5. **Grouping** — combined-hash keys are clustered into **similarity
+   groups**: keys whose mutual Hamming distance stays within the configured
+   `similarity_threshold` (percent similarity of phash+ahash) are merged, so
+   near-identical images group together even when they are not bit-identical.
+   A threshold of 100 restores strict exact-match behavior. Files in each
+   group are additionally validated by file size when size comparison is
+   enabled. With "Keep better quality" enabled, each group is sorted by a
+   composite quality score — pixel count, then the encoder quality estimate
+   (e.g. JPEG quality), then file size — so the best copy leads the group;
+   its metadata can optionally be copied from the duplicates it replaces.
 
 ## Progress saving and resuming
 
@@ -117,12 +124,12 @@ throughput (files/s). The summary is written to the log and emitted via the
 ## Troubleshooting
 
 | Symptom | Cause / fix |
-|---------|-------------|
-| `MagickWand shared library not found` | ImageMagick not installed or `MAGICK_HOME` unset |
-| Crash on first `WandImage` use | 32/64-bit mismatch between Python and ImageMagick |
-| PSD/GIF hashing looks wrong | Only the flattened image / first frame is compared — expected behavior |
-| "Network drive is not accessible" | UNC path offline or credentials expired — reconnect the drive |
-| "directories were skipped — access denied" | Permission-protected folders excluded from the scan |
+| --- | --- |
+| `MagickWand library not found` | Install ImageMagick or set `MAGICK_HOME` |
+| Crash on first `WandImage` use | 32/64-bit Python/ImageMagick mismatch |
+| PSD/GIF hashing looks wrong | First frame compared — expected |
+| "Network drive is not accessible" | UNC offline — reconnect the drive |
+| "directories skipped" | Restricted folders excluded |
 
 ## Related documentation
 

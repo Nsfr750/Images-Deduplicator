@@ -131,6 +131,21 @@ def _pil_open_stub():
     return patch.object(sys.modules['PIL'].Image, 'open', return_value=b'png-data')
 
 
+@pytest.fixture(autouse=True)
+def isolated_hash_cache(tmp_path, monkeypatch):
+    """Redirect the default hash cache to a temp file.
+
+    Workers default to ``cache/image_hashes.json`` in the repo — writing or
+    cleaning it during tests would mutate tracked data.
+    """
+    real_hash_cache = workers.HashCache
+
+    def redirected(cache_file=None):
+        return real_hash_cache(cache_file or (tmp_path / 'image_hashes.json'))
+
+    monkeypatch.setattr(workers, 'HashCache', redirected)
+
+
 # ---------------------------------------------------------------------------
 # Fixtures and helpers
 # ---------------------------------------------------------------------------
@@ -439,14 +454,14 @@ class TestFileSizeComparison:
 
     def test_quality_score_from_wand(self, worker, image_files):
         fake = FakeWandImage(width=100, height=50)
+        fake.quality = 92
         with patch.object(workers, 'WandImage', return_value=fake):
-            resolution, size = worker._get_image_quality_score(image_files['a.jpg'])
-        assert resolution == 5000
-        assert size == 100
+            resolution, quality, size = worker._get_image_quality_score(image_files['a.jpg'])
+        assert (resolution, quality, size) == (5000, 92, 100)
 
     def test_quality_score_error(self, worker):
         with patch.object(workers, 'WandImage', side_effect=RuntimeError('boom')):
-            assert worker._get_image_quality_score('x.jpg') == (0, 0)
+            assert worker._get_image_quality_score('x.jpg') == (0, 0, 0)
 
     def test_best_quality_sorting(self, temp_dir, image_files):
         """With keep_better_quality, the best image leads the group."""
@@ -460,6 +475,68 @@ class TestFileSizeComparison:
                 {'h': [image_files['a.jpg'], image_files['b.jpg']]})
         assert list(dups.keys()) == [image_files['a.jpg']]
         assert dups[image_files['a.jpg']] == [image_files['b.jpg']]
+        assert w.quality_scores[image_files['a.jpg']] == scores[image_files['a.jpg']]
+
+    def test_file_size_cached_between_grouping_calls(self, worker, image_files):
+        worker._group_files_by_size([image_files['a.jpg']])
+        assert image_files['a.jpg'] in worker._file_sizes
+        with patch('workers.os.path.getsize',
+                   side_effect=AssertionError('should use cache')):
+            assert worker._get_file_size(image_files['a.jpg']) == 100
+
+
+# ---------------------------------------------------------------------------
+# Similarity groups
+# ---------------------------------------------------------------------------
+
+class TestSimilarityGroups:
+    """Tests for hash-similarity clustering of image groups."""
+
+    def test_hex_hamming_identical(self):
+        assert workers.ImageComparisonWorker._hex_hamming('ff', 'ff') == 0
+
+    def test_hex_hamming_distance(self):
+        # 'f' vs 'e' differ in one bit; 'f' vs '0' differ in four
+        assert workers.ImageComparisonWorker._hex_hamming('f', 'e') == 1
+        assert workers.ImageComparisonWorker._hex_hamming('f', '0') == 4
+
+    def test_hash_similarity_identical(self, worker):
+        assert worker._hash_similarity('aa:bb', 'aa:bb') == 100.0
+
+    def test_hash_similarity_percentage(self, worker):
+        # one bit out of 64 differs -> ~98.4%
+        similarity = worker._hash_similarity(
+            'ffffffffffffffff:0', 'fffffffffffffffe:0')
+        assert similarity > 98.0
+
+    def test_exact_grouping_at_threshold_100(self, worker, image_files):
+        worker.similarity_threshold = 100
+        groups = worker._group_by_similarity({
+            'aaaa:0000': [image_files['a.jpg'], image_files['b.jpg']],
+            'bbbb:0000': [image_files['d.jpg'], image_files['e.jpg']],
+        })
+        assert len(groups) == 2
+
+    def test_near_duplicates_clustered(self, worker, image_files):
+        worker.similarity_threshold = 90
+        groups = worker._group_by_similarity({
+            'ffffffffffffffff:0000000000000000': [image_files['a.jpg']],
+            'fffffffffffffffe:0000000000000000': [image_files['b.jpg']],
+            '0000000000000000:ffffffffffffffff': [image_files['c.jpg']],
+        })
+        # a+b cluster (1 bit diff), c stays separate (single -> dropped)
+        assert len(groups) == 1
+        assert sorted(groups[0]) == sorted(
+            [image_files['a.jpg'], image_files['b.jpg']])
+
+    def test_similarity_group_in_process_duplicates(self, worker, image_files):
+        worker.similarity_threshold = 90
+        worker.use_file_size = False
+        dups = worker._process_duplicates({
+            'ffffffffffffffff:0000000000000000': [image_files['a.jpg']],
+            'fffffffffffffffe:0000000000000000': [image_files['d.jpg']],
+        })
+        assert len(dups) == 1
 
 
 # ---------------------------------------------------------------------------

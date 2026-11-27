@@ -168,6 +168,7 @@ CACHE_EXPIRY_DAYS = 7  # Number of days to keep cache entries
 MAX_WORKERS = os.cpu_count() or 4  # Number of worker threads
 CHUNK_SIZE = 50  # Number of images to process in each chunk
 SUPPORTED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp', '.psd', '.gif', '.bmp'}
+MAX_SIMILARITY_KEYS = 2000  # Max unique hash keys for pairwise similarity clustering
 
 class WorkerSignals(QObject):
     """Defines the signals available from a running worker thread."""
@@ -417,6 +418,12 @@ class ImageComparisonWorker(QRunnable):
         self.metrics = ComparisonMetrics()
         self._scan_started_at = datetime.now()
 
+        # File size cache — avoids repeated stat calls during grouping/scoring
+        self._file_sizes: Dict[str, int] = {}
+
+        # Quality score of the leading image of each duplicate group
+        self.quality_scores: Dict[str, Tuple[int, int, int]] = {}
+
         # Track processed files and batches
         self._processed_count = 0
         self._total_files = 0
@@ -503,25 +510,36 @@ class ImageComparisonWorker(QRunnable):
         self.metrics.inaccessible_dirs += 1
         logger.warning(f"Skipping inaccessible directory: {self._describe_fs_error(err)} ({err})")
         
+    def _get_file_size(self, file_path: str) -> Optional[int]:
+        """Get a file's size in bytes, with caching to avoid repeated stat calls."""
+        size = self._file_sizes.get(file_path)
+        if size is None:
+            try:
+                size = os.path.getsize(file_path)
+                self._file_sizes[file_path] = size
+            except OSError:
+                return None
+        return size
+
     def _group_files_by_size(self, file_paths: List[str]) -> Dict[int, List[str]]:
         """Group files by their size in bytes.
-        
+
         Args:
             file_paths: List of file paths to group
-            
+
         Returns:
             Dictionary mapping file sizes to lists of file paths with that size
         """
         size_groups = {}
         for file_path in file_paths:
-            try:
-                size = os.path.getsize(file_path)
-                if size in size_groups:
-                    size_groups[size].append(file_path)
-                else:
-                    size_groups[size] = [file_path]
-            except OSError as e:
-                logger.warning(f"Could not get size for {file_path}: {e}")
+            size = self._get_file_size(file_path)
+            if size is None:
+                logger.warning(f"Could not get size for {file_path}")
+                continue
+            if size in size_groups:
+                size_groups[size].append(file_path)
+            else:
+                size_groups[size] = [file_path]
         return size_groups
     
     def _get_image_hashes(self, img_path: str) -> Tuple[str, str]:
@@ -571,25 +589,98 @@ class ImageComparisonWorker(QRunnable):
             # Return a dummy hash to avoid breaking the processing
             return "0" * 16, "0" * 16
     
-    def _get_image_quality_score(self, img_path: str) -> Tuple[int, int]:
-        """Calculate a quality score for an image.
-        
+    def _get_image_quality_score(self, img_path: str) -> Tuple[int, int, int]:
+        """Calculate a composite quality score for an image.
+
+        The score is a tuple of (pixel count, ImageMagick quality estimate,
+        file size in bytes) — compared lexicographically, so resolution
+        dominates, then the encoder quality (e.g. JPEG quality 0-100), then
+        file size.
+
         Args:
             img_path: Path to the image file
-            
+
         Returns:
-            Tuple of (resolution_score, file_size)
+            Tuple of (resolution, quality, file_size); (0, 0, 0) on errors
         """
         try:
             with WandImage(filename=img_path) as img:
                 # Resolution score (width * height)
                 resolution = img.width * img.height
-                # File size in bytes
-                file_size = os.path.getsize(img_path)
-                return (resolution, file_size)
+                # Encoder quality estimate (JPEG quality, 0 for other formats)
+                im_quality = getattr(img, 'quality', None) or 0
+                # File size in bytes (from the cached stat)
+                file_size = self._get_file_size(img_path) or 0
+                return (resolution, int(im_quality), file_size)
         except Exception as e:
             logger.warning(f"Error getting quality for {img_path}: {e}")
-            return (0, 0)
+            return (0, 0, 0)
+
+    @staticmethod
+    def _hex_hamming(hash_a: str, hash_b: str) -> int:
+        """Hamming distance between two hex-encoded hashes in bits."""
+        try:
+            return (int(hash_a, 16) ^ int(hash_b, 16)).bit_count()
+        except ValueError:
+            # Undecodable hashes are treated as maximally different
+            return max(len(hash_a), len(hash_b)) * 4 or 64
+
+    def _hash_similarity(self, key_a: str, key_b: str) -> float:
+        """Similarity percentage between two combined ``phash:ahash`` keys.
+
+        Both components contribute equally; the result is 100 for identical
+        keys and degrades with the combined Hamming distance.
+        """
+        phash_a, _, ahash_a = key_a.partition(':')
+        phash_b, _, ahash_b = key_b.partition(':')
+        distance = self._hex_hamming(phash_a, phash_b) + self._hex_hamming(ahash_a, ahash_b)
+        total_bits = (max(len(phash_a), len(phash_b)) + max(len(ahash_a), len(ahash_b))) * 4
+        if total_bits <= 0:
+            return 0.0
+        return max(0.0, (total_bits - distance) / total_bits * 100)
+
+    def _group_by_similarity(self, hashes: Dict[str, List[str]]) -> List[List[str]]:
+        """Cluster files into similarity groups.
+
+        Combined-hash keys whose mutual similarity is at least
+        ``similarity_threshold`` are merged into one group (union-find over
+        pairwise comparisons). With a threshold of 100 or a single key this
+        degenerates to exact-hash grouping.
+
+        Args:
+            hashes: Mapping of combined hash keys to file paths
+
+        Returns:
+            List of file-path groups containing at least two files
+        """
+        keys = list(hashes.keys())
+        if self.similarity_threshold >= 100 or len(keys) <= 1:
+            return [files for files in hashes.values() if len(files) > 1]
+        if len(keys) > MAX_SIMILARITY_KEYS:
+            logger.warning(
+                f"Too many unique hash keys ({len(keys)}), falling back to "
+                "exact-match grouping"
+            )
+            return [files for files in hashes.values() if len(files) > 1]
+
+        # Union-find over the unique hash keys
+        parent = {k: k for k in keys}
+
+        def find(x: str) -> str:
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        for i, key_a in enumerate(keys):
+            for key_b in keys[i + 1:]:
+                if self._hash_similarity(key_a, key_b) >= self.similarity_threshold:
+                    parent[find(key_b)] = find(key_a)
+
+        clusters: Dict[str, List[str]] = {}
+        for key in keys:
+            clusters.setdefault(find(key), []).extend(hashes[key])
+        return [files for files in clusters.values() if len(files) > 1]
     
     def _process_image_chunk(self, chunk: List[str]) -> Dict[str, List[str]]:
         """Process a chunk of images and return their hashes.
@@ -635,37 +726,39 @@ class ImageComparisonWorker(QRunnable):
         return chunk_hashes
     
     def _process_duplicates(self, hashes: Dict[str, List[str]]) -> Dict[str, List[str]]:
-        """Process duplicate groups and keep the best quality image if enabled."""
+        """Process similarity groups and keep the best quality image if enabled."""
         result = {}
+        self.quality_scores = {}
 
-        for _, file_paths in hashes.items():
-            if len(file_paths) > 1:  # Only process groups with duplicates
-                # When file size comparison is enabled, files with matching
-                # hashes are additionally validated by file size
-                if self.use_file_size:
-                    size_groups = self._group_files_by_size(file_paths)
-                else:
-                    size_groups = {0: file_paths}
+        for file_paths in self._group_by_similarity(hashes):
+            # When file size comparison is enabled, files with matching
+            # hashes are additionally validated by file size
+            if self.use_file_size:
+                size_groups = self._group_files_by_size(file_paths)
+            else:
+                size_groups = {0: file_paths}
 
-                for size, same_size_files in size_groups.items():
-                    if len(same_size_files) > 1:  # Only process groups with same size
-                        if self.keep_better_quality:
-                            # Sort by quality (resolution first, then file size)
-                            same_size_files.sort(
-                                key=lambda x: self._get_image_quality_score(x),
-                                reverse=True
-                            )
-                            
-                            # Preserve metadata from the best image if needed
-                            if self.preserve_metadata and len(same_size_files) > 1:
-                                best_image = same_size_files[0]
-                                for duplicate in same_size_files[1:]:
-                                    self._preserve_metadata_for_best_image(duplicate, best_image)
-                        
-                        # The first item is considered the original (best quality if enabled)
-                        original = same_size_files[0]
-                        result[original] = same_size_files[1:]
-                
+            for size, same_size_files in size_groups.items():
+                if len(same_size_files) > 1:  # Only process groups with same size
+                    if self.keep_better_quality:
+                        # Sort by composite quality (resolution, encoder
+                        # quality, then file size)
+                        same_size_files.sort(
+                            key=lambda x: self._get_image_quality_score(x),
+                            reverse=True
+                        )
+
+                        # Preserve metadata from the best image if needed
+                        if self.preserve_metadata and len(same_size_files) > 1:
+                            best_image = same_size_files[0]
+                            for duplicate in same_size_files[1:]:
+                                self._preserve_metadata_for_best_image(duplicate, best_image)
+
+                    # The first item is considered the original (best quality if enabled)
+                    original = same_size_files[0]
+                    result[original] = same_size_files[1:]
+                    self.quality_scores[original] = self._get_image_quality_score(original)
+
         return result
     
     def _preserve_metadata_for_best_image(self, original_path: str, best_path: str) -> bool:
@@ -838,6 +931,7 @@ class ImageComparisonWorker(QRunnable):
             # Resume previously saved progress for this folder, if any
             all_hashes, remaining_files, done = self._load_saved_progress(potential_duplicates)
             processed_files: Set[str] = set(done)
+            remaining_set: Set[str] = set(remaining_files)
 
             logger.info(
                 f"Found {total_files} image files, "
@@ -858,7 +952,7 @@ class ImageComparisonWorker(QRunnable):
                         self._save_progress(
                             ProgressState.PAUSED,
                             sorted(processed_files),
-                            remaining_files,
+                            sorted(remaining_set),
                             all_hashes,
                         )
                         self.signals.paused.emit()
@@ -889,7 +983,7 @@ class ImageComparisonWorker(QRunnable):
                                     all_hashes[key] = value
 
                             processed_files.update(chunk)
-                            remaining_files = [f for f in remaining_files if f not in chunk]
+                            remaining_set.difference_update(chunk)
                             self._processed_count = len(processed_files)
                             progress = min(95, 5 + int((self._processed_count / self._total_files) * 90))
                             self.signals.progress.emit(progress)
@@ -904,7 +998,7 @@ class ImageComparisonWorker(QRunnable):
                         self._save_progress(
                             ProgressState.PROCESSING,
                             sorted(processed_files),
-                            remaining_files,
+                            sorted(remaining_set),
                             all_hashes,
                         )
 
@@ -912,7 +1006,7 @@ class ImageComparisonWorker(QRunnable):
                 self._save_progress(
                     ProgressState.PAUSED,
                     sorted(processed_files),
-                    remaining_files,
+                    sorted(remaining_set),
                     all_hashes,
                 )
                 self.signals.paused.emit()
